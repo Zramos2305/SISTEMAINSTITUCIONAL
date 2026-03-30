@@ -27,7 +27,7 @@ const VERIFICACION_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL + "/verificar?doc
 
 function generarCodigo() {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigo = "DOC-";
+  let codigo = "FIC-";
   for (let i = 0; i < 8; i++) {
     codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
