@@ -51,7 +51,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 
-const VERIFICACION_BASE_URL = "https://zramos2305.github.io/VERIFICACIONQR/?doc=";
+const VERIFICACION_BASE_URL = "https://sistemainstitucional.vercel.app/verificar?doc=";
 
 function formatearFecha(fecha) {
   if (!fecha) return "-";
