@@ -3,7 +3,9 @@ import withPWAInit from "next-pwa";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development", // 👈 CLAVE
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development", // 👈 MUY IMPORTANTE
 });
 
 const nextConfig = {
@@ -11,7 +13,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  turbopack: {}, // 👈 ESTO SOLUCIONA EL ERROR
+  turbopack: {}, // 👈 ESTO EVITA EL ERROR
 };
 
 export default withPWA(nextConfig);
