@@ -23,7 +23,7 @@ export const metadata = {
       { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
       { url: '/icon.svg', type: 'image/svg+xml' },
     ],
-    apple: '/logo.png', // 👈 CLAVE
+    apple: '/apple-icon.png', // 👈 CLAVE
   },
 }
 export const viewport = {
