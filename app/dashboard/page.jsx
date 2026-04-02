@@ -72,7 +72,12 @@ function exportarCSV(lista, nombre) {
   }
   const encabezados = ["Código", "Nombre", "Cédula", "Tipo", "Detalle", "Estado", "Fecha"];
   const filas = lista.map((item) => {
-    const detalle = item.tipo === "certificado" ? (item.evento || "Evento") : "Miembro";
+    let detalle = "Miembro";
+    if (item.tipo === "certificado") {
+      detalle = item.evento ? `${item.evento} ${item.descripcion ? `(${item.descripcion})` : ''}` : (item.descripcion || "Evento");
+    } else if (item.tipo === "documento") {
+      detalle = item.descripcion || "General";
+    }
     return [item.codigo, item.nombre, item.cedula || "", item.tipo, detalle, item.estado, formatearFecha(item.fecha)];
   });
   const csv = [encabezados, ...filas].map((fila) => fila.map((valor) => `"${valor}"`).join(" ;")).join("\n");
@@ -133,7 +138,8 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     const certificados = documentos.filter((d) => d.tipo === "certificado").length;
     const afiliados = documentos.filter((d) => d.tipo === "afiliado").length;
-    return { total: documentos.length, certificados, afiliados };
+    const documentosGenerales = documentos.filter((d) => d.tipo === "documento").length;
+    return { total: documentos.length, certificados, afiliados, documentosGenerales };
   }, [documentos]);
 
   const handleEliminar = async () => {
@@ -233,6 +239,17 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Documentos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                <span className="text-2xl font-bold">{stats.documentosGenerales}</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Actions & Filters */}
@@ -262,6 +279,15 @@ export default function DashboardPage() {
                   <Users className="h-4 w-4 mr-2" />
                   Afiliados
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-primary border-primary/30 hover:bg-primary/10"
+                  onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "documento"), "documentos_generales")}
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Documentos
+                </Button>
               </div>
 
               <div className="flex flex-1 gap-3 max-w-xl">
@@ -282,6 +308,7 @@ export default function DashboardPage() {
                     <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="certificado">Certificados</SelectItem>
                     <SelectItem value="afiliado">Afiliados</SelectItem>
+                    <SelectItem value="documento">Documentos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -340,18 +367,20 @@ export default function DashboardPage() {
                           <TableCell className="hidden md:table-cell">{doc.cedula || "-"}</TableCell>
                           <TableCell>
                             <Badge
-                              variant={doc.tipo === "certificado" ? "default" : "secondary"}
+                              variant={doc.tipo === "certificado" ? "default" : doc.tipo === "documento" ? "outline" : "secondary"}
                               className={
                                 doc.tipo === "certificado"
                                   ? "bg-success/10 text-success border-success/20"
+                                  : doc.tipo === "documento"
+                                  ? "bg-primary/10 text-primary border-primary/20"
                                   : "bg-info/10 text-info border-info/20"
                               }
                             >
-                              {doc.tipo === "certificado" ? "Certificado" : "Afiliado"}
+                              {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "Afiliado"}
                             </Badge>
                           </TableCell>
                           <TableCell className="hidden lg:table-cell">
-                            {doc.tipo === "certificado" ? doc.evento : "Miembro"}
+                            {doc.tipo === "certificado" ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") : doc.tipo === "documento" ? doc.descripcion || "General" : "Miembro"}
                           </TableCell>
 
                           {/* ESTADO — botón toggle simple, sin DropdownMenu ni portal */}

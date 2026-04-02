@@ -167,10 +167,12 @@ function VerificarContent() {
                   className={
                     documento.tipo === "certificado"
                       ? "bg-success text-success-foreground text-base px-4 py-1"
+                      : documento.tipo === "documento"
+                      ? "bg-primary text-primary-foreground text-base px-4 py-1"
                       : "bg-info text-info-foreground text-base px-4 py-1"
                   }
                 >
-                  {documento.tipo === "certificado" ? "Certificado Válido" : "Afiliado Verificado"}
+                  {documento.tipo === "certificado" ? "Certificado Válido" : documento.tipo === "documento" ? "Documento Válido" : "Afiliado Verificado"}
                 </Badge>
               </div>
 
@@ -202,6 +204,15 @@ function VerificarContent() {
                     <div>
                       <p className="text-xs text-muted-foreground">Evento</p>
                       <p className="font-medium">{documento.evento}</p>
+                    </div>
+                  </div>
+                )}
+                {(documento.tipo === "certificado" || documento.tipo === "documento") && documento.descripcion && (
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Descripción</p>
+                      <p className="font-medium">{documento.descripcion}</p>
                     </div>
                   </div>
                 )}

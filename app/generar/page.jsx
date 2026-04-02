@@ -41,6 +41,7 @@ export default function GenerarPage() {
     cedula: "",
     tipo: "",
     evento: "",
+    descripcion: "",
   });
   const [isCreating, setIsCreating] = useState(false);
   const [documentoCreado, setDocumentoCreado] = useState(null);
@@ -98,6 +99,7 @@ export default function GenerarPage() {
         cedula: formData.cedula.trim(),
         tipo: formData.tipo,
         evento: formData.tipo === "certificado" ? formData.evento : null,
+        descripcion: (formData.tipo === "certificado" || formData.tipo === "documento") ? formData.descripcion.trim() : null,
         estado: "activo", // ← siempre "activo" al crear
         fecha: new Date().toISOString(),
       });
@@ -131,7 +133,7 @@ export default function GenerarPage() {
   };
 
   const handleNuevoDocumento = () => {
-    setFormData({ nombre: "", cedula: "", tipo: "", evento: "" });
+    setFormData({ nombre: "", cedula: "", tipo: "", evento: "", descripcion: "" });
     setDocumentoCreado(null);
     setMostrarPreview(false);
   };
@@ -261,6 +263,7 @@ export default function GenerarPage() {
                     <SelectContent>
                       <SelectItem value="certificado">Certificado</SelectItem>
                       <SelectItem value="afiliado">Afiliado</SelectItem>
+                      <SelectItem value="documento">Documento</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -275,6 +278,22 @@ export default function GenerarPage() {
                         placeholder="Ej: Diplomado en Gestión Comunitaria"
                         value={formData.evento}
                         onChange={(e) => handleInputChange("evento", e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </Field>
+                )}
+
+                {(formData.tipo === "certificado" || formData.tipo === "documento") && (
+                  <Field>
+                    <FieldLabel htmlFor="descripcion">Descripción (Opcional)</FieldLabel>
+                    <div className="relative">
+                      <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="descripcion"
+                        placeholder="Breve descripción del documento"
+                        value={formData.descripcion}
+                        onChange={(e) => handleInputChange("descripcion", e.target.value)}
                         className="pl-10"
                       />
                     </div>
@@ -335,20 +354,28 @@ export default function GenerarPage() {
                     <div className="flex items-center gap-3">
                       <Award className="h-4 w-4 text-muted-foreground" />
                       <Badge
-                        variant={formData.tipo === "certificado" ? "default" : "secondary"}
+                        variant={formData.tipo === "certificado" ? "default" : formData.tipo === "documento" ? "outline" : "secondary"}
                         className={
                           formData.tipo === "certificado"
                             ? "bg-success/10 text-success border-success/20"
+                            : formData.tipo === "documento"
+                            ? "bg-primary/10 text-primary border-primary/20"
                             : "bg-info/10 text-info border-info/20"
                         }
                       >
-                        {formData.tipo === "certificado" ? "Certificado" : "Afiliado"}
+                        {formData.tipo === "certificado" ? "Certificado" : formData.tipo === "documento" ? "Documento" : "Afiliado"}
                       </Badge>
                     </div>
                     {formData.tipo === "certificado" && formData.evento && (
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span>{formData.evento}</span>
+                      </div>
+                    )}
+                    {(formData.tipo === "certificado" || formData.tipo === "documento") && formData.descripcion && (
+                      <div className="flex items-center gap-3">
+                        <FileCheck className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{formData.descripcion}</span>
                       </div>
                     )}
                   </div>
