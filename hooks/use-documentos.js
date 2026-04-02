@@ -1,44 +1,45 @@
 "use client";
 
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { collection, onSnapshot, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import useSWR from "swr";
-
-async function fetchDocumentos() {
-  const snap = await getDocs(collection(db, "documentos"));
-  const documentos = [];
-  
-  snap.forEach((doc) => {
-    documentos.push({
-      codigo: doc.id,
-      ...doc.data(),
-    });
-  });
-
-  return documentos.sort((a, b) => 
-    new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-  );
-}
 
 export function useDocumentos() {
-  const { data, error, isLoading, mutate } = useSWR(
-    "documentos",
-    fetchDocumentos,
-    {
-      revalidateOnFocus: false,
-    }
-  );
+  const [documentos, setDocumentos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "documentos"), orderBy("fecha", "desc"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map((doc) => ({
+        codigo: doc.id,
+        ...doc.data(),
+      }));
+      setDocumentos(docs);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching documentos:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const eliminarDocumento = async (codigo) => {
     await deleteDoc(doc(db, "documentos", codigo));
-    mutate();
+  };
+
+  const actualizarEstado = async (codigo, nuevoEstado) => {
+    await updateDoc(doc(db, "documentos", codigo), {
+      estado: nuevoEstado,
+    });
   };
 
   return {
-    documentos: data || [],
+    documentos,
     isLoading,
-    error,
-    mutate,
     eliminarDocumento,
+    actualizarEstado,
   };
 }

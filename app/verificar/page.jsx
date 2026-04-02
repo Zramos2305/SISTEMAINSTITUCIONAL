@@ -38,8 +38,13 @@ function VerificarContent() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          setDocumento({ codigo: docSnap.id, ...docSnap.data() });
-          setEstado("valid");
+          const docData = { codigo: docSnap.id, ...docSnap.data() };
+          setDocumento(docData);
+          if (docData.estado === "inactivo") {
+            setEstado("inactive");
+          } else {
+            setEstado("valid");
+          }
         } else {
           setEstado("invalid");
         }
@@ -115,6 +120,41 @@ function VerificarContent() {
                   {codigo}
                 </Badge>
               )}
+            </div>
+          )}
+
+          {estado === "inactive" && documento && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-amber-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-amber-600 mb-2">
+                Documento Inactivo
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Este documento se encuentra registrado pero está marcado como <strong>inactivo</strong> en el sistema.
+              </p>
+              <div className="space-y-3 text-left max-w-xs mx-auto">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Nombre</p>
+                    <p className="font-medium">{documento.nombre}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <IdCard className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Código</p>
+                    <p className="font-mono font-medium">{documento.codigo}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                <p className="text-sm text-amber-600">
+                  Para más información, contacte a la Fundación Isla Cascajal.
+                </p>
+              </div>
             </div>
           )}
 

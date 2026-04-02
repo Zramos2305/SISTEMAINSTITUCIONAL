@@ -32,6 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Empty } from "@/components/ui/empty";
@@ -47,6 +53,7 @@ import {
   QrCode,
   User,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -122,7 +129,8 @@ async function descargarQR(codigo) {
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
-  const { documentos, isLoading, eliminarDocumento } = useDocumentos();
+  const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
+  const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
 
@@ -158,6 +166,18 @@ export default function DashboardPage() {
       toast.success("Documento eliminado");
     } catch {
       toast.error("Error al eliminar");
+    }
+  };
+
+  const handleCambiarEstado = async (codigo, nuevoEstado) => {
+    setUpdatingStatus(codigo);
+    try {
+      await actualizarEstado(codigo, nuevoEstado);
+      toast.success(`Estado cambiado a ${nuevoEstado}`);
+    } catch {
+      toast.error("Error al cambiar estado");
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -383,9 +403,40 @@ export default function DashboardPage() {
                           {doc.tipo === "certificado" ? doc.evento : "Miembro"}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline" className="text-success border-success/30">
-                            {doc.estado}
-                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingStatus === doc.codigo}
+                                className={
+                                  doc.estado === "activo"
+                                    ? "text-success border-success/30 hover:bg-success/10"
+                                    : "text-destructive border-destructive/30 hover:bg-destructive/10"
+                                }
+                              >
+                                {updatingStatus === doc.codigo ? (
+                                  <Spinner className="h-3 w-3 mr-1" />
+                                ) : null}
+                                {doc.estado === "activo" ? "Activo" : "Inactivo"}
+                                <ChevronDown className="h-3 w-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem
+                                onClick={() => handleCambiarEstado(doc.codigo, "activo")}
+                                disabled={doc.estado === "activo"}
+                              >
+                                <span className="text-success">Activo</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCambiarEstado(doc.codigo, "inactivo")}
+                                disabled={doc.estado === "inactivo"}
+                              >
+                                <span className="text-destructive">Inactivo</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                         <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
                           {formatearFecha(doc.fecha)}
