@@ -27,7 +27,7 @@ const VERIFICACION_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL + "/verificar?doc
 
 function generarCodigo() {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigo = "FIC-";
+  let codigo = "FICONG-";
   for (let i = 0; i < 8; i++) {
     codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
@@ -359,8 +359,8 @@ export default function GenerarPage() {
                           formData.tipo === "certificado"
                             ? "bg-success/10 text-success border-success/20"
                             : formData.tipo === "documento"
-                            ? "bg-primary/10 text-primary border-primary/20"
-                            : "bg-info/10 text-info border-info/20"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "bg-info/10 text-info border-info/20"
                         }
                       >
                         {formData.tipo === "certificado" ? "Certificado" : formData.tipo === "documento" ? "Documento" : "Afiliado"}
