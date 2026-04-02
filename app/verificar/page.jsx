@@ -128,10 +128,10 @@ function VerificarContent() {
                 <AlertCircle className="h-8 w-8 text-amber-500" />
               </div>
               <h3 className="text-lg font-semibold text-amber-600 mb-2">
-                Documento Inactivo
+                {documento.tipo === "afiliado" ? "Afiliado Inactivo" : "Documento Inactivo"}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Este documento está registrado pero se encuentra <strong>inactivo</strong> en el sistema.
+                Este {documento.tipo === "afiliado" ? "afiliado" : "documento"} está registrado pero se encuentra <strong>inactivo</strong> en el sistema.
               </p>
               <div className="space-y-3 text-left max-w-xs mx-auto">
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">

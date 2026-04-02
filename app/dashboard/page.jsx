@@ -385,27 +385,39 @@ export default function DashboardPage() {
 
                           {/* ESTADO — botón toggle simple, sin DropdownMenu ni portal */}
                           <TableCell className="hidden sm:table-cell">
-                            <button
-                              onClick={() => handleToggleEstado(doc.codigo, doc.estado)}
-                              disabled={cargando}
-                              className={`
-                                inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                                ${esActivo
-                                  ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
-                                  : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
-                                }
-                              `}
-                            >
-                              {cargando ? (
-                                <Spinner className="h-3 w-3" />
-                              ) : esActivo ? (
+                            {doc.tipo === "afiliado" ? (
+                              <button
+                                onClick={() => handleToggleEstado(doc.codigo, doc.estado)}
+                                disabled={cargando}
+                                className={`
+                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                  border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                                  ${esActivo
+                                    ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
+                                    : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
+                                  }
+                                `}
+                              >
+                                {cargando ? (
+                                  <Spinner className="h-3 w-3" />
+                                ) : esActivo ? (
+                                  <ToggleRight className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ToggleLeft className="h-3.5 w-3.5" />
+                                )}
+                                {esActivo ? "Activo" : "Inactivo"}
+                              </button>
+                            ) : (
+                              <div
+                                className={`
+                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                  border bg-success/10 text-success border-success/30 opacity-80 cursor-default
+                                `}
+                              >
                                 <ToggleRight className="h-3.5 w-3.5" />
-                              ) : (
-                                <ToggleLeft className="h-3.5 w-3.5" />
-                              )}
-                              {esActivo ? "Activo" : "Inactivo"}
-                            </button>
+                                Activo
+                              </div>
+                            )}
                           </TableCell>
 
                           <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
