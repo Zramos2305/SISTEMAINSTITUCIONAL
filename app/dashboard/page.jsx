@@ -30,7 +30,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
@@ -76,39 +75,23 @@ function exportarCSV(lista, nombre) {
     toast.error("No hay datos para exportar");
     return;
   }
-
   const encabezados = ["Código", "Nombre", "Cédula", "Tipo", "Detalle", "Estado", "Fecha"];
-
   const filas = lista.map((item) => {
     const detalle = item.tipo === "certificado" ? (item.evento || "Evento") : "Miembro";
-    return [
-      item.codigo,
-      item.nombre,
-      item.cedula || "",
-      item.tipo,
-      detalle,
-      item.estado,
-      formatearFecha(item.fecha),
-    ];
+    return [item.codigo, item.nombre, item.cedula || "", item.tipo, detalle, item.estado, formatearFecha(item.fecha)];
   });
-
-  const csv = [encabezados, ...filas]
-    .map((fila) => fila.map((valor) => `"${valor}"`).join(" ;"))
-    .join("\n");
-
+  const csv = [encabezados, ...filas].map((fila) => fila.map((valor) => `"${valor}"`).join(" ;")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = `${nombre}.csv`;
   link.click();
-
   toast.success(`Exportado: ${nombre}.csv`);
 }
 
 async function descargarQR(codigo) {
   const link = VERIFICACION_BASE_URL + codigo;
   const urlQR = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
-
   try {
     const res = await fetch(urlQR);
     const blob = await res.blob();
@@ -129,13 +112,16 @@ async function descargarQR(codigo) {
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
   const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
+
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
 
+  // FIX: AlertDialog controlado desde fuera del map para no bloquear el DropdownMenu
+  const [codigoAEliminar, setCodigoAEliminar] = useState(null);
+
   const documentosFiltrados = useMemo(() => {
     let resultado = documentos;
-
     if (busqueda) {
       const termino = busqueda.toLowerCase();
       resultado = resultado.filter(
@@ -145,11 +131,9 @@ export default function DashboardPage() {
           d.cedula?.toLowerCase().includes(termino)
       );
     }
-
     if (filtroTipo !== "todos") {
       resultado = resultado.filter((d) => d.tipo === filtroTipo);
     }
-
     return resultado;
   }, [documentos, busqueda, filtroTipo]);
 
@@ -159,12 +143,15 @@ export default function DashboardPage() {
     return { total: documentos.length, certificados, afiliados };
   }, [documentos]);
 
-  const handleEliminar = async (codigo) => {
+  const handleEliminar = async () => {
+    if (!codigoAEliminar) return;
     try {
-      await eliminarDocumento(codigo);
+      await eliminarDocumento(codigoAEliminar);
       toast.success("Documento eliminado");
     } catch {
       toast.error("Error al eliminar");
+    } finally {
+      setCodigoAEliminar(null);
     }
   };
 
@@ -371,7 +358,7 @@ export default function DashboardPage() {
                             {doc.tipo === "certificado" ? doc.evento : "Miembro"}
                           </TableCell>
 
-                          {/* ESTADO con dropdown */}
+                          {/* ESTADO — DropdownMenu limpio, sin AlertDialog anidado */}
                           <TableCell className="hidden sm:table-cell">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -414,6 +401,7 @@ export default function DashboardPage() {
                           <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
                             {formatearFecha(doc.fecha)}
                           </TableCell>
+
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button
@@ -424,36 +412,16 @@ export default function DashboardPage() {
                               >
                                 <QrCode className="h-4 w-4" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive hover:text-destructive"
-                                    title="Eliminar"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Eliminar documento</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      ¿Estás seguro de eliminar el documento {doc.codigo}? Esta
-                                      acción no se puede deshacer.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleEliminar(doc.codigo)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Eliminar
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              {/* FIX: solo setea el código, el AlertDialog está fuera del map */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                title="Eliminar"
+                                onClick={() => setCodigoAEliminar(doc.codigo)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -466,6 +434,27 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* AlertDialog FUERA del map — evita conflicto con DropdownMenu */}
+      <AlertDialog open={!!codigoAEliminar} onOpenChange={(open) => !open && setCodigoAEliminar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar documento</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de eliminar el documento <span className="font-mono font-semibold">{codigoAEliminar}</span>? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEliminar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
