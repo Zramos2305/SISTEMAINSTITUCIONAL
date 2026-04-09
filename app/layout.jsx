@@ -42,12 +42,12 @@ export default function RootLayout({ children }) {
         <div className="flex-1">
           {children}
         </div>
-        <footer className="py-8 bg-card border-t mt-auto">
-          <div className="container mx-auto px-4 text-center space-y-2">
-            <p className="text-sm font-medium text-foreground/70 uppercase tracking-widest">
+        <footer className="py-4 bg-card border-t mt-auto">
+          <div className="container mx-auto px-4 text-left space-y-0.5">
+            <p className="text-[10px] font-medium text-foreground/60 uppercase tracking-wider">
               Aplicación desarrollada por Zayra Ramos
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground/80">
               para Fundación Isla Cascajal
             </p>
           </div>
