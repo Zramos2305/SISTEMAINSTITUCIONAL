@@ -131,6 +131,7 @@ export default function DashboardPage() {
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [codigoAEliminar, setCodigoAEliminar] = useState(null);
   const [infoDoc, setInfoDoc] = useState(null);
+  const [confirmarInactivacion, setConfirmarInactivacion] = useState(null);
 
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
@@ -178,7 +179,7 @@ export default function DashboardPage() {
     const nuevoEstado = estadoActual === "activo" ? "inactivo" : "activo";
     setUpdatingStatus(codigo);
     try {
-      await actualizarEstado(codigo, nuevoEstado);
+      await actualizarEstado(codigo, nuevoEstado, nuevoEstado === "activo" ? { desactivadoManualmente: null, fechaDesactivacion: null } : {});
       toast.success(nuevoEstado === "activo" ? "Documento activado" : "Documento desactivado");
     } catch {
       toast.error("Error al cambiar estado");
@@ -407,7 +408,13 @@ export default function DashboardPage() {
                           <TableCell className="hidden sm:table-cell">
                             {doc.tipo === "afiliado" ? (
                               <button
-                                onClick={() => handleToggleEstado(doc.codigo, doc.estado)}
+                                onClick={() => {
+                                  if (esActivo) {
+                                    setConfirmarInactivacion(doc);
+                                  } else {
+                                    handleToggleEstado(doc.codigo, doc.estado);
+                                  }
+                                }}
                                 disabled={cargando || isExpired}
                                 className={`
                                   inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
@@ -535,11 +542,56 @@ export default function DashboardPage() {
                     {formatearFecha(infoDoc.fechaExpiracion) || 'Permanente'}
                   </p>
                 </div>
+                {infoDoc.desactivadoManualmente && (
+                  <div className="space-y-1 bg-destructive/10 p-3 rounded-lg border border-destructive/20 col-span-2 text-center mt-2">
+                    <p className="text-xs text-destructive uppercase font-semibold">Desactivado Manualmente</p>
+                    <p className="font-medium text-sm text-destructive">
+                      {formatearFecha(infoDoc.fechaDesactivacion)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de confirmación para inactivar manualmente */}
+      <AlertDialog open={!!confirmarInactivacion} onOpenChange={(open) => !open && setConfirmarInactivacion(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desea inactivar manualmente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de inactivar a <span className="font-semibold text-foreground">{confirmarInactivacion?.nombre}</span> de forma manual antes de su fecha de expiración. ¿Deseas continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmarInactivacion) {
+                  setUpdatingStatus(confirmarInactivacion.codigo);
+                  actualizarEstado(confirmarInactivacion.codigo, "inactivo", {
+                    desactivadoManualmente: true,
+                    fechaDesactivacion: new Date().toISOString(),
+                  }).then(() => {
+                    toast.success("Documento desactivado manualmente");
+                    setUpdatingStatus(null);
+                    setConfirmarInactivacion(null);
+                  }).catch(() => {
+                    toast.error("Error al inactivar");
+                    setUpdatingStatus(null);
+                    setConfirmarInactivacion(null);
+                  });
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Inactivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

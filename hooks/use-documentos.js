@@ -35,9 +35,10 @@ export function useDocumentos() {
   };
 
   // nuevoEstado: "activo" | "inactivo"
-  const actualizarEstado = async (codigo, nuevoEstado) => {
+  const actualizarEstado = async (codigo, nuevoEstado, extraData = {}) => {
     await updateDoc(doc(db, "documentos", codigo), {
       estado: nuevoEstado,
+      ...extraData,
     });
   };
 
