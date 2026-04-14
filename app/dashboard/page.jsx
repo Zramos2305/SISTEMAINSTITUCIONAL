@@ -64,7 +64,7 @@ import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
 
-const VERIFICACION_BASE_URL = "https://sistemainstitucional.vercel.app/verificar?doc=";
+const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar?doc=";
 
 // Función auxiliar para dar formato legible a la fecha (por ejemplo: "22 oct 2023, 14:30")
 function formatearFecha(fecha) {
