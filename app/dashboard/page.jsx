@@ -62,6 +62,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import QRCode from "qrcode";
 
 const VERIFICACION_BASE_URL = "https://sistemainstitucional.vercel.app/verificar?doc=";
 
@@ -105,18 +106,22 @@ function exportarCSV(lista, nombre) {
 // Función asíncrona para generar un código QR y forzar su descarga como imagen PNG
 async function descargarQR(codigo) {
   const link = VERIFICACION_BASE_URL + codigo;
-  const urlQR = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
   try {
-    const res = await fetch(urlQR);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const qrDataUrl = await QRCode.toDataURL(link, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: "#1e3a5f",
+        light: "#ffffff",
+      },
+    });
+
     const a = document.createElement("a");
-    a.href = url;
+    a.href = qrDataUrl;
     a.download = `QR_${codigo}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     toast.success("QR descargado");
   } catch {
     toast.error("Error al descargar QR");
