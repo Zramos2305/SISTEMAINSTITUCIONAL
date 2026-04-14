@@ -23,7 +23,7 @@ import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
 
-const VERIFICACION_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL + "/verificar?doc=";
+const VERIFICACION_BASE_URL = "https://sistemainstitucional.vercel.app/verificar?doc=";
 
 // Función auxiliar para generar un código alfanumérico aleatorio (ejemplo: FICONG-4F8A0X1P)
 function generarCodigo() {
