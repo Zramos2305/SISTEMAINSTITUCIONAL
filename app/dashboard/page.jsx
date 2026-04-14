@@ -31,6 +31,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Empty } from "@/components/ui/empty";
@@ -48,6 +55,7 @@ import {
   FileText,
   ToggleLeft,
   ToggleRight,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -122,6 +130,7 @@ export default function DashboardPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [codigoAEliminar, setCodigoAEliminar] = useState(null);
+  const [infoDoc, setInfoDoc] = useState(null);
 
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
@@ -437,6 +446,17 @@ export default function DashboardPage() {
 
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              {doc.tipo === "afiliado" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-info hover:text-info"
+                                  title="Información"
+                                  onClick={() => setInfoDoc(doc)}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -488,6 +508,38 @@ export default function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de información de afiliación */}
+      <Dialog open={!!infoDoc} onOpenChange={(open) => !open && setInfoDoc(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Información de Afiliación</DialogTitle>
+            <DialogDescription>
+              Detalles sobre el tiempo de afiliación de <span className="font-semibold text-foreground">{infoDoc?.nombre}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          {infoDoc && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 bg-muted/50 p-3 rounded-lg border">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Afiliación</p>
+                  <p className="font-medium text-sm">{formatearFecha(infoDoc.fecha)}</p>
+                </div>
+                <div className="space-y-1 bg-muted/50 p-3 rounded-lg border">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Tipo (Duración)</p>
+                  <p className="font-medium text-sm">{infoDoc.duracion === "6_meses" ? "6 Meses" : infoDoc.duracion === "1_ano" ? "1 Año" : "No especificada"}</p>
+                </div>
+                <div className="space-y-1 bg-muted/50 p-3 rounded-lg border col-span-2 text-center mt-2">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Expiración</p>
+                  <p className={`font-medium text-base ${infoDoc.fechaExpiracion && new Date() > new Date(infoDoc.fechaExpiracion) ? 'text-destructive' : 'text-success'}`}>
+                    {formatearFecha(infoDoc.fechaExpiracion) || 'Permanente'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
