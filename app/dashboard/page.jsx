@@ -367,7 +367,8 @@ export default function DashboardPage() {
                   </TableHeader>
                   <TableBody>
                     {documentosFiltrados.map((doc) => {
-                      const esActivo = doc.estado === "activo";
+                      const isExpired = doc.tipo === "afiliado" && doc.fechaExpiracion && new Date() > new Date(doc.fechaExpiracion);
+                      const esActivo = doc.estado === "activo" && !isExpired;
                       const cargando = updatingStatus === doc.codigo;
 
                       return (
@@ -398,10 +399,10 @@ export default function DashboardPage() {
                             {doc.tipo === "afiliado" ? (
                               <button
                                 onClick={() => handleToggleEstado(doc.codigo, doc.estado)}
-                                disabled={cargando}
+                                disabled={cargando || isExpired}
                                 className={`
                                   inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                  border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                                  border transition-colors ${isExpired ? 'opacity-50 cursor-not-allowed' : 'disabled:opacity-50 disabled:cursor-not-allowed'}
                                   ${esActivo
                                     ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
                                     : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
@@ -415,7 +416,7 @@ export default function DashboardPage() {
                                 ) : (
                                   <ToggleLeft className="h-3.5 w-3.5" />
                                 )}
-                                {esActivo ? "Activo" : "Inactivo"}
+                                {isExpired ? "Vencido" : (esActivo ? "Activo" : "Inactivo")}
                               </button>
                             ) : (
                               <div

@@ -50,7 +50,16 @@ function VerificarContent() {
           if (docData.estado === "inactivo") {
             setEstado("inactive");
           } else {
-            setEstado("valid");
+            if (docData.tipo === "afiliado" && docData.fechaExpiracion) {
+              const isExpired = new Date() > new Date(docData.fechaExpiracion);
+              if (isExpired) {
+                setEstado("inactive");
+              } else {
+                setEstado("valid");
+              }
+            } else {
+              setEstado("valid");
+            }
           }
         } else {
           setEstado("invalid");
