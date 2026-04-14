@@ -260,7 +260,7 @@ export default function GenerarPage() {
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="cedula">Cédula</FieldLabel>
+                  <FieldLabel htmlFor="cedula">NUIP</FieldLabel>
                   <div className="relative">
                     <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input

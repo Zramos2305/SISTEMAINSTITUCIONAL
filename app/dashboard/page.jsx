@@ -84,7 +84,7 @@ function exportarCSV(lista, nombre) {
     toast.error("No hay datos para exportar");
     return;
   }
-  const encabezados = ["Código", "Nombre", "Cédula", "Tipo", "Detalle", "Estado", "Fecha"];
+  const encabezados = ["Código", "Nombre", "NUIP", "Tipo", "Detalle", "Estado", "Fecha"];
   const filas = lista.map((item) => {
     let detalle = "Miembro";
     if (item.tipo === "certificado") {
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nombre, código o cédula..."
+                    placeholder="Buscar por nombre, código o NUIP..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     className="pl-10"
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                     <TableRow className="bg-muted/50">
                       <TableHead>Código</TableHead>
                       <TableHead>Nombre</TableHead>
-                      <TableHead className="hidden md:table-cell">Cédula</TableHead>
+                      <TableHead className="hidden md:table-cell">NUIP</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="hidden lg:table-cell">Detalle</TableHead>
                       <TableHead className="hidden sm:table-cell">Estado</TableHead>
