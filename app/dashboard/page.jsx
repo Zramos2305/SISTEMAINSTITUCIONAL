@@ -31,6 +31,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Empty } from "@/components/ui/empty";
@@ -48,6 +55,8 @@ import {
   FileText,
   ToggleLeft,
   ToggleRight,
+  Info,
+  IdCard,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -72,7 +81,7 @@ function exportarCSV(lista, nombre) {
     toast.error("No hay datos para exportar");
     return;
   }
-  const encabezados = ["Código", "Nombre", "Cédula", "Tipo", "Detalle", "Estado", "Fecha"];
+  const encabezados = ["Código", "Nombre", "NUIP", "Tipo", "Detalle", "Estado", "Fecha"];
   const filas = lista.map((item) => {
     let detalle = "Miembro";
     if (item.tipo === "certificado") {
@@ -92,7 +101,8 @@ function exportarCSV(lista, nombre) {
 }
 
 // Función asíncrona para generar un código QR con el mismo estilo que /generar y descargarlo como PNG
-async function descargarQR(codigo) {
+async function descargarQR(docObj) {
+  const codigo = typeof docObj === "string" ? docObj : docObj.codigo;
   const link = VERIFICACION_BASE_URL + codigo;
   try {
     const QRCode = (await import("qrcode")).default;
@@ -126,6 +136,8 @@ export default function DashboardPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [codigoAEliminar, setCodigoAEliminar] = useState(null);
+  const [infoDoc, setInfoDoc] = useState(null);
+  const [confirmarInactivacion, setConfirmarInactivacion] = useState(null);
 
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
@@ -167,18 +179,35 @@ export default function DashboardPage() {
     }
   };
 
-  // Toggle directo: si está activo lo pasa a inactivo y viceversa
-  // Alternador visual y lógico para los afiliados (Activo <-> Inactivo). Actualiza directo en Firebase
+  // Reactivar directamente (sin confirmación). Desactivar requiere confirmación.
   const handleToggleEstado = async (codigo, estadoActual) => {
-    const nuevoEstado = estadoActual === "activo" ? "inactivo" : "activo";
+    if (estadoActual === "activo") return; // desactivar va por confirmación
     setUpdatingStatus(codigo);
     try {
-      await actualizarEstado(codigo, nuevoEstado);
-      toast.success(nuevoEstado === "activo" ? "Documento activado" : "Documento desactivado");
+      await actualizarEstado(codigo, "activo", { desactivadoManualmente: null, fechaDesactivacion: null });
+      toast.success("Afiliado activado");
     } catch {
       toast.error("Error al cambiar estado");
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  // Confirmar inactivación manual: guarda metadatos adicionales en Firestore
+  const handleConfirmarInactivar = async () => {
+    if (!confirmarInactivacion) return;
+    setUpdatingStatus(confirmarInactivacion.codigo);
+    try {
+      await actualizarEstado(confirmarInactivacion.codigo, "inactivo", {
+        desactivadoManualmente: true,
+        fechaDesactivacion: new Date().toISOString(),
+      });
+      toast.success("Afiliado desactivado manualmente");
+    } catch {
+      toast.error("Error al desactivar");
+    } finally {
+      setUpdatingStatus(null);
+      setConfirmarInactivacion(null);
     }
   };
 
@@ -308,7 +337,7 @@ export default function DashboardPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nombre, código o cédula..."
+                    placeholder="Buscar por nombre, código o NUIP..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     className="pl-10"
@@ -371,7 +400,8 @@ export default function DashboardPage() {
                   </TableHeader>
                   <TableBody>
                     {documentosFiltrados.map((doc) => {
-                      const esActivo = doc.estado === "activo";
+                      const isExpired = doc.tipo === "afiliado" && doc.fechaExpiracion && new Date() > new Date(doc.fechaExpiracion);
+                      const esActivo = doc.estado === "activo" && !isExpired;
                       const cargando = updatingStatus === doc.codigo;
 
                       return (
@@ -397,18 +427,26 @@ export default function DashboardPage() {
                             {doc.tipo === "certificado" ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") : doc.tipo === "documento" ? doc.descripcion || "General" : "Miembro"}
                           </TableCell>
 
-                          {/* ESTADO — botón toggle simple, sin DropdownMenu ni portal */}
+                          {/* ESTADO — toggle con confirmación para desactivar */}
                           <TableCell className="hidden sm:table-cell">
                             {doc.tipo === "afiliado" ? (
                               <button
-                                onClick={() => handleToggleEstado(doc.codigo, doc.estado)}
-                                disabled={cargando}
+                                onClick={() => {
+                                  if (esActivo) {
+                                    setConfirmarInactivacion(doc);
+                                  } else {
+                                    handleToggleEstado(doc.codigo, doc.estado);
+                                  }
+                                }}
+                                disabled={cargando || isExpired}
                                 className={`
                                   inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
                                   border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                                  ${esActivo
-                                    ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
-                                    : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
+                                  ${isExpired
+                                    ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                                    : esActivo
+                                      ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
+                                      : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
                                   }
                                 `}
                               >
@@ -419,15 +457,10 @@ export default function DashboardPage() {
                                 ) : (
                                   <ToggleLeft className="h-3.5 w-3.5" />
                                 )}
-                                {esActivo ? "Activo" : "Inactivo"}
+                                {isExpired ? "Vencido" : esActivo ? "Activo" : "Inactivo"}
                               </button>
                             ) : (
-                              <div
-                                className={`
-                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                                  border bg-success/10 text-success border-success/30 opacity-80 cursor-default
-                                `}
-                              >
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-success/10 text-success border-success/30 opacity-80 cursor-default">
                                 <ToggleRight className="h-3.5 w-3.5" />
                                 Activo
                               </div>
@@ -440,6 +473,17 @@ export default function DashboardPage() {
 
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              {doc.tipo === "afiliado" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-info hover:text-info"
+                                  title="Información de afiliación"
+                                  onClick={() => setInfoDoc(doc)}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -491,6 +535,81 @@ export default function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de confirmación para desactivar manualmente */}
+      <AlertDialog open={!!confirmarInactivacion} onOpenChange={(open) => !open && setConfirmarInactivacion(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desactivar manualmente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de desactivar a{" "}
+              <span className="font-semibold text-foreground">{confirmarInactivacion?.nombre}</span>{" "}
+              de forma manual antes de su fecha de expiración. ¿Deseas continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarInactivar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Desactivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de información de afiliación */}
+      <Dialog open={!!infoDoc} onOpenChange={(open) => !open && setInfoDoc(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Información de Afiliación</DialogTitle>
+            <DialogDescription>
+              Detalles de la afiliación de{" "}
+              <span className="font-semibold text-foreground">{infoDoc?.nombre}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          {infoDoc && (
+            <div className="space-y-3 pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 p-3 rounded-lg border space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Afiliación</p>
+                  <p className="font-medium text-sm">{formatearFecha(infoDoc.fecha)}</p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg border space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Duración</p>
+                  <p className="font-medium text-sm">
+                    {infoDoc.duracion === "6_meses" ? "6 Meses" : infoDoc.duracion === "1_ano" ? "1 Año" : "No especificada"}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-muted/50 p-3 rounded-lg border text-center space-y-1">
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Expiración</p>
+                <p className={`font-semibold text-base ${
+                  infoDoc.fechaExpiracion && new Date() > new Date(infoDoc.fechaExpiracion)
+                    ? "text-destructive"
+                    : "text-success"
+                }`}>
+                  {infoDoc.fechaExpiracion ? formatearFecha(infoDoc.fechaExpiracion) : "Sin expiración"}
+                </p>
+              </div>
+              <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                <IdCard className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">NUIP</p>
+                  <p className="font-medium text-sm font-mono">{infoDoc.cedula || "-"}</p>
+                </div>
+              </div>
+              {infoDoc.desactivadoManualmente && (
+                <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg space-y-1">
+                  <p className="text-xs text-destructive uppercase font-semibold">Desactivado Manualmente</p>
+                  <p className="font-medium text-sm text-destructive">{formatearFecha(infoDoc.fechaDesactivacion)}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
