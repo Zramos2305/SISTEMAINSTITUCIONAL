@@ -58,7 +58,13 @@ export default function GenerarPage() {
 
   // Cuando el usuario modifica un input en el formulario, actualizamos el respectivo estado
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      if (field === "oficina") {
+        newData.dependencia = "";
+      }
+      return newData;
+    });
     setDocumentoCreado(null);
     setMostrarPreview(false);
   };
@@ -67,6 +73,7 @@ export default function GenerarPage() {
     if (!formData.nombre || !formData.cedula || !formData.tipo || !formData.fecha || !formData.oficina || !formData.dependencia) return false;
     if (formData.tipo === "certificado" && !formData.evento) return false;
     if (formData.tipo === "afiliado" && !formData.duracion) return false;
+    if (formData.tipo === "documento" && !formData.descripcion) return false;
     return true;
   };
 
@@ -319,23 +326,6 @@ export default function GenerarPage() {
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="tipo">Tipo de documento</FieldLabel>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => handleInputChange("tipo", value)}
-                  >
-                    <SelectTrigger id="tipo">
-                      <SelectValue placeholder="Seleccione el tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="certificado">Certificado</SelectItem>
-                      <SelectItem value="afiliado">Afiliado</SelectItem>
-                      <SelectItem value="documento">Documento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field>
                   <FieldLabel htmlFor="oficina">Oficina que emite</FieldLabel>
                   <Select
                     value={formData.oficina}
@@ -363,31 +353,44 @@ export default function GenerarPage() {
                   <Select
                     value={formData.dependencia}
                     onValueChange={(value) => handleInputChange("dependencia", value)}
+                    disabled={!formData.oficina}
                   >
                     <SelectTrigger id="dependencia">
                       <SelectValue placeholder="Seleccione la dependencia" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Dirección Ejecutiva">Dirección Ejecutiva</SelectItem>
-                      <SelectItem value="Dirección Administrativa">Dirección Administrativa</SelectItem>
-                      <SelectItem value="Revisaría Fiscal">Revisaría Fiscal</SelectItem>
-                      <SelectItem value="Secretaría General">Secretaría General</SelectItem>
-                      <SelectItem value="Subdirección de Áreas">Subdirección de Áreas</SelectItem>
-                      <SelectItem value="Subdirección de Turismo, Las Artes, Las Culturas y Los Saberes">Subdirección de Turismo, Las Artes, Las Culturas y Los Saberes</SelectItem>
-                      <SelectItem value="Subdirección de Extensión Y Cosmovisión Etnoeducativa">Subdirección de Extensión Y Cosmovisión Etnoeducativa</SelectItem>
-                      <SelectItem value="Subdirección de Recreación, Deporte, Salud y Ambiente Saludable">Subdirección de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
-                      <SelectItem value="Subdirección de Bienestar Social, Inclusión y Equidad">Subdirección de Bienestar Social, Inclusión y Equidad</SelectItem>
-                      <SelectItem value="Coordinación Jurídica">Coordinación Jurídica</SelectItem>
-                      <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
-                      <SelectItem value="Coordinación de Planeación y Calidad">Coordinación de Planeación y Calidad</SelectItem>
-                      <SelectItem value="Coordinación de Proyectos e Internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
-                      <SelectItem value="Coordinación de Operaciones Financieras">Coordinación de Operaciones Financieras</SelectItem>
-                      <SelectItem value="Coordinación del Talento Humano">Coordinación del Talento Humano</SelectItem>
-                      <SelectItem value="Coordinación de Comunicaciones y Canales Digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
-                      <SelectItem value="Área de Operaciones Logísticas">Área de Operaciones Logísticas</SelectItem>
-                      <SelectItem value="Área de Tesorería">Área de Tesorería</SelectItem>
-                      <SelectItem value="Área de Contabilidad">Área de Contabilidad</SelectItem>
-                      <SelectItem value="Área de Práctica y Pasantías">Área de Práctica y Pasantías</SelectItem>
+                      {formData.oficina === "Sede Principal" ? (
+                        <>
+                          <SelectItem value="Dirección ejecutiva">Dirección ejecutiva</SelectItem>
+                          <SelectItem value="Dirección administrativa">Dirección administrativa</SelectItem>
+                          <SelectItem value="Revisaría fiscal">Revisaría fiscal</SelectItem>
+                          <SelectItem value="Secretaría general">Secretaría general</SelectItem>
+                          <SelectItem value="Subdireccion de áreas">Subdireccion de áreas</SelectItem>
+                          <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de turismo, las artes,las culturas y los saberes</SelectItem>
+                          <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de extensión y cosmovision etnoeducativa</SelectItem>
+                          <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de recreación, deporte,salud y ambiente saludable</SelectItem>
+                          <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de bienestar social, inclusión y equidad</SelectItem>
+                        </>
+                      ) : formData.oficina ? (
+                        <SelectItem value="Dirección Regional">Dirección Regional</SelectItem>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="tipo">Tipo de documento</FieldLabel>
+                  <Select
+                    value={formData.tipo}
+                    onValueChange={(value) => handleInputChange("tipo", value)}
+                  >
+                    <SelectTrigger id="tipo">
+                      <SelectValue placeholder="Seleccione el tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="certificado">Certificado</SelectItem>
+                      <SelectItem value="afiliado">Afiliado</SelectItem>
+                      <SelectItem value="documento">Documento</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -428,7 +431,9 @@ export default function GenerarPage() {
 
                 {(formData.tipo === "certificado" || formData.tipo === "documento") && (
                   <Field>
-                    <FieldLabel htmlFor="descripcion">Descripción (Opcional)</FieldLabel>
+                    <FieldLabel htmlFor="descripcion">
+                      {formData.tipo === "documento" ? "Descripción" : "Descripción (Opcional)"}
+                    </FieldLabel>
                     <div className="relative">
                       <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -501,6 +506,18 @@ export default function GenerarPage() {
                         return `${d}/${m}/${y}`;
                       })()}</span>
                     </div>
+                    {formData.oficina && (
+                      <div className="flex items-center gap-3">
+                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Oficina: {formData.oficina}</span>
+                      </div>
+                    )}
+                    {formData.dependencia && (
+                      <div className="flex items-center gap-3">
+                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Dependencia: {formData.dependencia}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <Award className="h-4 w-4 text-muted-foreground" />
                       <Badge
@@ -532,18 +549,6 @@ export default function GenerarPage() {
                       <div className="flex items-center gap-3">
                         <FileCheck className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">{formData.descripcion}</span>
-                      </div>
-                    )}
-                    {formData.oficina && (
-                      <div className="flex items-center gap-3">
-                        <Award className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Oficina: {formData.oficina}</span>
-                      </div>
-                    )}
-                    {formData.dependencia && (
-                      <div className="flex items-center gap-3">
-                        <Award className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Dependencia: {formData.dependencia}</span>
                       </div>
                     )}
                   </div>
