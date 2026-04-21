@@ -116,7 +116,7 @@ export default function GenerarPage() {
       let fechaCreacion = new Date();
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
+
       if (formData.fecha && formData.fecha !== todayStr) {
         const [year, month, day] = formData.fecha.split('-');
         fechaCreacion = new Date(year, month - 1, day, 12, 0, 0);
@@ -311,9 +311,9 @@ export default function GenerarPage() {
                         className="pl-10"
                       />
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => {
                         const now = new Date();
                         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -361,26 +361,26 @@ export default function GenerarPage() {
                     <SelectContent>
                       {formData.oficina === "Sede Principal" ? (
                         <>
-                          <SelectItem value="Dirección ejecutiva">Dirección ejecutiva</SelectItem>
-                          <SelectItem value="Dirección administrativa">Dirección administrativa</SelectItem>
-                          <SelectItem value="Revisaría fiscal">Revisaría fiscal</SelectItem>
-                          <SelectItem value="Secretaría general">Secretaría general</SelectItem>
-                          <SelectItem value="Subdireccion de áreas">Subdireccion de áreas</SelectItem>
-                          <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de turismo, las artes,las culturas y los saberes</SelectItem>
-                          <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de extensión y cosmovision etnoeducativa</SelectItem>
-                          <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de recreación, deporte,salud y ambiente saludable</SelectItem>
-                          <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de bienestar social, inclusión y equidad</SelectItem>
-                          <SelectItem value="Coordinación jurídica">Coordinación jurídica</SelectItem>
-                          <SelectItem value="Coordinación comercial">Coordinación comercial</SelectItem>
-                          <SelectItem value="Coordinación de plantación y calidad">Coordinación de plantación y calidad</SelectItem>
-                          <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de proyectos e internacionalización</SelectItem>
-                          <SelectItem value="Coordinación de operaciones financieras">Coordinación de operaciones financieras</SelectItem>
-                          <SelectItem value="Coordinación del talento humano">Coordinación del talento humano</SelectItem>
-                          <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de comunicaciones y canales digitales</SelectItem>
-                          <SelectItem value="Área de operaciones logísticas">Área de operaciones logísticas</SelectItem>
-                          <SelectItem value="Área de tesorería">Área de tesorería</SelectItem>
-                          <SelectItem value="Área de contabilidad">Área de contabilidad</SelectItem>
-                          <SelectItem value="Área de práctica y pasantías">Área de práctica y pasantías</SelectItem>
+                          <SelectItem value="Dirección ejecutiva">Dirección Ejecutiva</SelectItem>
+                          <SelectItem value="Dirección administrativa">Dirección Administrativa</SelectItem>
+                          <SelectItem value="Revisaría fiscal">Revisaría Fiscal</SelectItem>
+                          <SelectItem value="Secretaría general">Secretaría General</SelectItem>
+                          <SelectItem value="Subdireccion de áreas">Subdireccion de Áreas</SelectItem>
+                          <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de Turismo, las Artes, las Culturas y los Saberes</SelectItem>
+                          <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de Extensión y Cosmovision Etnoeducativa</SelectItem>
+                          <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
+                          <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de Bienestar Social, Inclusión y Equidad</SelectItem>
+                          <SelectItem value="Coordinación jurídica">Coordinación Jurídica</SelectItem>
+                          <SelectItem value="Coordinación comercial">Coordinación Comercial</SelectItem>
+                          <SelectItem value="Coordinación de plantación y calidad">Coordinación de Planeación y Calidad</SelectItem>
+                          <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
+                          <SelectItem value="Coordinación de operaciones financieras">Coordinación de Operaciones Financieras</SelectItem>
+                          <SelectItem value="Coordinación del talento humano">Coordinación del Talento Humano</SelectItem>
+                          <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
+                          <SelectItem value="Área de operaciones logísticas">Área de Operaciones Logísticas</SelectItem>
+                          <SelectItem value="Área de tesorería">Área de Tesorería</SelectItem>
+                          <SelectItem value="Área de contabilidad">Área de Contabilidad</SelectItem>
+                          <SelectItem value="Área de práctica y pasantías">Área de Prácticas y Pasantías</SelectItem>
                         </>
                       ) : formData.oficina ? (
                         <>
