@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   AlertCircle,
   ArrowLeft,
+  QrCode,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -171,6 +172,13 @@ function VerificarContent() {
                   <IdCard className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">NUIP</p>
+                    <p className="font-mono font-medium">{documento.cedula}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <QrCode className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Código de Registro</p>
                     <p className="font-mono font-medium">{documento.codigo}</p>
                   </div>
                 </div>
@@ -268,6 +276,13 @@ function VerificarContent() {
                   <IdCard className="h-5 w-5 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">NUIP</p>
+                    <p className="font-mono font-medium">{documento.cedula}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <QrCode className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Código de Registro</p>
                     <p className="font-mono font-medium">{documento.codigo}</p>
                   </div>
                 </div>
