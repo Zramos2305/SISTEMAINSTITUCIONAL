@@ -1,10 +1,12 @@
 "use client";
 
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 export const dynamic = "force-dynamic";
 import { useAuth } from "@/hooks/use-auth";
 import { useDocumentos } from "@/hooks/use-documentos";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -61,6 +64,15 @@ import {
   Info,
   IdCard,
   Calendar as CalendarIcon,
+  ClipboardList,
+  Clock,
+  Briefcase,
+  Coffee,
+  Monitor,
+  CheckCircle2,
+  AlertCircle,
+  Home,
+  RefreshCcw,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -132,7 +144,63 @@ async function descargarQR(docObj) {
   }
 }
 
-// Componente Principal: Vista del panel de administración (Dashboard)
+// ─── helpers de asistencia ───────────────────────────────────────────────────
+
+const ESTADO_ASISTENCIA = {
+  trabajando:        { label: "En jornada",   color: "bg-success/15 text-success border-success/30",             icon: Briefcase,     dot: "bg-success" },
+  almuerzo:          { label: "En almuerzo",  color: "bg-amber-500/15 text-amber-600 border-amber-500/30",       icon: Coffee,        dot: "bg-amber-500" },
+  teletrabajo_activo:{ label: "Teletrabajo",  color: "bg-primary/15 text-primary border-primary/30",            icon: Monitor,       dot: "bg-primary" },
+  finalizado:        { label: "Finalizado",   color: "bg-muted text-muted-foreground border-border",            icon: CheckCircle2,  dot: "bg-muted-foreground" },
+  fuera_de_jornada:  { label: "Sin registro", color: "bg-muted text-muted-foreground border-border",            icon: Clock,         dot: "bg-muted-foreground" },
+};
+
+function BadgeEstado({ estado }) {
+  const cfg = ESTADO_ASISTENCIA[estado] || ESTADO_ASISTENCIA.fuera_de_jornada;
+  const Icon = cfg.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      <Icon className="h-3 w-3" />
+      {cfg.label}
+    </span>
+  );
+}
+
+function formatearHoraAsistencia(h) { return h || "—"; }
+
+// ─── hook de registros de asistencia ─────────────────────────────────────────
+
+function useAsistencias(fecha) {
+  const [registros, setRegistros] = useState([]);
+  const [cargando, setCargando] = useState(false);
+
+  const cargar = useCallback(async () => {
+    if (!fecha) return;
+    setCargando(true);
+    try {
+      const q = query(
+        collection(db, "asistencias"),
+        where("fecha", "==", fecha)
+      );
+      const snap = await getDocs(q);
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // ordenar por nombre
+      data.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+      setRegistros(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCargando(false);
+    }
+  }, [fecha]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  return { registros, cargando, recargar: cargar };
+}
+
+// ─── Componente Principal ─────────────────────────────────────────────────────
+
 export default function DashboardPage() {
 
   const {
@@ -146,10 +214,7 @@ export default function DashboardPage() {
 
   const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
 
-  console.log("USER AUTH:", user);
-  console.log("USER DATA:", userData);
-  console.log("EMPLEADO DATA:", empleadoData);
-  console.log("EMPLEADO ID:", empleadoId);
+  const esSuperAdmin = userData?.rol === "superadmin";
 
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -162,6 +227,31 @@ export default function DashboardPage() {
   const [reactivarDoc, setReactivarDoc] = useState(null);
   const [duracionReactivacion, setDuracionReactivacion] = useState("6_meses");
   const [periodosExpandidos, setPeriodosExpandidos] = useState({});
+
+  // ── estado para la pestaña de asistencia ────────────────────────────────
+  const [fechaAsistencia, setFechaAsistencia] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [busquedaAsistencia, setBusquedaAsistencia] = useState("");
+  const { registros, cargando: cargandoAsistencias, recargar } = useAsistencias(fechaAsistencia);
+
+  const registrosFiltrados = useMemo(() => {
+    if (!busquedaAsistencia.trim()) return registros;
+    const t = busquedaAsistencia.toLowerCase();
+    return registros.filter(
+      (r) =>
+        r.nombre?.toLowerCase().includes(t) ||
+        r.cargo?.toLowerCase().includes(t)
+    );
+  }, [registros, busquedaAsistencia]);
+
+  const statsAsistencia = useMemo(() => {
+    const total       = registros.length;
+    const trabajando  = registros.filter((r) => r.estadoActual === "trabajando" || r.estadoActual === "teletrabajo_activo").length;
+    const almuerzo    = registros.filter((r) => r.estadoActual === "almuerzo").length;
+    const finalizados = registros.filter((r) => r.estadoActual === "finalizado").length;
+    return { total, trabajando, almuerzo, finalizados };
+  }, [registros]);
 
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
@@ -332,6 +422,24 @@ export default function DashboardPage() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+
+        <Tabs defaultValue="documentos">
+          {/* Pestañas — Control de Asistencia solo para superadmin */}
+          <TabsList className={`mb-6 ${esSuperAdmin ? "" : "hidden"}`}>
+            <TabsTrigger value="documentos" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Documentos
+            </TabsTrigger>
+            {esSuperAdmin && (
+              <TabsTrigger value="asistencia" className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Control de Asistencia
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* ══════════════════ PESTAÑA: DOCUMENTOS ══════════════════ */}
+          <TabsContent value="documentos">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card>
@@ -604,6 +712,138 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+          </TabsContent>
+
+          {/* ══════════════════ PESTAÑA: ASISTENCIA (solo superadmin) ══════════════════ */}
+          {esSuperAdmin && (
+            <TabsContent value="asistencia">
+
+              {/* stats rápidos */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                {[
+                  { label: "Registros hoy",  val: statsAsistencia.total,       icon: Users,        color: "text-primary" },
+                  { label: "En jornada",     val: statsAsistencia.trabajando,   icon: Briefcase,    color: "text-success" },
+                  { label: "En almuerzo",    val: statsAsistencia.almuerzo,     icon: Coffee,       color: "text-amber-500" },
+                  { label: "Finalizados",    val: statsAsistencia.finalizados,  icon: CheckCircle2, color: "text-muted-foreground" },
+                ].map(({ label, val, icon: Icon, color }) => (
+                  <Card key={label}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground">{label}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-2">
+                        <Icon className={`h-5 w-5 ${color}`} />
+                        <span className="text-2xl font-bold">{val}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* filtros */}
+              <Card className="mb-4">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground font-medium block mb-1">Fecha</label>
+                        <input
+                          type="date"
+                          value={fechaAsistencia}
+                          onChange={(e) => setFechaAsistencia(e.target.value)}
+                          className="border rounded-md px-3 py-1.5 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div className="pt-5">
+                        <Button variant="outline" size="sm" onClick={recargar} disabled={cargandoAsistencias}>
+                          <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAsistencias ? "animate-spin" : ""}`} />
+                          Actualizar
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="relative flex-1 sm:max-w-xs">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar empleado o cargo…"
+                        value={busquedaAsistencia}
+                        onChange={(e) => setBusquedaAsistencia(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* tabla de registros */}
+              <Card>
+                <CardContent className="p-0">
+                  {cargandoAsistencias ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Spinner className="h-8 w-8" />
+                    </div>
+                  ) : registrosFiltrados.length === 0 ? (
+                    <Empty
+                      title="Sin registros"
+                      description={`No hay registros de asistencia para el ${fechaAsistencia}`}
+                      className="py-14"
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Empleado</TableHead>
+                            <TableHead className="hidden sm:table-cell">Cargo</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead className="hidden md:table-cell">Entrada</TableHead>
+                            <TableHead className="hidden lg:table-cell">Sal. Almuerzo</TableHead>
+                            <TableHead className="hidden lg:table-cell">Reg. Almuerzo</TableHead>
+                            <TableHead className="hidden md:table-cell">Salida</TableHead>
+                            <TableHead className="hidden xl:table-cell">Modo</TableHead>
+                            <TableHead className="hidden xl:table-cell">Actividad</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {registrosFiltrados.map((reg) => (
+                            <TableRow key={reg.id}>
+                              <TableCell className="font-medium">{reg.nombre}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{reg.cargo || "—"}</TableCell>
+                              <TableCell>
+                                <BadgeEstado estado={reg.estadoActual} />
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaEntrada)}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaSalidaAlmuerzo)}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaEntradaAlmuerzo)}</TableCell>
+                              <TableCell className="hidden md:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaSalida)}</TableCell>
+                              <TableCell className="hidden xl:table-cell">
+                                {reg.modoTrabajo === "teletrabajo" ? (
+                                  <span className="inline-flex items-center gap-1 text-xs text-primary">
+                                    <Home className="h-3 w-3" /> Remoto
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Briefcase className="h-3 w-3" /> Presencial
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="hidden xl:table-cell text-xs text-muted-foreground max-w-[180px] truncate">
+                                {reg.ultimaActividad || "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+            </TabsContent>
+          )}
+
+        </Tabs>
+
       </main>
 
       {/* AlertDialog único fuera del map */}
