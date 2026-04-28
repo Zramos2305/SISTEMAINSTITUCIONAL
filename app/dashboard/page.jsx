@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 export const dynamic = "force-dynamic";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
+import { PersonalReadOnlyList } from "@/components/personal-read-only";
 import { useDocumentos } from "@/hooks/use-documentos";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -886,6 +887,8 @@ function DashboardContent() {
                     </div>
                   </CardContent>
                 </Card>
+
+                <PersonalReadOnlyList />
               </div>
             </TabsContent>
           )}
