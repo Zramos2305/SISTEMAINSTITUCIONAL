@@ -440,15 +440,9 @@ function DashboardContent() {
               </TabsTrigger>
             )}
             {esSuperAdmin && (
-              <TabsTrigger value="modalidad" className="gap-2">
-                <CalendarDays className="h-4 w-4" />
-                Modalidad Laboral
-              </TabsTrigger>
-            )}
-            {esSuperAdmin && (
-              <TabsTrigger value="usuarios" className="gap-2">
+              <TabsTrigger value="personal" className="gap-2">
                 <Users className="h-4 w-4" />
-                Gestión de Usuarios
+                Gestión de Personal
               </TabsTrigger>
             )}
           </TabsList>
@@ -857,68 +851,17 @@ function DashboardContent() {
             </TabsContent>
           )}
 
-          {/* ══════════════════ PESTAÑA: MODALIDAD LABORAL ══════════════════ */}
+          {/* ══════════════════ PESTAÑA: GESTIÓN DE PERSONAL ══════════════════ */}
           {esSuperAdmin && (
-            <TabsContent value="modalidad">
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-primary" />
-                    Gestión de Modalidad Laboral
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Configura la modalidad de trabajo de cada empleado para cada día de la semana.
-                  </p>
-                </div>
-
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardContent className="pt-6 pb-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-foreground flex items-center gap-2">
-                          <CalendarDays className="h-4 w-4 text-primary" />
-                          Programación Semanal de Empleados
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Asigna <strong>presencial</strong>, <strong>teletrabajo</strong> o <strong>libre</strong> por cada día.
-                          El módulo de asistencia del empleado impondrá automáticamente el flujo correcto.
-                        </p>
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-success/15 text-success border-success/30">
-                            <Briefcase className="h-3 w-3" /> Presencial
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-primary/15 text-primary border-primary/30">
-                            <Monitor className="h-3 w-3" /> Teletrabajo
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-muted text-muted-foreground border-border">
-                            <Home className="h-3 w-3" /> Libre
-                          </span>
-                        </div>
-                      </div>
-                      <Button asChild size="lg" className="shrink-0">
-                        <Link href="/dashboard/modalidad-laboral">
-                          <CalendarDays className="h-4 w-4 mr-2" />
-                          Abrir Programación
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          )}
-
-          {/* ══════════════════ PESTAÑA: GESTIÓN DE USUARIOS ══════════════════ */}
-          {esSuperAdmin && (
-            <TabsContent value="usuarios">
+            <TabsContent value="personal">
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    Gestión de Usuarios y Roles
+                    Gestión de Personal Integrada
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Crea y administra las cuentas de acceso al sistema (Superadmin, Admin, Empleado).
+                    Crea y administra las cuentas de acceso, perfiles administrativos y horarios de trabajo de todo el personal en un solo lugar.
                   </p>
                 </div>
 
@@ -928,16 +871,16 @@ function DashboardContent() {
                       <div className="space-y-1">
                         <p className="font-semibold text-foreground flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-primary" />
-                          Control de Acceso Centralizado
+                          Directorio Central
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Asigna correos, contraseñas y roles. Vincula automáticamente las cuentas de usuario con los perfiles de los empleados.
+                          Asigna correos, contraseñas, roles, cargos y la modalidad laboral semana a semana. Todo integrado sin vinculaciones manuales.
                         </p>
                       </div>
                       <Button asChild size="lg" className="shrink-0">
-                        <Link href="/dashboard/usuarios">
+                        <Link href="/dashboard/personal">
                           <Users className="h-4 w-4 mr-2" />
-                          Administrar Usuarios
+                          Administrar Personal
                         </Link>
                       </Button>
                     </div>

@@ -5,7 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export async function crearUsuarioInstitucional(data) {
   try {
-    const { correo, password, nombre, rol, empleadoId, creadoPorUid } = data;
+    const { correo, password, nombre, rol, cargo, creadoPorUid } = data;
 
     // 1. Crear usuario en Firebase Auth
     const userRecord = await adminAuth.createUser({
@@ -14,7 +14,35 @@ export async function crearUsuarioInstitucional(data) {
       displayName: nombre,
     });
 
-    // 2. Crear documento en colección 'usuarios'
+    let nuevoEmpleadoId = null;
+
+    // 2. Si es empleado, crear el documento en la colección 'empleados'
+    if (rol === "empleado") {
+      const empleadoRef = adminDb.collection("empleados").doc();
+      nuevoEmpleadoId = empleadoRef.id;
+      
+      const horarioDefault = {
+        lunes: "presencial",
+        martes: "presencial",
+        miercoles: "presencial",
+        jueves: "presencial",
+        viernes: "presencial",
+        sabado: "libre",
+        domingo: "libre"
+      };
+
+      await empleadoRef.set({
+        nombre: nombre,
+        cargo: cargo || "Empleado General",
+        uidAuth: userRecord.uid,
+        correoLogin: correo,
+        rolSistema: rol,
+        fechaCreacion: FieldValue.serverTimestamp(),
+        horarioModalidad: horarioDefault
+      });
+    }
+
+    // 3. Crear documento en colección 'usuarios'
     const usuarioRef = adminDb.collection("usuarios").doc(userRecord.uid);
     await usuarioRef.set({
       uid: userRecord.uid,
@@ -22,20 +50,10 @@ export async function crearUsuarioInstitucional(data) {
       nombre: nombre,
       rol: rol,
       activo: true,
-      empleadoId: empleadoId || null,
+      empleadoId: nuevoEmpleadoId, // Será null si es admin/superadmin
       creadoPor: creadoPorUid,
       fechaCreacion: FieldValue.serverTimestamp(),
     });
-
-    // 3. Si hay empleado vinculado, actualizar ese empleado
-    if (empleadoId) {
-      const empleadoRef = adminDb.collection("empleados").doc(empleadoId);
-      await empleadoRef.update({
-        uidAuth: userRecord.uid,
-        correoLogin: correo,
-        rolSistema: rol,
-      });
-    }
 
     return { success: true, uid: userRecord.uid };
   } catch (error) {
@@ -43,3 +61,4 @@ export async function crearUsuarioInstitucional(data) {
     return { success: false, error: error.message };
   }
 }
+
