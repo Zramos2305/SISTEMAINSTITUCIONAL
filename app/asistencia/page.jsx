@@ -327,6 +327,9 @@ function AsistenciaContent() {
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-4 w-4 text-primary" />
             </div>
+            <Button variant="ghost" size="icon" onClick={logout} className="ml-1 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Cerrar Sesión">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
