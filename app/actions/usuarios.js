@@ -8,6 +8,7 @@ export async function crearUsuarioInstitucional(data) {
     const { correo, password, nombre, rol, cargo, creadoPorUid } = data;
 
     // 1. Crear usuario en Firebase Auth
+    console.log("==> Creando usuario institucional:", correo, "Rol:", rol);
     const userRecord = await adminAuth.createUser({
       email: correo,
       password: password,
