@@ -73,6 +73,7 @@ import {
   AlertCircle,
   Home,
   RefreshCcw,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -433,7 +434,13 @@ export default function DashboardPage() {
             {esSuperAdmin && (
               <TabsTrigger value="asistencia" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
-                Control de Asistencia
+                Asistencia
+              </TabsTrigger>
+            )}
+            {esSuperAdmin && (
+              <TabsTrigger value="modalidad" className="gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Modalidad Laboral
               </TabsTrigger>
             )}
           </TabsList>
@@ -839,6 +846,57 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
+            </TabsContent>
+          )}
+
+          {/* ══════════════════ PESTAÑA: MODALIDAD LABORAL ══════════════════ */}
+          {esSuperAdmin && (
+            <TabsContent value="modalidad">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                    Gestión de Modalidad Laboral
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Configura la modalidad de trabajo de cada empleado para cada día de la semana.
+                  </p>
+                </div>
+
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardContent className="pt-6 pb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-foreground flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          Programación Semanal de Empleados
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Asigna <strong>presencial</strong>, <strong>teletrabajo</strong> o <strong>libre</strong> por cada día.
+                          El módulo de asistencia del empleado impondrá automáticamente el flujo correcto.
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-success/15 text-success border-success/30">
+                            <Briefcase className="h-3 w-3" /> Presencial
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-primary/15 text-primary border-primary/30">
+                            <Monitor className="h-3 w-3" /> Teletrabajo
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-muted text-muted-foreground border-border">
+                            <Home className="h-3 w-3" /> Libre
+                          </span>
+                        </div>
+                      </div>
+                      <Button asChild size="lg" className="shrink-0">
+                        <Link href="/dashboard/modalidad-laboral">
+                          <CalendarDays className="h-4 w-4 mr-2" />
+                          Abrir Programación
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           )}
 
