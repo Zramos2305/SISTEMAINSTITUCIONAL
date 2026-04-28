@@ -264,13 +264,25 @@ function AsistenciaContent() {
   if (!empleadoId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-sm w-full text-center">
-          <CardContent className="pt-8 pb-8 space-y-4">
+        <Card className="max-w-sm w-full text-center shadow-lg border-primary/20">
+          <CardContent className="pt-8 pb-8 space-y-6">
             <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto">
               <AlertCircle className="h-8 w-8 text-amber-500" />
             </div>
-            <h2 className="text-lg font-semibold">Sin perfil de empleado</h2>
-            <p className="text-sm text-muted-foreground">Tu cuenta no está vinculada a un empleado. Contacta al administrador.</p>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">Sin perfil de empleado</h2>
+              <p className="text-sm text-muted-foreground px-2">
+                Tu cuenta no está vinculada a un empleado. Contacta al administrador para que complete tu registro.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col gap-3">
+              <Button asChild variant="default" className="w-full">
+                <Link href="/">Volver al Inicio</Link>
+              </Button>
+              <Button variant="outline" className="w-full" onClick={logout}>
+                Cerrar Sesión
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
