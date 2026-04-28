@@ -137,7 +137,7 @@ function LineaTiempo({ registro, modalidad }) {
 // ─── página principal ─────────────────────────────────────────────────────────
 
 function AsistenciaContent() {
-  const { user, userData, empleadoData, empleadoId, loading } = useAuth();
+  const { user, userData, empleadoData, empleadoId, loading, logout } = useAuth();
 
   const [registroHoy, setRegistroHoy]       = useState(null);
   const [cargandoReg, setCargandoReg]       = useState(true);
