@@ -188,7 +188,15 @@ function AsistenciaContent() {
     finally { setCargandoReg(false); }
   }, [empleadoId, hoy]);
 
-  useEffect(() => { if (!loading && empleadoId) cargarRegistro(); }, [loading, empleadoId, cargarRegistro]);
+  useEffect(() => { 
+    if (!loading) {
+      if (empleadoId) {
+        cargarRegistro(); 
+      } else {
+        setCargandoReg(false);
+      }
+    }
+  }, [loading, empleadoId, cargarRegistro]);
 
   // Ejecutar acción
   const handleAccion = async (accion) => {
