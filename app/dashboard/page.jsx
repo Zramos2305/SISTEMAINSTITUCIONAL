@@ -898,6 +898,7 @@ function DashboardContent() {
                             <TableHead className="hidden md:table-cell">Salida</TableHead>
                             <TableHead className="hidden xl:table-cell">Modo</TableHead>
                             <TableHead>Acciones</TableHead>
+                            <TableHead className="text-right">Eliminar</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -937,19 +938,21 @@ function DashboardContent() {
                                       </a>
                                     </Button>
                                   )}
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-8 w-8 text-destructive hover:bg-destructive/10" 
-                                    onClick={() => handleEliminarAsistencia(reg)}
-                                    title="Eliminar Asistencia"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                  {!reg.bitacora && !reg.ubicacion && false && (
+                                  {!reg.bitacora && !reg.ubicacion && (
                                     <span className="text-xs text-muted-foreground italic">Ninguna</span>
                                   )}
                                 </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                                  onClick={() => handleEliminarAsistencia(reg)}
+                                  title="Eliminar Asistencia"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
