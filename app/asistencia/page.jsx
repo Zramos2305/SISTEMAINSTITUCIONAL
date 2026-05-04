@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/protected-route";
 import { getDiaActualES, normalizarHorario } from "@/hooks/use-empleados";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -266,6 +267,21 @@ function AsistenciaContent() {
     const hora = horaActual();
     const ref = doc(db, "asistencias", `${hoy}_${empleadoId}`);
     try {
+      // Capturar ubicación en el momento exacto si es presencial y no la tenemos
+      let ubicacionFinal = coords;
+      if (modalidadPermitida === "presencial" && !ubicacionFinal) {
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, enableHighAccuracy: true });
+          });
+          ubicacionFinal = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setCoords(ubicacionFinal);
+          setGpsValido(true);
+        } catch (error) {
+          console.warn("No se pudo obtener la ubicación exacta:", error);
+        }
+      }
+
       const snap = await getDoc(ref);
       const base = {
         [accion.campo]: hora,
@@ -273,8 +289,8 @@ function AsistenciaContent() {
         modoTrabajo: modalidadPermitida,
         modalidadAsignada: modalidadPermitida,
         wifiValidado: wifiValido,
-        gpsValidado: gpsValido,
-        ubicacion: modalidadPermitida === "presencial" ? coords : null,
+        gpsValidado: !!ubicacionFinal,
+        ubicacion: modalidadPermitida === "presencial" ? ubicacionFinal : null,
         redInstitucional: esRedValida,
         ipPublica: ipParaRegistrar,
         actualizadoEn: serverTimestamp(),
@@ -292,6 +308,16 @@ function AsistenciaContent() {
       } else {
         await updateDoc(ref, base);
       }
+
+      // Registrar en Auditoría el movimiento del usuario
+      await registrarAuditoria({
+        user,
+        userData: userData || empleadoData, // Usar datos de empleado si no hay de user (admin)
+        accion: `Registro: ${accion.label}`,
+        documentoId: `${hoy}_${empleadoId}`,
+        detalles: `El usuario registró ${accion.label} a las ${hora} en modo ${modalidadPermitida}.`
+      });
+
       await cargarRegistro();
       toast.success(`✅ ${accion.label} — ${hora}`);
     } catch (e) { console.error(e); toast.error("Error al registrar. Intenta de nuevo."); }
@@ -313,6 +339,16 @@ function AsistenciaContent() {
         }),
         actualizadoEn: serverTimestamp(),
       });
+
+      // Registrar en Auditoría la adición de actividad
+      await registrarAuditoria({
+        user,
+        userData: userData || empleadoData,
+        accion: "Bitácora: Actividad",
+        documentoId: `${hoy}_${empleadoId}`,
+        detalles: `El usuario agregó una actividad a su bitácora: "${actividad.trim().substring(0, 50)}${actividad.trim().length > 50 ? '...' : ''}"`
+      });
+
       toast.success("Actividad registrada en la bitácora ✔");
       setActividad(""); // Limpiar campo tras guardar
       await cargarRegistro();
