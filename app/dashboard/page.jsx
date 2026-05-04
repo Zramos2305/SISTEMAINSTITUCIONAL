@@ -68,11 +68,8 @@ import {
   IdCard,
   Calendar as CalendarIcon,
   Filter,
-  FileText,
   Download,
-  Trash2,
   MoreVertical,
-  QrCode,
   Briefcase,
   Monitor,
   CheckCircle2,
@@ -85,8 +82,7 @@ import {
   MapPin,
   ListChecks,
   Activity,
-  History,
-  FileSpreadsheet
+  History
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
