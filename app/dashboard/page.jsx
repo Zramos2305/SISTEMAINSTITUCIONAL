@@ -67,17 +67,26 @@ import {
   Info,
   IdCard,
   Calendar as CalendarIcon,
-  ClipboardList,
-  Clock,
+  Filter,
+  FileText,
+  Download,
+  Trash2,
+  MoreVertical,
+  QrCode,
   Briefcase,
-  Coffee,
   Monitor,
   CheckCircle2,
-  AlertCircle,
+  Clock,
   Home,
   RefreshCcw,
-  CalendarDays,
   ShieldCheck,
+  AlertCircle,
+  ExternalLink,
+  MapPin,
+  ListChecks,
+  Activity,
+  History,
+  FileSpreadsheet
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -238,6 +247,9 @@ function DashboardContent() {
     new Date().toISOString().split("T")[0]
   );
   const [busquedaAsistencia, setBusquedaAsistencia] = useState("");
+  const [logsAuditoria, setLogsAuditoria]           = useState([]);
+  const [cargandoAuditoria, setCargandoAuditoria]   = useState(false);
+  const [verBitacoraDoc, setVerBitacoraDoc]         = useState(null);
   const { registros, cargando: cargandoAsistencias, recargar } = useAsistencias(fechaAsistencia);
 
   const registrosFiltrados = useMemo(() => {
@@ -257,6 +269,26 @@ function DashboardContent() {
     const finalizados = registros.filter((r) => r.estadoActual === "finalizado").length;
     return { total, trabajando, almuerzo, finalizados };
   }, [registros]);
+
+  // Cargar auditoría (solo para superadmin)
+  const cargarAuditoria = useCallback(async () => {
+    if (!esSuperAdmin) return;
+    setCargandoAuditoria(true);
+    try {
+      const q = query(collection(db, "auditoria"), orderBy("fecha", "desc"));
+      const snap = await getDocs(q);
+      const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setLogsAuditoria(logs);
+    } catch (e) {
+      console.error("Error cargando auditoría:", e);
+    } finally {
+      setCargandoAuditoria(false);
+    }
+  }, [esSuperAdmin]);
+
+  useEffect(() => {
+    if (esSuperAdmin) cargarAuditoria();
+  }, [esSuperAdmin, cargarAuditoria]);
 
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
@@ -472,7 +504,13 @@ function DashboardContent() {
             {esSuperAdmin && (
               <TabsTrigger value="personal" className="gap-2">
                 <Users className="h-4 w-4" />
-                Gestión de Personal
+                Personal
+              </TabsTrigger>
+            )}
+            {esSuperAdmin && (
+              <TabsTrigger value="auditoria" className="gap-2">
+                <History className="h-4 w-4" />
+                Auditoría
               </TabsTrigger>
             )}
           </TabsList>
@@ -840,7 +878,7 @@ function DashboardContent() {
                             <TableHead className="hidden lg:table-cell">Reg. Almuerzo</TableHead>
                             <TableHead className="hidden md:table-cell">Salida</TableHead>
                             <TableHead className="hidden xl:table-cell">Modo</TableHead>
-                            <TableHead className="hidden xl:table-cell">Actividad</TableHead>
+                            <TableHead>Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -866,8 +904,24 @@ function DashboardContent() {
                                   </span>
                                 )}
                               </TableCell>
-                              <TableCell className="hidden xl:table-cell text-xs text-muted-foreground max-w-[180px] truncate">
-                                {reg.ultimaActividad || "—"}
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {reg.bitacora?.length > 0 && (
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => setVerBitacoraDoc(reg)} title="Ver Bitácora">
+                                      <ListChecks className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {reg.ubicacion && (
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-success" asChild title="Ver Ubicación">
+                                      <a href={`https://www.google.com/maps?q=${reg.ubicacion.lat},${reg.ubicacion.lng}`} target="_blank" rel="noopener noreferrer">
+                                        <MapPin className="h-4 w-4" />
+                                      </a>
+                                    </Button>
+                                  )}
+                                  {!reg.bitacora && !reg.ubicacion && (
+                                    <span className="text-xs text-muted-foreground italic">Ninguna</span>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -878,6 +932,66 @@ function DashboardContent() {
                 </CardContent>
               </Card>
 
+            </TabsContent>
+          )}
+
+          {/* ══════════════════ PESTAÑA: AUDITORÍA ══════════════════ */}
+          {esSuperAdmin && (
+            <TabsContent value="auditoria">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <History className="h-5 w-5 text-primary" /> Historial de Auditoría
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Registro de acciones administrativas realizadas en el sistema.</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
+                    <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} /> Actualizar
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {cargandoAuditoria ? (
+                    <div className="flex items-center justify-center py-20"><Spinner className="h-8 w-8" /></div>
+                  ) : logsAuditoria.length === 0 ? (
+                    <div className="py-20 text-center text-muted-foreground">No hay registros de auditoría aún.</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Fecha/Hora</TableHead>
+                            <TableHead>Administrador</TableHead>
+                            <TableHead>Acción</TableHead>
+                            <TableHead>Documento/ID</TableHead>
+                            <TableHead>Detalles</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {logsAuditoria.map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="text-xs font-medium whitespace-nowrap">
+                                {log.fecha?.toDate ? log.fecha.toDate().toLocaleString('es-CO') : 'Reciente'}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-semibold">{log.usuarioNombre}</span>
+                                  <span className="text-[10px] text-muted-foreground">{log.usuarioEmail}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="text-[10px] uppercase">{log.accion}</Badge>
+                              </TableCell>
+                              <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
 
@@ -1215,6 +1329,40 @@ function DashboardContent() {
                 )}
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Modal para ver bitácora de asistencia */}
+      <Dialog open={!!verBitacoraDoc} onOpenChange={(open) => !open && setVerBitacoraDoc(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5 text-primary" />
+              Bitácora de Actividades
+            </DialogTitle>
+            <DialogDescription>
+              Resumen de tareas reportadas por <span className="font-semibold text-foreground">{verBitacoraDoc?.nombre}</span> el {fechaAsistencia}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              {verBitacoraDoc?.bitacora?.length > 0 ? (
+                [...verBitacoraDoc.bitacora].reverse().map((item, i) => (
+                  <div key={i} className="bg-muted/40 border rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full">
+                        {item.hora}
+                      </span>
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm italic">"{item.actividad}"</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-10">No hay actividades registradas.</p>
+              )}
+            </div>
+            <Button className="w-full" onClick={() => setVerBitacoraDoc(null)}>Cerrar</Button>
           </div>
         </DialogContent>
       </Dialog>

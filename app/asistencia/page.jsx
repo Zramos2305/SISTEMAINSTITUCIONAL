@@ -33,17 +33,17 @@ function fmt(h) { return h || "—"; }
 // ─── config visual modalidad ──────────────────────────────────────────────────
 
 const MODALIDAD_DISPLAY = {
-  presencial:  { label: "Presencial",  icon: Briefcase, color: "bg-success/15 text-success border-success/30",   dot: "bg-success" },
-  teletrabajo: { label: "Teletrabajo", icon: Monitor,   color: "bg-primary/15 text-primary border-primary/30",   dot: "bg-primary" },
-  libre:       { label: "Día libre",   icon: CalendarOff, color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
+  presencial: { label: "Presencial", icon: Briefcase, color: "bg-success/15 text-success border-success/30", dot: "bg-success" },
+  teletrabajo: { label: "Teletrabajo", icon: Monitor, color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
+  libre: { label: "Día libre", icon: CalendarOff, color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
 };
 
 const ESTADO_DISPLAY = {
-  trabajando:         { label: "En jornada",   color: "bg-success/15 text-success border-success/30",          dot: "bg-success",        icon: Briefcase },
-  almuerzo:           { label: "En almuerzo",  color: "bg-amber-500/15 text-amber-600 border-amber-500/30",    dot: "bg-amber-500",      icon: Coffee },
-  teletrabajo_activo: { label: "Teletrabajo",  color: "bg-primary/15 text-primary border-primary/30",          dot: "bg-primary",        icon: Monitor },
-  finalizado:         { label: "Finalizado",   color: "bg-muted text-muted-foreground border-border",          dot: "bg-muted-foreground", icon: CheckCircle2 },
-  fuera_de_jornada:   { label: "Sin registro", color: "bg-muted text-muted-foreground border-border",          dot: "bg-muted-foreground", icon: Clock },
+  trabajando: { label: "En jornada", color: "bg-success/15 text-success border-success/30", dot: "bg-success", icon: Briefcase },
+  almuerzo: { label: "En almuerzo", color: "bg-amber-500/15 text-amber-600 border-amber-500/30", dot: "bg-amber-500", icon: Coffee },
+  teletrabajo_activo: { label: "Teletrabajo", color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary", icon: Monitor },
+  finalizado: { label: "Finalizado", color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground", icon: CheckCircle2 },
+  fuera_de_jornada: { label: "Sin registro", color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground", icon: Clock },
 };
 
 // ─── flujos por modalidad ─────────────────────────────────────────────────────
@@ -52,16 +52,16 @@ function getAcciones(modalidad, registro) {
   const r = registro;
   if (modalidad === "presencial") {
     return [
-      { id: "entrada",  label: "Registrar Entrada", icon: LogIn,   campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-success hover:bg-success/90 text-success-foreground", show: !r?.horaEntrada,                                   desc: "Marca el inicio de tu jornada presencial" },
-      { id: "salida",   label: "Registrar Salida",  icon: LogOut,  campo: "horaSalida",  estadoResultante: "finalizado",  color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida, desc: "Marca el fin de tu jornada presencial" },
+      { id: "entrada", label: "Registrar Entrada", icon: LogIn, campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-success hover:bg-success/90 text-success-foreground", show: !r?.horaEntrada, desc: "Marca el inicio de tu jornada presencial" },
+      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida, desc: "Marca el fin de tu jornada presencial" },
     ].filter((a) => a.show);
   }
   if (modalidad === "teletrabajo") {
     return [
-      { id: "entrada",         label: "Activar Teletrabajo",  icon: Monitor,   campo: "horaEntrada",         estadoResultante: "teletrabajo_activo", color: "bg-primary hover:bg-primary/90 text-primary-foreground",                     show: !r?.horaEntrada,                                     desc: "Inicia tu jornada en modalidad remota" },
-      { id: "salidaAlmuerzo",  label: "Salida Almuerzo",       icon: Coffee,    campo: "horaSalidaAlmuerzo",  estadoResultante: "almuerzo",           color: "bg-amber-500 hover:bg-amber-500/90 text-white",                               show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo,          desc: "Marca tu salida para almorzar" },
-      { id: "entradaAlmuerzo", label: "Regreso de Almuerzo",   icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "teletrabajo_activo", color: "bg-info hover:bg-info/90 text-info-foreground",                              show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo,  desc: "Regresa a tu jornada remota" },
-      { id: "salida",          label: "Registrar Salida",      icon: LogOut,    campo: "horaSalida",          estadoResultante: "finalizado",          color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu jornada remota" },
+      { id: "entrada", label: "Activar Teletrabajo", icon: Monitor, campo: "horaEntrada", estadoResultante: "teletrabajo_activo", color: "bg-primary hover:bg-primary/90 text-primary-foreground", show: !r?.horaEntrada, desc: "Inicia tu jornada en modalidad remota" },
+      { id: "salidaAlmuerzo", label: "Salida Almuerzo", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Marca tu salida para almorzar" },
+      { id: "entradaAlmuerzo", label: "Regreso de Almuerzo", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "teletrabajo_activo", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Regresa a tu jornada remota" },
+      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu jornada remota" },
     ].filter((a) => a.show);
   }
   return [];
@@ -116,15 +116,15 @@ function BadgeConexion({ wifiValido, gpsValido, redValida }) {
 function LineaTiempo({ registro, modalidad }) {
   const pasos = modalidad === "presencial"
     ? [
-        { label: "Entrada", hora: registro?.horaEntrada,  icon: LogIn,  ok: !!registro?.horaEntrada },
-        { label: "Salida",  hora: registro?.horaSalida,   icon: LogOut, ok: !!registro?.horaSalida },
-      ]
+      { label: "Entrada", hora: registro?.horaEntrada, icon: LogIn, ok: !!registro?.horaEntrada },
+      { label: "Salida", hora: registro?.horaSalida, icon: LogOut, ok: !!registro?.horaSalida },
+    ]
     : [
-        { label: "Inicio TT",    hora: registro?.horaEntrada,         icon: Monitor,   ok: !!registro?.horaEntrada },
-        { label: "Sal. almuerzo",hora: registro?.horaSalidaAlmuerzo,  icon: Coffee,    ok: !!registro?.horaSalidaAlmuerzo },
-        { label: "Reg. almuerzo",hora: registro?.horaEntradaAlmuerzo, icon: RotateCcw, ok: !!registro?.horaEntradaAlmuerzo },
-        { label: "Salida",       hora: registro?.horaSalida,          icon: LogOut,    ok: !!registro?.horaSalida },
-      ];
+      { label: "Inicio TT", hora: registro?.horaEntrada, icon: Monitor, ok: !!registro?.horaEntrada },
+      { label: "Sal. almuerzo", hora: registro?.horaSalidaAlmuerzo, icon: Coffee, ok: !!registro?.horaSalidaAlmuerzo },
+      { label: "Reg. almuerzo", hora: registro?.horaEntradaAlmuerzo, icon: RotateCcw, ok: !!registro?.horaEntradaAlmuerzo },
+      { label: "Salida", hora: registro?.horaSalida, icon: LogOut, ok: !!registro?.horaSalida },
+    ];
   return (
     <div className="flex items-start justify-between relative">
       <div className="absolute top-4 left-4 right-4 h-0.5 bg-border z-0" />
@@ -149,15 +149,16 @@ function LineaTiempo({ registro, modalidad }) {
 function AsistenciaContent() {
   const { user, userData, empleadoData, empleadoId, loading, logout } = useAuth();
 
-  const [registroHoy, setRegistroHoy]       = useState(null);
-  const [cargandoReg, setCargandoReg]       = useState(true);
-  const [accionEnCurso, setAccionEnCurso]   = useState(null);
-  const [actividad, setActividad]           = useState("");
-  const [enviando, setEnviando]             = useState(false);
-  const [wifiValido, setWifiValido]         = useState(false);
-  const [gpsValido, setGpsValido]           = useState(false);
-  const [redValida, setRedValida]           = useState(false);
-  const [ipActual, setIpActual]             = useState("");
+  const [registroHoy, setRegistroHoy] = useState(null);
+  const [cargandoReg, setCargandoReg] = useState(true);
+  const [accionEnCurso, setAccionEnCurso] = useState(null);
+  const [actividad, setActividad] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [wifiValido, setWifiValido] = useState(false);
+  const [gpsValido, setGpsValido] = useState(false);
+  const [redValida, setRedValida] = useState(false);
+  const [ipActual, setIpActual] = useState("");
+  const [coords, setCoords] = useState(null);
 
   const hoy = fechaHoy();
   const diaActual = getDiaActualES();
@@ -171,7 +172,14 @@ function AsistenciaContent() {
   // GPS
   useEffect(() => {
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(() => setGpsValido(true), () => setGpsValido(false), { timeout: 5000 });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsValido(true);
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => setGpsValido(false),
+      { timeout: 5000, enableHighAccuracy: true }
+    );
   }, []);
 
   // WiFi
@@ -222,10 +230,10 @@ function AsistenciaContent() {
     finally { setCargandoReg(false); }
   }, [empleadoId, hoy]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (!loading) {
       if (empleadoId) {
-        cargarRegistro(); 
+        cargarRegistro();
       } else {
         setCargandoReg(false);
       }
@@ -266,6 +274,7 @@ function AsistenciaContent() {
         modalidadAsignada: modalidadPermitida,
         wifiValidado: wifiValido,
         gpsValidado: gpsValido,
+        ubicacion: modalidadPermitida === "presencial" ? coords : null,
         redInstitucional: esRedValida,
         ipPublica: ipParaRegistrar,
         actualizadoEn: serverTimestamp(),
@@ -362,10 +371,10 @@ function AsistenciaContent() {
   }
 
   const estadoActual = registroHoy?.estadoActual || "fuera_de_jornada";
-  const estadoCfg   = ESTADO_DISPLAY[estadoActual] || ESTADO_DISPLAY.fuera_de_jornada;
-  const EIcon       = estadoCfg.icon;
-  const acciones    = getAcciones(modalidadPermitida, registroHoy);
-  const finalizado  = estadoActual === "finalizado";
+  const estadoCfg = ESTADO_DISPLAY[estadoActual] || ESTADO_DISPLAY.fuera_de_jornada;
+  const EIcon = estadoCfg.icon;
+  const acciones = getAcciones(modalidadPermitida, registroHoy);
+  const finalizado = estadoActual === "finalizado";
 
   return (
     <div className="min-h-screen bg-background">
@@ -400,7 +409,9 @@ function AsistenciaContent() {
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 pt-6 pb-4 space-y-4">
             <RelojVivo />
-            <BadgeConexion wifiValido={wifiValido} gpsValido={gpsValido} redValida={redValida} />
+            {modalidadPermitida === "presencial" && (
+              <BadgeConexion wifiValido={wifiValido} gpsValido={gpsValido} redValida={redValida} />
+            )}
           </div>
           <CardContent className="pt-4 pb-4 space-y-3">
             {/* Modalidad autorizada hoy */}
@@ -457,7 +468,7 @@ function AsistenciaContent() {
               <p className="text-sm text-muted-foreground">Hasta mañana, {empleadoData?.nombre?.split(" ")[0] || "compañero/a"} 👋</p>
               <div className="text-xs text-muted-foreground space-y-1">
                 {registroHoy?.horaEntrada && <p>Entrada: <strong>{registroHoy.horaEntrada}</strong></p>}
-                {registroHoy?.horaSalida  && <p>Salida: <strong>{registroHoy.horaSalida}</strong></p>}
+                {registroHoy?.horaSalida && <p>Salida: <strong>{registroHoy.horaSalida}</strong></p>}
               </div>
             </CardContent>
           </Card>
@@ -554,16 +565,16 @@ function AsistenciaContent() {
             <CardContent>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {[
-                  { label: "Empleado",       val: registroHoy.nombre },
-                  { label: "Cargo",          val: registroHoy.cargo || "—" },
-                  { label: "Modalidad",      val: registroHoy.modalidadAsignada || registroHoy.modoTrabajo || "—" },
-                  { label: "Entrada",        val: fmt(registroHoy.horaEntrada) },
-                  { label: "Sal. almuerzo",  val: fmt(registroHoy.horaSalidaAlmuerzo) },
-                  { label: "Reg. almuerzo",  val: fmt(registroHoy.horaEntradaAlmuerzo) },
-                  { label: "Salida",         val: fmt(registroHoy.horaSalida) },
-                  { label: "IP Registro",    val: registroHoy.ipPublica || "No reg." },
-                  { label: "Red Inst.",      val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
-                  { label: "WiFi validado",  val: registroHoy.wifiValidado ? "✅ Sí" : "❌ No" },
+                  { label: "Empleado", val: registroHoy.nombre },
+                  { label: "Cargo", val: registroHoy.cargo || "—" },
+                  { label: "Modalidad", val: registroHoy.modalidadAsignada || registroHoy.modoTrabajo || "—" },
+                  { label: "Entrada", val: fmt(registroHoy.horaEntrada) },
+                  { label: "Sal. almuerzo", val: fmt(registroHoy.horaSalidaAlmuerzo) },
+                  { label: "Reg. almuerzo", val: fmt(registroHoy.horaEntradaAlmuerzo) },
+                  { label: "Salida", val: fmt(registroHoy.horaSalida) },
+                  { label: "IP Registro", val: registroHoy.ipPublica || "No reg." },
+                  { label: "Red Inst.", val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
+                  { label: "WiFi validado", val: registroHoy.wifiValidado ? "✅ Sí" : "❌ No" },
                 ].map((item) => (
                   <div key={item.label} className="bg-muted/40 rounded-lg px-3 py-2">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
