@@ -9,6 +9,7 @@ import { PersonalReadOnlyList } from "@/components/personal-read-only";
 import { useDocumentos } from "@/hooks/use-documentos";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -310,6 +311,13 @@ function DashboardContent() {
     if (!codigoAEliminar) return;
     try {
       await eliminarDocumento(codigoAEliminar);
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Eliminar Documento",
+        documentoId: codigoAEliminar,
+        detalles: `Eliminación permanente del registro ${codigoAEliminar}`
+      });
       toast.success("Documento eliminado");
     } catch {
       toast.error("Error al eliminar");
@@ -324,6 +332,13 @@ function DashboardContent() {
     setUpdatingStatus(codigo);
     try {
       await actualizarEstado(codigo, "activo", { desactivadoManualmente: null, fechaDesactivacion: null });
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Activar Afiliado",
+        documentoId: codigo,
+        detalles: "Re-activación manual de afiliado inactivo"
+      });
       toast.success("Afiliado activado");
     } catch {
       toast.error("Error al cambiar estado");
@@ -340,6 +355,13 @@ function DashboardContent() {
       await actualizarEstado(confirmarInactivacion.codigo, "inactivo", {
         desactivadoManualmente: true,
         fechaDesactivacion: new Date().toISOString(),
+      });
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Inactivar Afiliado",
+        documentoId: confirmarInactivacion.codigo,
+        detalles: "Desactivación manual por el administrador"
       });
       toast.success("Afiliado desactivado manualmente");
     } catch {
@@ -379,6 +401,13 @@ function DashboardContent() {
         desactivadoManualmente: null,
         fechaDesactivacion: null,
         periodos: periodosAnteriores,
+      });
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Renovar Afiliación",
+        documentoId: reactivarDoc.codigo,
+        detalles: `Renovación de membresía por ${duracionReactivacion === '6_meses' ? '6 meses' : '1 año'}`
       });
       toast.success("Afiliado reactivado exitosamente");
     } catch {

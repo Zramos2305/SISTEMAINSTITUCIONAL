@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { getDiaActualES, normalizarHorario } from "@/hooks/use-empleados";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,7 +214,7 @@ function AsistenciaContent() {
       const snap = await getDoc(ref);
       if (snap.exists()) {
         setRegistroHoy(snap.data());
-        setActividad(snap.data().ultimaActividad || "");
+        // No limpiamos el campo de texto, solo cargamos el estado
       } else {
         setRegistroHoy(null);
       }
@@ -276,7 +276,7 @@ function AsistenciaContent() {
           empleadoId,
           nombre: empleadoData?.nombre || userData?.nombre || user?.email,
           cargo: empleadoData?.cargo || "",
-          ultimaActividad: "",
+          bitacora: [],
           creadoEn: serverTimestamp(),
           ...base,
         });
@@ -294,12 +294,18 @@ function AsistenciaContent() {
     if (!actividad.trim()) { toast.error("Escribe una actividad"); return; }
     if (!registroHoy) { toast.error("Primero registra tu entrada"); return; }
     setEnviando(true);
+    const hora = horaActual();
     try {
       await updateDoc(doc(db, "asistencias", `${hoy}_${empleadoId}`), {
-        ultimaActividad: actividad.trim(),
+        bitacora: arrayUnion({
+          actividad: actividad.trim(),
+          hora,
+          timestamp: new Date().toISOString()
+        }),
         actualizadoEn: serverTimestamp(),
       });
-      toast.success("Actividad actualizada ✔");
+      toast.success("Actividad registrada en la bitácora ✔");
+      setActividad(""); // Limpiar campo tras guardar
       await cargarRegistro();
     } catch (e) { toast.error("Error al guardar"); }
     finally { setEnviando(false); }
@@ -515,12 +521,22 @@ function AsistenciaContent() {
                 <span className="text-xs text-muted-foreground">{actividad.length}/300</span>
                 <Button size="sm" onClick={handleGuardarActividad} disabled={enviando || !actividad.trim()}>
                   {enviando ? <Spinner className="mr-2 h-3 w-3" /> : <Send className="mr-2 h-3 w-3" />}
-                  Actualizar actividad
+                  Registrar tarea
                 </Button>
               </div>
-              {registroHoy?.ultimaActividad && (
-                <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 border">
-                  <span className="font-medium text-foreground">Última: </span>{registroHoy.ultimaActividad}
+              {registroHoy?.bitacora?.length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Historial de hoy</p>
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                    {[...registroHoy.bitacora].reverse().map((item, idx) => (
+                      <div key={idx} className="text-xs bg-muted/50 rounded-lg px-3 py-2 border flex justify-between gap-3 items-start">
+                        <span className="flex-1 italic">"{item.actividad}"</span>
+                        <span className="text-[10px] font-bold text-primary whitespace-nowrap bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                          {item.hora}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>

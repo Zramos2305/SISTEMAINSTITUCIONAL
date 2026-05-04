@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,7 @@ function generarCodigo() {
 
 // Componente de Generar: Se encarga de la captura de datos y subida a Firebase
 export default function GenerarPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     nombre: "",
     cedula: "",
@@ -147,6 +148,14 @@ export default function GenerarPage() {
         fechaExpiracion: fechaExpiracion ? fechaExpiracion.toISOString() : null,
         estado: "activo", // ← siempre "activo" al crear
         fecha: fechaCreacion.toISOString(),
+      });
+
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Generar Documento",
+        documentoId: codigo,
+        detalles: `Creación de ${formData.tipo} para ${formData.nombre} (${formData.cedula})`
       });
 
       // Crea en paralelo un código QR visual con la librería qrcode
