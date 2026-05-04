@@ -178,7 +178,11 @@ function BadgeEstado({ estado }) {
   );
 }
 
-function formatearHoraAsistencia(h) { return h || "—"; }
+function formatearHoraAsistencia(h) {
+  if (!h) return "—";
+  if (h.toDate) return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return h;
+}
 
 // ─── hook de registros de asistencia ─────────────────────────────────────────
 

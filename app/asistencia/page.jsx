@@ -29,7 +29,11 @@ function horaActual() {
   return new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 function fechaHoy() { return new Date().toISOString().split("T")[0]; }
-function fmt(h) { return h || "—"; }
+function fmt(h) { 
+  if (!h) return "—";
+  if (h.toDate) return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return h; 
+}
 
 // ─── config visual modalidad ──────────────────────────────────────────────────
 
@@ -264,7 +268,6 @@ function AsistenciaContent() {
       esRedValida = true;
     }
 
-    const hora = horaActual();
     const ref = doc(db, "asistencias", `${hoy}_${empleadoId}`);
     try {
       // Capturar ubicación en el momento exacto si es presencial y no la tenemos
@@ -284,7 +287,7 @@ function AsistenciaContent() {
 
       const snap = await getDoc(ref);
       const base = {
-        [accion.campo]: hora,
+        [accion.campo]: serverTimestamp(), // Seguridad de servidor
         estadoActual: accion.estadoResultante,
         modoTrabajo: modalidadPermitida,
         modalidadAsignada: modalidadPermitida,
@@ -312,14 +315,14 @@ function AsistenciaContent() {
       // Registrar en Auditoría el movimiento del usuario
       await registrarAuditoria({
         user,
-        userData: userData || empleadoData, // Usar datos de empleado si no hay de user (admin)
+        userData: userData || empleadoData,
         accion: `Registro: ${accion.label}`,
         documentoId: `${hoy}_${empleadoId}`,
-        detalles: `El usuario registró ${accion.label} a las ${hora} en modo ${modalidadPermitida}.`
+        detalles: `Registro de ${accion.label} (Modo: ${modalidadPermitida}) validado por servidor.`
       });
 
       await cargarRegistro();
-      toast.success(`✅ ${accion.label} — ${hora}`);
+      toast.success(`✅ ${accion.label} registrado correctamente`);
     } catch (e) { console.error(e); toast.error("Error al registrar. Intenta de nuevo."); }
     finally { setAccionEnCurso(null); }
   };
