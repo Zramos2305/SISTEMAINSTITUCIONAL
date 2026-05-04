@@ -391,6 +391,7 @@ function AsistenciaContent() {
       <main className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
 
         {/* Reloj + estado conexión */}
+        <Card className="overflow-hidden">
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 pt-6 pb-4 space-y-4">
             <RelojVivo />
             <BadgeConexion wifiValido={wifiValido} gpsValido={gpsValido} redValida={redValida} />
