@@ -18,6 +18,9 @@ export const metadata = {
     statusBarStyle: 'default',
     title: 'Isla Cascajal',
   },
+  other: {
+    "mobile-web-app-capable": "yes"
+  },
 
   icons: {
   icon: [
