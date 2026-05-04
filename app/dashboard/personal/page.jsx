@@ -52,7 +52,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { crearUsuarioInstitucional } from "@/app/actions/usuarios";
+import { crearUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 const DIA_LABELS = {
   lunes: "Lun",
@@ -100,6 +101,7 @@ function PersonalContent() {
       const usersList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       setUsuarios(usersList);
       
+      // Aseguramos que los logs de auditoría estén frescos si es necesario
       await recargarEmpleados();
     } catch (error) {
       console.error(error);
@@ -156,16 +158,27 @@ function PersonalContent() {
     }
   };
 
-  const handleToggleActivo = async (usuarioId, estadoActual) => {
+  const handleEliminar = async (usuario) => {
+    if (!confirm(`¿Estás seguro de eliminar a ${usuario.nombre}? Esta acción borrará su acceso y su perfil de personal permanentemente.`)) return;
+    
     try {
-      await updateDoc(doc(db, "usuarios", usuarioId), {
-        activo: !estadoActual
-      });
-      toast.success(`Usuario ${!estadoActual ? 'activado' : 'desactivado'}`);
-      cargarDatos();
+      const result = await eliminarUsuarioInstitucional(usuario.id, usuario.empleadoId);
+      if (result.success) {
+        await registrarAuditoria({
+          user,
+          userData: { nombre: "Sistema (Admin)", email: user.email }, // Simplificado para auditoría
+          accion: "Eliminar Personal",
+          documentoId: usuario.id,
+          detalles: `Se eliminó permanentemente al usuario ${usuario.nombre} (${usuario.correo}) y su perfil de empleado.`
+        });
+        toast.success("Personal eliminado correctamente");
+        cargarDatos();
+      } else {
+        toast.error(result.error || "Error al eliminar");
+      }
     } catch (error) {
       console.error(error);
-      toast.error("Error al cambiar estado");
+      toast.error("Error al eliminar");
     }
   };
 
@@ -328,11 +341,11 @@ function PersonalContent() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleToggleActivo(u.id, u.activo !== false)}
-                              className={`h-8 ${u.activo !== false ? "text-destructive hover:text-destructive hover:bg-destructive/10" : "text-success hover:text-success hover:bg-success/10"}`}
+                              onClick={() => handleEliminar(u)}
+                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                               disabled={u.id === user.uid}
                             >
-                              {u.activo !== false ? "Bloquear" : "Activar"}
+                              Eliminar
                             </Button>
                           </div>
                         </TableCell>

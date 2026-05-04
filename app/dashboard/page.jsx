@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { PersonalReadOnlyList } from "@/components/personal-read-only";
 import { useDocumentos } from "@/hooks/use-documentos";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
@@ -283,6 +283,27 @@ function DashboardContent() {
       setCargandoAuditoria(false);
     }
   }, [esSuperAdmin]);
+
+  const handleEliminarAsistencia = async (asistencia) => {
+    if (!confirm(`¿Estás seguro de eliminar el registro de asistencia de ${asistencia.nombre} del día ${asistencia.fecha}?`)) return;
+    
+    try {
+      await deleteDoc(doc(db, "asistencias", asistencia.id));
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Eliminar Asistencia",
+        documentoId: asistencia.id,
+        detalles: `Se eliminó el registro de asistencia de ${asistencia.nombre} para la fecha ${asistencia.fecha}.`
+      });
+      toast.success("Asistencia eliminada");
+      recargar(); // Recargar tabla de asistencia
+      cargarAuditoria(); // Recargar logs
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al eliminar asistencia");
+    }
+  };
 
   useEffect(() => {
     if (esSuperAdmin) cargarAuditoria();
@@ -916,7 +937,16 @@ function DashboardContent() {
                                       </a>
                                     </Button>
                                   )}
-                                  {!reg.bitacora && !reg.ubicacion && (
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                                    onClick={() => handleEliminarAsistencia(reg)}
+                                    title="Eliminar Asistencia"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                  {!reg.bitacora && !reg.ubicacion && false && (
                                     <span className="text-xs text-muted-foreground italic">Ninguna</span>
                                   )}
                                 </div>

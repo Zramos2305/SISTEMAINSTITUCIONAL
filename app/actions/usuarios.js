@@ -63,3 +63,29 @@ export async function crearUsuarioInstitucional(data) {
   }
 }
 
+export async function eliminarUsuarioInstitucional(uid, empleadoId) {
+  try {
+    console.log("==> Eliminando usuario institucional:", uid);
+
+    // 1. Eliminar de Firebase Auth
+    try {
+      await adminAuth.deleteUser(uid);
+    } catch (authError) {
+      console.warn("Aviso: No se pudo borrar de Auth (tal vez ya no existe):", authError.message);
+    }
+
+    // 2. Eliminar de la colección 'usuarios'
+    await adminDb.collection("usuarios").doc(uid).delete();
+
+    // 3. Eliminar de la colección 'empleados' si aplica
+    if (empleadoId) {
+      await adminDb.collection("empleados").doc(empleadoId).delete();
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error en eliminarUsuarioInstitucional:", error);
+    return { success: false, error: error.message };
+  }
+}
+
