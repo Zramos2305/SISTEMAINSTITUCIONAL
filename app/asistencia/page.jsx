@@ -17,8 +17,10 @@ import Link from "next/link";
 import {
   LogIn, LogOut, Coffee, RotateCcw, Monitor, CheckCircle2,
   Clock, User, Wifi, WifiOff, MapPin, MapPinOff, Activity,
-  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff,
+  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck
 } from "lucide-react";
+
+const IP_AUTORIZADA = "181.54.0.27";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -88,17 +90,25 @@ function RelojVivo() {
   );
 }
 
-function BadgeConexion({ wifiValido, gpsValido }) {
+function BadgeConexion({ wifiValido, gpsValido, redValida }) {
   return (
-    <div className="flex items-center justify-center gap-4 text-xs">
-      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${wifiValido ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
-        {wifiValido ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-        {wifiValido ? "WiFi OK" : "Sin WiFi"}
-      </span>
-      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${gpsValido ? "bg-success/10 text-success border-success/30" : "bg-amber-500/10 text-amber-600 border-amber-500/30"}`}>
-        {gpsValido ? <MapPin className="h-3 w-3" /> : <MapPinOff className="h-3 w-3" />}
-        {gpsValido ? "GPS OK" : "Sin GPS"}
-      </span>
+    <div className="space-y-3">
+      <div className="flex items-center justify-center gap-4 text-xs">
+        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${wifiValido ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
+          {wifiValido ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+          {wifiValido ? "Conexión OK" : "Sin Internet"}
+        </span>
+        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${gpsValido ? "bg-success/10 text-success border-success/30" : "bg-amber-500/10 text-amber-600 border-amber-500/30"}`}>
+          {gpsValido ? <MapPin className="h-3 w-3" /> : <MapPinOff className="h-3 w-3" />}
+          {gpsValido ? "GPS OK" : "Sin GPS"}
+        </span>
+      </div>
+      <div className="flex justify-center">
+        <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] uppercase font-bold tracking-wider transition-all duration-300 ${redValida ? "bg-success text-success-foreground border-success/50" : "bg-destructive/10 text-destructive border-destructive/30"}`}>
+          {redValida ? <ShieldCheck className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+          {redValida ? "Red Institucional Detectada" : "Red Externa / No Autorizada"}
+        </span>
+      </div>
     </div>
   );
 }
@@ -146,6 +156,8 @@ function AsistenciaContent() {
   const [enviando, setEnviando]             = useState(false);
   const [wifiValido, setWifiValido]         = useState(false);
   const [gpsValido, setGpsValido]           = useState(false);
+  const [redValida, setRedValida]           = useState(false);
+  const [ipActual, setIpActual]             = useState("");
 
   const hoy = fechaHoy();
   const diaActual = getDiaActualES();
@@ -171,6 +183,25 @@ function AsistenciaContent() {
     window.addEventListener("offline", off);
     return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
   }, []);
+
+  // Verificar IP pública y Red
+  const verificarRed = useCallback(async () => {
+    try {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      setIpActual(data.ip);
+      setRedValida(data.ip === IP_AUTORIZADA);
+      return data.ip;
+    } catch (e) {
+      console.error("Error detectando IP:", e);
+      setRedValida(false);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (wifiValido) verificarRed();
+  }, [wifiValido, verificarRed]);
 
   // Cargar registro del día
   const cargarRegistro = useCallback(async () => {
@@ -203,6 +234,25 @@ function AsistenciaContent() {
   const handleAccion = async (accion) => {
     if (!empleadoId) { toast.error("Sin perfil de empleado"); return; }
     setAccionEnCurso(accion.id);
+
+    // Re-verificar IP antes de proceder si es presencial
+    let ipParaRegistrar = ipActual;
+    let esRedValida = redValida;
+
+    if (modalidadPermitida === "presencial") {
+      toast.loading("Validando conexión institucional...", { id: "val-ip" });
+      const currentIp = await verificarRed();
+      toast.dismiss("val-ip");
+
+      if (currentIp !== IP_AUTORIZADA) {
+        toast.error("Acceso denegado: Debes estar conectado al WiFi de la Fundación para registro presencial.");
+        setAccionEnCurso(null);
+        return;
+      }
+      ipParaRegistrar = currentIp;
+      esRedValida = true;
+    }
+
     const hora = horaActual();
     const ref = doc(db, "asistencias", `${hoy}_${empleadoId}`);
     try {
@@ -214,6 +264,8 @@ function AsistenciaContent() {
         modalidadAsignada: modalidadPermitida,
         wifiValidado: wifiValido,
         gpsValidado: gpsValido,
+        redInstitucional: esRedValida,
+        ipPublica: ipParaRegistrar,
         actualizadoEn: serverTimestamp(),
       };
       if (!snap.exists()) {
@@ -337,10 +389,9 @@ function AsistenciaContent() {
       <main className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
 
         {/* Reloj + estado conexión */}
-        <Card className="overflow-hidden">
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 pt-6 pb-4 space-y-4">
             <RelojVivo />
-            <BadgeConexion wifiValido={wifiValido} gpsValido={gpsValido} />
+            <BadgeConexion wifiValido={wifiValido} gpsValido={gpsValido} redValida={redValida} />
           </div>
           <CardContent className="pt-4 pb-4 space-y-3">
             {/* Modalidad autorizada hoy */}
@@ -491,6 +542,8 @@ function AsistenciaContent() {
                   { label: "Sal. almuerzo",  val: fmt(registroHoy.horaSalidaAlmuerzo) },
                   { label: "Reg. almuerzo",  val: fmt(registroHoy.horaEntradaAlmuerzo) },
                   { label: "Salida",         val: fmt(registroHoy.horaSalida) },
+                  { label: "IP Registro",    val: registroHoy.ipPublica || "No reg." },
+                  { label: "Red Inst.",      val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
                   { label: "WiFi validado",  val: registroHoy.wifiValidado ? "✅ Sí" : "❌ No" },
                 ].map((item) => (
                   <div key={item.label} className="bg-muted/40 rounded-lg px-3 py-2">
