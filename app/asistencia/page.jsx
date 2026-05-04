@@ -187,10 +187,12 @@ function AsistenciaContent() {
   // Verificar IP pública y Red
   const verificarRed = useCallback(async () => {
     try {
-      const res = await fetch("https://api.ipify.org?format=json");
+      // Añadimos un timestamp para evitar que el navegador guarde la IP en caché
+      const res = await fetch(`https://api.ipify.org?format=json&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       setIpActual(data.ip);
-      setRedValida(data.ip === IP_AUTORIZADA);
+      const esValida = data.ip === IP_AUTORIZADA;
+      setRedValida(esValida);
       return data.ip;
     } catch (e) {
       console.error("Error detectando IP:", e);
@@ -245,7 +247,7 @@ function AsistenciaContent() {
       toast.dismiss("val-ip");
 
       if (currentIp !== IP_AUTORIZADA) {
-        toast.error("Acceso denegado: Debes estar conectado al WiFi de la Fundación para registro presencial.");
+        toast.error(`Acceso denegado: Estás conectado desde una red externa (${currentIp || 'Desconocida'}). Para registro presencial usa el WiFi de la Fundación.`, { duration: 5000 });
         setAccionEnCurso(null);
         return;
       }
