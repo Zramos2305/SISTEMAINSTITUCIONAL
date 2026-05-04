@@ -82,7 +82,9 @@ import {
   MapPin,
   ListChecks,
   Activity,
-  History
+  History,
+  Coffee,
+  ClipboardList
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
