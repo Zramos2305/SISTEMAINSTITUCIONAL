@@ -21,7 +21,7 @@ import {
   Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck
 } from "lucide-react";
 
-const IP_AUTORIZADA = "181.57.30.136";
+const IPS_AUTORIZADAS = ["181.57.30.136", "191.156.13.184"];
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -212,7 +212,7 @@ function AsistenciaContent() {
       const res = await fetch(`https://api.ipify.org?format=json&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       setIpActual(data.ip);
-      const esValida = data.ip === IP_AUTORIZADA;
+      const esValida = IPS_AUTORIZADAS.includes(data.ip);
       setRedValida(esValida);
       return data.ip;
     } catch (e) {
@@ -267,7 +267,7 @@ function AsistenciaContent() {
       const currentIp = await verificarRed();
       toast.dismiss("val-ip");
 
-      if (currentIp !== IP_AUTORIZADA) {
+      if (!IPS_AUTORIZADAS.includes(currentIp)) {
         toast.error(`Acceso denegado: Estás conectado desde una red externa (${currentIp || 'Desconocida'}). Para registro presencial usa el WiFi de la Fundación.`, { duration: 5000 });
         setAccionEnCurso(null);
         return;
