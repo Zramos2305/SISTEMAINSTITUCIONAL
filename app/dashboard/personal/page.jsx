@@ -263,43 +263,45 @@ function PersonalContent() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
           <div>
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Users className="h-7 w-7 text-primary" />
               Directorio de Personal
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               Administra accesos, roles, cargos y la programación laboral de la fundación.
             </p>
           </div>
-          <Button onClick={() => setOpenCrear(true)} className="gap-2 shrink-0">
-            <UserPlus className="h-4 w-4" />
-            Ingresar Personal
-          </Button>
-        </div>
-        
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o correo..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
-            />
-            {searchQuery && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setSearchQuery("")}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              >
-                ×
-              </Button>
-            )}
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o correo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
+              />
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </Button>
+              )}
+            </div>
+            
+            <Button onClick={() => setOpenCrear(true)} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
+              <UserPlus className="h-4 w-4" />
+              Ingresar Personal
+            </Button>
           </div>
         </div>
+        
 
         {cargando ? (
           <div className="flex justify-center py-12">
