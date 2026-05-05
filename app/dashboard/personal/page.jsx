@@ -50,7 +50,8 @@ import {
   Home,
   CheckCircle2,
   Eye,
-  EyeOff
+  EyeOff,
+  Search
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -92,6 +93,7 @@ function PersonalContent() {
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
   const [horarioEdit, setHorarioEdit] = useState({});
   const [guardandoHorario, setGuardandoHorario] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const cargarDatos = async () => {
     setCargandoUsuarios(true);
@@ -221,6 +223,14 @@ function PersonalContent() {
 
   const cargando = cargandoUsuarios || cargandoEmpleados;
 
+  const usuariosFiltrados = usuarios.filter((u) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      u.nombre?.toLowerCase().includes(query) ||
+      u.correo?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -268,6 +278,28 @@ function PersonalContent() {
             Ingresar Personal
           </Button>
         </div>
+        
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o correo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
+            />
+            {searchQuery && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              >
+                ×
+              </Button>
+            )}
+          </div>
+        </div>
 
         {cargando ? (
           <div className="flex justify-center py-12">
@@ -287,7 +319,7 @@ function PersonalContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usuarios.map((u) => {
+                  {usuariosFiltrados.map((u) => {
                     const empleado = u.empleadoId ? empleados.find(e => e.id === u.empleadoId) : null;
                     const resumenHorario = empleado ? calcularResumenHorario(empleado.horarioModalidad) : null;
                     
@@ -365,10 +397,18 @@ function PersonalContent() {
                       </TableRow>
                     );
                   })}
-                  {usuarios.length === 0 && (
+                  {usuariosFiltrados.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No hay personal registrado
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                        <div className="flex flex-col items-center gap-2">
+                          <Search className="h-8 w-8 opacity-20" />
+                          <p>No se encontraron resultados para "{searchQuery}"</p>
+                          {searchQuery && (
+                            <Button variant="link" onClick={() => setSearchQuery("")} className="text-primary p-0 h-auto text-xs">
+                              Limpiar búsqueda
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
