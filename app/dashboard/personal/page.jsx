@@ -48,7 +48,9 @@ import {
   CalendarDays,
   Monitor,
   Home,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -82,12 +84,9 @@ function PersonalContent() {
   const [openCrear, setOpenCrear] = useState(false);
   const [creando, setCreando] = useState(false);
   const [formData, setFormData] = useState({
-    nombre: "",
-    correo: "",
-    password: "",
-    rol: "empleado",
     cargo: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Modal Horario
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
@@ -429,12 +428,23 @@ function PersonalContent() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
                     required
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Min. 6 chars" 
                     value={formData.password}
                     onChange={e => setFormData({...formData, password: e.target.value})}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
