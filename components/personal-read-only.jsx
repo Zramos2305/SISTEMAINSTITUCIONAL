@@ -14,12 +14,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Monitor } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Monitor, Search } from "lucide-react";
 
 export function PersonalReadOnlyList() {
   const [usuarios, setUsuarios] = useState([]);
   const { empleados, isLoading: cargandoEmpleados, recargar } = useEmpleados();
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     async function fetchUsuarios() {
@@ -45,8 +48,37 @@ export function PersonalReadOnlyList() {
     );
   }
 
+  const usuariosFiltrados = usuarios.filter((u) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      u.nombre?.toLowerCase().includes(query) ||
+      u.correo?.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div className="border rounded-md mt-6 overflow-hidden">
+    <div className="space-y-4">
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Filtrar por nombre o correo..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+        {searchQuery && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSearchQuery("")}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+          >
+            ×
+          </Button>
+        )}
+      </div>
+
+      <div className="border rounded-md overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -57,7 +89,7 @@ export function PersonalReadOnlyList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {usuarios.map((u) => {
+          {usuariosFiltrados.map((u) => {
             const empleado = u.empleadoId ? empleados.find(e => e.id === u.empleadoId) : null;
             const resumenHorario = empleado ? calcularResumenHorario(empleado.horarioModalidad) : null;
             
@@ -111,10 +143,13 @@ export function PersonalReadOnlyList() {
               </TableRow>
             );
           })}
-          {usuarios.length === 0 && (
+          {usuariosFiltrados.length === 0 && (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                No hay personal registrado
+              <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Search className="h-6 w-6 opacity-20" />
+                  <p>No se encontraron resultados para "{searchQuery}"</p>
+                </div>
               </TableCell>
             </TableRow>
           )}
