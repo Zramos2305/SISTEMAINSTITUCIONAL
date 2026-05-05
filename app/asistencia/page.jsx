@@ -21,7 +21,7 @@ import {
   Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck
 } from "lucide-react";
 
-const IP_AUTORIZADA = "181.54.0.27";
+const IP_AUTORIZADA = "181.57.30.136";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
