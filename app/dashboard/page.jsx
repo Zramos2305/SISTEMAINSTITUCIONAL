@@ -935,10 +935,38 @@ function DashboardContent() {
                               <TableCell>
                                 <BadgeEstado estado={reg.estadoActual} />
                               </TableCell>
-                              <TableCell className="hidden md:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaEntrada)}</TableCell>
+                              <TableCell className="hidden md:table-cell text-sm tabular-nums">
+                                <div className="flex flex-col">
+                                  <span>{formatearHoraAsistencia(reg.horaEntrada)}</span>
+                                  {reg.entradaDiferenciaMinutos > 0 && (
+                                    <span className="text-[10px] text-destructive font-bold">
+                                      +{reg.entradaDiferenciaMinutos} min tarde
+                                    </span>
+                                  )}
+                                  {reg.entradaDiferenciaMinutos < 0 && (
+                                    <span className="text-[10px] text-success font-bold">
+                                      {Math.abs(reg.entradaDiferenciaMinutos)} min antes
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="hidden lg:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaSalidaAlmuerzo)}</TableCell>
                               <TableCell className="hidden lg:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaEntradaAlmuerzo)}</TableCell>
-                              <TableCell className="hidden md:table-cell text-sm tabular-nums">{formatearHoraAsistencia(reg.horaSalida)}</TableCell>
+                              <TableCell className="hidden md:table-cell text-sm tabular-nums">
+                                <div className="flex flex-col">
+                                  <span>{formatearHoraAsistencia(reg.horaSalida)}</span>
+                                  {reg.salidaDiferenciaMinutos < 0 && (
+                                    <span className="text-[10px] text-destructive font-bold">
+                                      {Math.abs(reg.salidaDiferenciaMinutos)} min antes
+                                    </span>
+                                  )}
+                                  {reg.salidaDiferenciaMinutos > 0 && (
+                                    <span className="text-[10px] text-success font-bold">
+                                      +{reg.salidaDiferenciaMinutos} min extra
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="hidden xl:table-cell">
                                 {reg.modoTrabajo === "teletrabajo" ? (
                                   <span className="inline-flex items-center gap-1 text-xs text-primary">
