@@ -74,7 +74,7 @@ const MODALIDAD_CONFIG = {
 };
 
 function PersonalContent() {
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   
   const [usuarios, setUsuarios] = useState([]);
   const { empleados, isLoading: cargandoEmpleados, recargar: recargarEmpleados, actualizarModalidad } = useEmpleados();
@@ -142,6 +142,13 @@ function PersonalContent() {
       const result = await crearUsuarioInstitucional(payload);
 
       if (result.success) {
+        await registrarAuditoria({
+          user,
+          userData,
+          accion: "Crear Personal",
+          documentoId: result.uid || formData.correo,
+          detalles: `Se creó un nuevo usuario con rol ${formData.rol}: ${formData.nombre} (${formData.correo}).`
+        });
         toast.success("Personal creado exitosamente");
         setOpenCrear(false);
         setFormData({ nombre: "", correo: "", password: "", rol: "empleado", cargo: "" });
@@ -165,7 +172,7 @@ function PersonalContent() {
       if (result.success) {
         await registrarAuditoria({
           user,
-          userData: { nombre: "Sistema (Admin)", email: user.email }, // Simplificado para auditoría
+          userData,
           accion: "Eliminar Personal",
           documentoId: usuario.id,
           detalles: `Se eliminó permanentemente al usuario ${usuario.nombre} (${usuario.correo}) y su perfil de empleado.`
@@ -195,6 +202,13 @@ function PersonalContent() {
     setGuardandoHorario(true);
     try {
       await actualizarModalidad(empleadoSeleccionado.id, horarioEdit);
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Actualizar Horario",
+        documentoId: empleadoSeleccionado.id,
+        detalles: `Se actualizó la programación semanal de modalidad laboral para ${empleadoSeleccionado.nombre}.`
+      });
       toast.success("Horario guardado");
       setEmpleadoSeleccionado(null);
     } catch (error) {

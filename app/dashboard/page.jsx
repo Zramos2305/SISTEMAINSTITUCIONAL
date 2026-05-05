@@ -293,11 +293,9 @@ function DashboardContent() {
     if (!esSuperAdmin) return;
     setCargandoAuditoria(true);
     try {
-      const q = query(collection(db, "auditoria"));
+      const q = query(collection(db, "auditoria"), orderBy("fecha", "desc"));
       const snap = await getDocs(q);
       const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Ordenar localmente
-      logs.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
       setLogsAuditoria(logs);
     } catch (e) {
       console.error("Error cargando auditoría:", e);
@@ -392,6 +390,7 @@ function DashboardContent() {
         detalles: `Eliminación permanente del registro ${codigoAEliminar}`
       });
       toast.success("Documento eliminado");
+      cargarAuditoria(); // Recargar logs inmediatamente
     } catch {
       toast.error("Error al eliminar");
     } finally {
@@ -413,6 +412,7 @@ function DashboardContent() {
         detalles: "Re-activación manual de afiliado inactivo"
       });
       toast.success("Afiliado activado");
+      cargarAuditoria(); // Recargar logs
     } catch {
       toast.error("Error al cambiar estado");
     } finally {
@@ -437,6 +437,7 @@ function DashboardContent() {
         detalles: "Desactivación manual por el administrador"
       });
       toast.success("Afiliado desactivado manualmente");
+      cargarAuditoria(); // Recargar logs
     } catch {
       toast.error("Error al desactivar");
     } finally {
@@ -483,6 +484,7 @@ function DashboardContent() {
         detalles: `Renovación de membresía por ${duracionReactivacion === '6_meses' ? '6 meses' : '1 año'}`
       });
       toast.success("Afiliado reactivado exitosamente");
+      cargarAuditoria(); // Recargar logs
     } catch {
       toast.error("Error al reactivar el afiliado");
     } finally {
