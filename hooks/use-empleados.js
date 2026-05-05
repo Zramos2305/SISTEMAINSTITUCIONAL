@@ -11,13 +11,13 @@ export const DIAS_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes",
 export const MODALIDADES = ["presencial", "teletrabajo", "libre"];
 
 export const HORARIO_DEFAULT = {
-  lunes: "libre",
-  martes: "libre",
-  miercoles: "libre",
-  jueves: "libre",
-  viernes: "libre",
-  sabado: "libre",
-  domingo: "libre",
+  lunes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  martes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  miercoles: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  jueves: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  viernes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  sabado: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  domingo: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -39,8 +39,17 @@ export function normalizarHorario(horario) {
   const base = { ...HORARIO_DEFAULT };
   if (horario && typeof horario === "object") {
     DIAS_SEMANA.forEach((dia) => {
-      if (MODALIDADES.includes(horario[dia])) {
-        base[dia] = horario[dia];
+      const data = horario[dia];
+      if (typeof data === "string" && MODALIDADES.includes(data)) {
+        // Compatibilidad con estructura anterior
+        base[dia] = { modalidad: data, entrada: "08:00", salida: "17:00" };
+      } else if (data && typeof data === "object") {
+        // Nueva estructura
+        base[dia] = {
+          modalidad: MODALIDADES.includes(data.modalidad) ? data.modalidad : "libre",
+          entrada: data.entrada || "08:00",
+          salida: data.salida || "17:00",
+        };
       }
     });
   }
@@ -53,9 +62,9 @@ export function normalizarHorario(horario) {
 export function calcularResumenHorario(horario) {
   const h = normalizarHorario(horario);
   return {
-    presencial: DIAS_SEMANA.filter((d) => h[d] === "presencial").length,
-    teletrabajo: DIAS_SEMANA.filter((d) => h[d] === "teletrabajo").length,
-    libre: DIAS_SEMANA.filter((d) => h[d] === "libre").length,
+    presencial: DIAS_SEMANA.filter((d) => h[d].modalidad === "presencial").length,
+    teletrabajo: DIAS_SEMANA.filter((d) => h[d].modalidad === "teletrabajo").length,
+    libre: DIAS_SEMANA.filter((d) => h[d].modalidad === "libre").length,
   };
 }
 

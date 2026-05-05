@@ -195,8 +195,11 @@ function PersonalContent() {
     setHorarioEdit({ ...empleado.horarioModalidad });
   };
 
-  const handleCambioModalidad = (dia, nuevaModalidad) => {
-    setHorarioEdit((prev) => ({ ...prev, [dia]: nuevaModalidad }));
+  const handleUpdateDia = (dia, fields) => {
+    setHorarioEdit((prev) => ({
+      ...prev,
+      [dia]: { ...prev[dia], ...fields }
+    }));
   };
 
   const handleGuardarHorario = async () => {
@@ -540,7 +543,7 @@ function PersonalContent() {
 
       {/* Modal Horario */}
       <Dialog open={!!empleadoSeleccionado} onOpenChange={(open) => !open && setEmpleadoSeleccionado(null)}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
@@ -552,41 +555,69 @@ function PersonalContent() {
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="grid grid-cols-7 gap-1">
+            <div className="space-y-4">
               {DIAS_SEMANA.map((dia) => {
-                const modalidadActual = horarioEdit[dia] || "libre";
-                const cfg = MODALIDAD_CONFIG[modalidadActual];
+                const diaData = horarioEdit[dia] || { modalidad: "libre", entrada: "08:00", salida: "17:00" };
+                const cfg = MODALIDAD_CONFIG[diaData.modalidad];
                 
                 return (
-                  <div key={dia} className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold text-center text-muted-foreground uppercase">
-                      {DIA_LABELS[dia]}
-                    </span>
-                    <Select value={modalidadActual} onValueChange={(v) => handleCambioModalidad(dia, v)}>
-                      <SelectTrigger
-                        className={`h-9 px-0 justify-center [&>span]:w-full [&>span]:text-center [&>svg]:hidden border-2 ${cfg.color}`}
-                        title={`${DIA_LABELS[dia]}: ${cfg.label}`}
+                  <div key={dia} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
+                    <div className="w-20">
+                      <span className="text-xs font-bold text-muted-foreground uppercase">
+                        {dia}
+                      </span>
+                    </div>
+
+                    <div className="w-40">
+                      <Select 
+                        value={diaData.modalidad} 
+                        onValueChange={(v) => handleUpdateDia(dia, { modalidad: v })}
                       >
-                        <SelectValue>
-                          <div className="flex justify-center w-full">
-                            <cfg.icon className="h-4 w-4" />
-                          </div>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MODALIDADES.map((m) => {
-                          const mc = MODALIDAD_CONFIG[m];
-                          return (
-                            <SelectItem key={m} value={m} className="text-xs py-2">
-                              <div className="flex items-center gap-2">
-                                <mc.icon className="h-3.5 w-3.5" />
-                                <span>{mc.label}</span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                        <SelectTrigger className={`h-9 border-2 ${cfg.color}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MODALIDADES.map((m) => {
+                            const mc = MODALIDAD_CONFIG[m];
+                            return (
+                              <SelectItem key={m} value={m} className="text-xs py-2">
+                                <div className="flex items-center gap-2">
+                                  <mc.icon className="h-3.5 w-3.5" />
+                                  <span>{mc.label}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {diaData.modalidad !== "libre" ? (
+                      <div className="flex items-center gap-2 flex-1 animate-in fade-in slide-in-from-right-2">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-[10px] text-muted-foreground uppercase font-semibold pl-1">Entrada</label>
+                          <Input 
+                            type="time" 
+                            value={diaData.entrada} 
+                            onChange={(e) => handleUpdateDia(dia, { entrada: e.target.value })}
+                            className="h-9 px-2 text-xs"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-[10px] text-muted-foreground uppercase font-semibold pl-1">Salida</label>
+                          <Input 
+                            type="time" 
+                            value={diaData.salida} 
+                            onChange={(e) => handleUpdateDia(dia, { salida: e.target.value })}
+                            className="h-9 px-2 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center">
+                        <span className="text-[10px] text-muted-foreground italic uppercase">Sin jornada laboral</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

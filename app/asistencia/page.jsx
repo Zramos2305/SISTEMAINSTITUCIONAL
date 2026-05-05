@@ -31,16 +31,20 @@ function horaActual() {
 function fechaHoy() { return new Date().toISOString().split("T")[0]; }
 function fmt(h) { 
   if (!h) return "—";
-  // Si es un Timestamp de Firebase con el método toDate()
   if (typeof h.toDate === "function") {
     return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
   }
-  // Si es un objeto plano con segundos (típico de datos serializados)
   if (h && typeof h.seconds === "number") {
     return new Date(h.seconds * 1000).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
   }
-  // Fallback si ya es un string o algo renderizable
   return typeof h === "object" ? "—" : h; 
+}
+
+function diffMinutos(hora1, hora2) {
+  if (!hora1 || !hora2) return 0;
+  const [h1, m1] = hora1.split(':').map(Number);
+  const [h2, m2] = hora2.split(':').map(Number);
+  return (h1 * 60 + m1) - (h2 * 60 + m2);
 }
 
 // ─── config visual modalidad ──────────────────────────────────────────────────
@@ -178,7 +182,8 @@ function AsistenciaContent() {
 
   // Detectar modalidad asignada para hoy
   const horario = normalizarHorario(empleadoData?.horarioModalidad);
-  const modalidadPermitida = horario[diaActual] || "libre";
+  const horarioHoy = horario[diaActual] || { modalidad: "libre", entrada: "08:00", salida: "17:00" };
+  const modalidadPermitida = horarioHoy.modalidad;
   const modalidadCfg = MODALIDAD_DISPLAY[modalidadPermitida] || MODALIDAD_DISPLAY.libre;
   const ModIcon = modalidadCfg.icon;
 
@@ -293,12 +298,25 @@ function AsistenciaContent() {
         }
       }
 
+      const ahora = new Date();
+      const horaHHMM = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false });
+      
+      let minutosDiferencia = 0;
+      if (accion.id === "entrada") {
+        minutosDiferencia = diffMinutos(horaHHMM, horarioHoy.entrada);
+      } else if (accion.id === "salida") {
+        minutosDiferencia = diffMinutos(horaHHMM, horarioHoy.salida);
+      }
+
       const snap = await getDoc(ref);
       const base = {
-        [accion.campo]: serverTimestamp(), // Seguridad de servidor
+        [accion.campo]: serverTimestamp(),
+        [`${accion.id}DiferenciaMinutos`]: minutosDiferencia,
         estadoActual: accion.estadoResultante,
         modoTrabajo: modalidadPermitida,
         modalidadAsignada: modalidadPermitida,
+        horaProgramadaEntrada: horarioHoy.entrada,
+        horaProgramadaSalida: horarioHoy.salida,
         wifiValidado: wifiValido,
         gpsValidado: !!ubicacionFinal,
         ubicacion: modalidadPermitida === "presencial" ? ubicacionFinal : null,
@@ -615,17 +633,34 @@ function AsistenciaContent() {
                   { label: "Empleado", val: registroHoy.nombre },
                   { label: "Cargo", val: registroHoy.cargo || "—" },
                   { label: "Modalidad", val: registroHoy.modalidadAsignada || registroHoy.modoTrabajo || "—" },
-                  { label: "Entrada", val: fmt(registroHoy.horaEntrada) },
-                  { label: "Sal. almuerzo", val: fmt(registroHoy.horaSalidaAlmuerzo) },
-                  { label: "Reg. almuerzo", val: fmt(registroHoy.horaEntradaAlmuerzo) },
-                  { label: "Salida", val: fmt(registroHoy.horaSalida) },
+                  { label: "Horario Prog.", val: `${registroHoy.horaProgramadaEntrada || '—'} a ${registroHoy.horaProgramadaSalida || '—'}` },
+                  { 
+                    label: "Entrada", 
+                    val: fmt(registroHoy.horaEntrada),
+                    extra: registroHoy.entradaDiferenciaMinutos > 0 
+                      ? <span className="text-[10px] text-destructive font-bold">({registroHoy.entradaDiferenciaMinutos} min tarde)</span>
+                      : registroHoy.entradaDiferenciaMinutos < 0 
+                      ? <span className="text-[10px] text-success font-bold">({Math.abs(registroHoy.entradaDiferenciaMinutos)} min antes)</span>
+                      : null
+                  },
+                  { 
+                    label: "Salida", 
+                    val: fmt(registroHoy.horaSalida),
+                    extra: registroHoy.salidaDiferenciaMinutos < 0
+                      ? <span className="text-[10px] text-destructive font-bold">({Math.abs(registroHoy.salidaDiferenciaMinutos)} min antes)</span>
+                      : registroHoy.salidaDiferenciaMinutos > 0
+                      ? <span className="text-[10px] text-success font-bold">({registroHoy.salidaDiferenciaMinutos} min después)</span>
+                      : null
+                  },
                   { label: "IP Registro", val: registroHoy.ipPublica || "No reg." },
                   { label: "Red Inst.", val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
-                  { label: "WiFi validado", val: registroHoy.wifiValidado ? "✅ Sí" : "❌ No" },
                 ].map((item) => (
                   <div key={item.label} className="bg-muted/40 rounded-lg px-3 py-2">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
-                    <p className="font-medium text-foreground truncate capitalize">{item.val}</p>
+                    <div className="flex flex-col">
+                      <p className="font-medium text-foreground truncate capitalize">{item.val}</p>
+                      {item.extra}
+                    </div>
                   </div>
                 ))}
               </div>
