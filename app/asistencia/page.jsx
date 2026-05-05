@@ -31,8 +31,16 @@ function horaActual() {
 function fechaHoy() { return new Date().toISOString().split("T")[0]; }
 function fmt(h) { 
   if (!h) return "—";
-  if (h.toDate) return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
-  return h; 
+  // Si es un Timestamp de Firebase con el método toDate()
+  if (typeof h.toDate === "function") {
+    return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
+  // Si es un objeto plano con segundos (típico de datos serializados)
+  if (h && typeof h.seconds === "number") {
+    return new Date(h.seconds * 1000).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
+  // Fallback si ya es un string o algo renderizable
+  return typeof h === "object" ? "—" : h; 
 }
 
 // ─── config visual modalidad ──────────────────────────────────────────────────
@@ -506,8 +514,8 @@ function AsistenciaContent() {
               <p className="font-semibold">Jornada completada 🎉</p>
               <p className="text-sm text-muted-foreground">Hasta mañana, {empleadoData?.nombre?.split(" ")[0] || "compañero/a"} 👋</p>
               <div className="text-xs text-muted-foreground space-y-1">
-                {registroHoy?.horaEntrada && <p>Entrada: <strong>{registroHoy.horaEntrada}</strong></p>}
-                {registroHoy?.horaSalida && <p>Salida: <strong>{registroHoy.horaSalida}</strong></p>}
+                {registroHoy?.horaEntrada && <p>Entrada: <strong>{fmt(registroHoy.horaEntrada)}</strong></p>}
+                {registroHoy?.horaSalida && <p>Salida: <strong>{fmt(registroHoy.horaSalida)}</strong></p>}
               </div>
             </CardContent>
           </Card>

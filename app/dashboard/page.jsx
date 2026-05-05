@@ -96,7 +96,19 @@ const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar
 // Función auxiliar para dar formato legible a la fecha (por ejemplo: "22 oct 2023, 14:30")
 function formatearFecha(fecha) {
   if (!fecha) return "-";
-  return new Date(fecha).toLocaleDateString("es-CO", {
+  
+  let dateObj;
+  if (typeof fecha.toDate === "function") {
+    dateObj = fecha.toDate();
+  } else if (fecha && typeof fecha.seconds === "number") {
+    dateObj = new Date(fecha.seconds * 1000);
+  } else {
+    dateObj = new Date(fecha);
+  }
+
+  if (isNaN(dateObj.getTime())) return "Fecha inválida";
+
+  return dateObj.toLocaleDateString("es-CO", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -180,8 +192,13 @@ function BadgeEstado({ estado }) {
 
 function formatearHoraAsistencia(h) {
   if (!h) return "—";
-  if (h.toDate) return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
-  return h;
+  if (typeof h.toDate === "function") {
+    return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
+  if (h && typeof h.seconds === "number") {
+    return new Date(h.seconds * 1000).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
+  return typeof h === "object" ? "—" : h;
 }
 
 // ─── hook de registros de asistencia ─────────────────────────────────────────
