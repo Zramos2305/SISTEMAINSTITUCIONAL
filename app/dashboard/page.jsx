@@ -201,6 +201,14 @@ function formatearHoraAsistencia(h) {
   return typeof h === "object" ? "—" : h;
 }
 
+function fmtDiferencia(minutos) {
+  const m = Math.abs(minutos);
+  if (m < 60) return `${m} min`;
+  const hrs = Math.floor(m / 60);
+  const mins = m % 60;
+  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
 // ─── hook de registros de asistencia ─────────────────────────────────────────
 
 function useAsistencias(fecha) {
@@ -940,12 +948,12 @@ function DashboardContent() {
                                   <span>{formatearHoraAsistencia(reg.horaEntrada)}</span>
                                   {reg.entradaDiferenciaMinutos > 0 && (
                                     <span className="text-[10px] text-destructive font-bold">
-                                      +{reg.entradaDiferenciaMinutos} min tarde
+                                      +{fmtDiferencia(reg.entradaDiferenciaMinutos)} tarde
                                     </span>
                                   )}
                                   {reg.entradaDiferenciaMinutos < 0 && (
                                     <span className="text-[10px] text-success font-bold">
-                                      {Math.abs(reg.entradaDiferenciaMinutos)} min antes
+                                      {fmtDiferencia(reg.entradaDiferenciaMinutos)} antes
                                     </span>
                                   )}
                                 </div>
@@ -957,12 +965,12 @@ function DashboardContent() {
                                   <span>{formatearHoraAsistencia(reg.horaSalida)}</span>
                                   {reg.salidaDiferenciaMinutos < 0 && (
                                     <span className="text-[10px] text-destructive font-bold">
-                                      {Math.abs(reg.salidaDiferenciaMinutos)} min antes
+                                      {fmtDiferencia(reg.salidaDiferenciaMinutos)} antes
                                     </span>
                                   )}
                                   {reg.salidaDiferenciaMinutos > 0 && (
                                     <span className="text-[10px] text-success font-bold">
-                                      +{reg.salidaDiferenciaMinutos} min extra
+                                      +{fmtDiferencia(reg.salidaDiferenciaMinutos)} extra
                                     </span>
                                   )}
                                 </div>

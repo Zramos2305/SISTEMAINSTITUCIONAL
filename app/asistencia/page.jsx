@@ -47,6 +47,14 @@ function diffMinutos(hora1, hora2) {
   return (h1 * 60 + m1) - (h2 * 60 + m2);
 }
 
+function fmtDiferencia(minutos) {
+  const m = Math.abs(minutos);
+  if (m < 60) return `${m} min`;
+  const hrs = Math.floor(m / 60);
+  const mins = m % 60;
+  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
 // ─── config visual modalidad ──────────────────────────────────────────────────
 
 const MODALIDAD_DISPLAY = {
@@ -638,18 +646,18 @@ function AsistenciaContent() {
                     label: "Entrada", 
                     val: fmt(registroHoy.horaEntrada),
                     extra: registroHoy.entradaDiferenciaMinutos > 0 
-                      ? <span className="text-[10px] text-destructive font-bold">({registroHoy.entradaDiferenciaMinutos} min tarde)</span>
+                      ? <span className="text-[10px] text-destructive font-bold">({fmtDiferencia(registroHoy.entradaDiferenciaMinutos)} tarde)</span>
                       : registroHoy.entradaDiferenciaMinutos < 0 
-                      ? <span className="text-[10px] text-success font-bold">({Math.abs(registroHoy.entradaDiferenciaMinutos)} min antes)</span>
+                      ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.entradaDiferenciaMinutos)} antes)</span>
                       : null
                   },
                   { 
                     label: "Salida", 
                     val: fmt(registroHoy.horaSalida),
                     extra: registroHoy.salidaDiferenciaMinutos < 0
-                      ? <span className="text-[10px] text-destructive font-bold">({Math.abs(registroHoy.salidaDiferenciaMinutos)} min antes)</span>
+                      ? <span className="text-[10px] text-destructive font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} antes)</span>
                       : registroHoy.salidaDiferenciaMinutos > 0
-                      ? <span className="text-[10px] text-success font-bold">({registroHoy.salidaDiferenciaMinutos} min después)</span>
+                      ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} después)</span>
                       : null
                   },
                   { label: "IP Registro", val: registroHoy.ipPublica || "No reg." },
