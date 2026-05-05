@@ -290,7 +290,7 @@ function PersonalContent() {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 >
-                  ×
+                  x
                 </Button>
               )}
             </div>
@@ -368,7 +368,10 @@ function PersonalContent() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={u.activo !== false ? "success" : "secondary"}>
+                          <Badge 
+                            variant={u.activo !== false ? "default" : "secondary"}
+                            className={u.activo !== false ? "bg-emerald-500 hover:bg-emerald-600 text-white border-none" : ""}
+                          >
                             {u.activo !== false ? "Activo" : "Inactivo"}
                           </Badge>
                         </TableCell>
@@ -404,7 +407,7 @@ function PersonalContent() {
                       <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         <div className="flex flex-col items-center gap-2">
                           <Search className="h-8 w-8 opacity-20" />
-                          <p>No se encontraron resultados para "{searchQuery}"</p>
+                          <p>No se encontraron resultados para &quot;{searchQuery}&quot;</p>
                           {searchQuery && (
                             <Button variant="link" onClick={() => setSearchQuery("")} className="text-primary p-0 h-auto text-xs">
                               Limpiar búsqueda
