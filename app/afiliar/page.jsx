@@ -447,8 +447,13 @@ export default function AfiliarPage() {
 
             <div
               ref={carnetRef}
-              className="relative w-[380px] h-[580px] bg-white rounded-[2rem] shadow-2xl overflow-hidden mx-auto border"
-              style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
+              className="relative w-[380px] h-[580px] rounded-[2rem] overflow-hidden mx-auto"
+              style={{ 
+                fontFamily: 'sans-serif', 
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+              }}
             >
               {/* Decoración Superior */}
               <div className="absolute top-0 left-0 w-full h-[180px] overflow-hidden">
@@ -463,18 +468,18 @@ export default function AfiliarPage() {
               </div>
 
               <div className="relative z-10 pt-8 px-8 flex flex-col items-center">
-                <div className="bg-white p-2 rounded-full shadow-lg mb-3">
+                <div className="bg-white p-2 rounded-full shadow-lg mb-3" style={{ backgroundColor: '#ffffff' }}>
                   <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", borderRadius: "9999px" }} />
                 </div>
-                <h2 className="text-white font-black text-2xl tracking-tighter leading-none">ISLA CASCAJAL</h2>
-                <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-1">Fundación</p>
+                <h2 className="font-black text-2xl tracking-tighter leading-none" style={{ color: '#ffffff' }}>ISLA CASCAJAL</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>Fundación</p>
               </div>
 
               {/* Foto de Perfil */}
               <div className="relative z-10 flex flex-col items-center mt-6">
                 <div
                   className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden"
-                  style={{ backgroundColor: "#f1f5f9" }}
+                  style={{ backgroundColor: "#f1f5f9", borderColor: '#ffffff' }}
                 >
                   {fotoPreview ? (
                     <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -487,38 +492,38 @@ export default function AfiliarPage() {
 
                 {/* Badge AFILIADO */}
                 <div
-                  className="mt-[-20px] relative z-20 px-8 py-1.5 rounded-full shadow-lg border-2 border-white"
-                  style={{ backgroundColor: COLORS.rojo }}
+                  className="mt-[-20px] relative z-20 px-8 py-1.5 rounded-full border-2 border-white"
+                  style={{ backgroundColor: COLORS.rojo, borderColor: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                 >
-                  <span className="text-white font-black text-sm tracking-widest uppercase italic">AFILIADO</span>
+                  <span className="text-white font-black text-sm uppercase tracking-widest" style={{ color: '#ffffff' }}>AFILIADO</span>
                 </div>
               </div>
 
               {/* Información Personal */}
               <div className="mt-4 px-10 flex flex-col items-center text-center">
-                <h3 className="text-xl font-black leading-tight uppercase line-clamp-2 w-full" style={{ color: "#1e293b" }}>
+                <h3 className="text-xl font-black leading-tight uppercase" style={{ color: "#1e293b", margin: 0 }}>
                   {formData.nombre || "NOMBRE COMPLETO"}
                 </h3>
-                <p className="font-bold text-xs mt-1" style={{ color: "#64748b" }}>
+                <p className="font-bold text-xs mt-1" style={{ color: "#64748b", margin: 0 }}>
                   C.C. {formData.cedula || "XXXXXXXX"}
                 </p>
 
                 <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Código</p>
-                    <p className="text-sm font-black font-mono tracking-tighter truncate" style={{ color: "#334155" }}>{formData.codigo}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Código</p>
+                    <p className="text-sm font-black font-mono tracking-tighter" style={{ color: "#334155", margin: 0 }}>{formData.codigo}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>RH</p>
-                    <p className="text-sm font-black uppercase" style={{ color: "#334155" }}>{formData.rh || "—"}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>RH</p>
+                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.rh || "—"}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Fecha Ingreso</p>
-                    <p className="text-sm font-black" style={{ color: "#334155" }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Vence</p>
+                    <p className="text-sm font-black" style={{ color: "#334155", margin: 0 }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Cargo</p>
-                    <p className="text-sm font-black uppercase line-clamp-1" style={{ color: "#334155" }}>{formData.cargo}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Cargo</p>
+                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
                   </div>
                 </div>
               </div>
@@ -526,23 +531,23 @@ export default function AfiliarPage() {
               {/* QR y Footer */}
               <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black" style={{ color: COLORS.azul }}>@fundacionislacascajal</p>
-                  <p className="text-[8px] font-bold" style={{ color: "#94a3b8" }}>www.fundacionislacascajal.org</p>
+                  <p className="text-[10px] font-black" style={{ color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
+                  <p className="text-[8px] font-bold" style={{ color: "#94a3b8", margin: 0 }}>www.fundacionislacascajal.org</p>
                 </div>
 
-                <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul }}>
+                <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul, backgroundColor: '#ffffff' }}>
                   {qrDataUrl && (
                     <img src={qrDataUrl} alt="QR" style={{ width: "70px", height: "70px" }} />
                   )}
                 </div>
               </div>
 
-              {/* Franjas de color decorativas en el fondo inferior */}
-              <div className="absolute bottom-0 right-0 w-full h-1.5 flex">
-                <div className="flex-1" style={{ backgroundColor: COLORS.azul }} />
-                <div className="flex-1" style={{ backgroundColor: COLORS.verde }} />
-                <div className="flex-1" style={{ backgroundColor: COLORS.amarillo }} />
-                <div className="flex-1" style={{ backgroundColor: COLORS.rojo }} />
+              {/* Franjas de color decorativas */}
+              <div className="absolute bottom-0 left-0 w-full h-1.5 flex">
+                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
               </div>
             </div>
 
