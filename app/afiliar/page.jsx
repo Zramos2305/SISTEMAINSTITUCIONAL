@@ -402,9 +402,9 @@ export default function AfiliarPage() {
                   className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
                   style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
                 />
-                <div
+                <div 
                   className="absolute top-0 right-0 w-1/3 h-full"
-                  style={{ background: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
+                  style={{ backgroundColor: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
                 />
               </div>
 
@@ -419,11 +419,14 @@ export default function AfiliarPage() {
 
               {/* Foto de Perfil */}
               <div className="relative z-10 flex flex-col items-center mt-6">
-                <div className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden bg-muted">
+                <div 
+                  className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden"
+                  style={{ backgroundColor: "#f1f5f9" }}
+                >
                   {fotoPreview ? (
                     <Image src={fotoPreview} alt="Foto" fill className="object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                    <div className="w-full h-full flex items-center justify-center" style={{ color: "#94a3b8" }}>
                       <User size={80} />
                     </div>
                   )}
@@ -440,29 +443,29 @@ export default function AfiliarPage() {
 
               {/* Información Personal */}
               <div className="mt-4 px-10 flex flex-col items-center text-center">
-                <h3 className="text-xl font-black text-slate-800 leading-tight uppercase line-clamp-2 w-full">
+                <h3 className="text-xl font-black leading-tight uppercase line-clamp-2 w-full" style={{ color: "#1e293b" }}>
                   {formData.nombre || "NOMBRE COMPLETO"}
                 </h3>
-                <p className="text-slate-500 font-bold text-xs mt-1">
+                <p className="font-bold text-xs mt-1" style={{ color: "#64748b" }}>
                   C.C. {formData.cedula || "XXXXXXXX"}
                 </p>
 
                 <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
                   <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Código</p>
-                    <p className="text-sm font-black text-slate-700 font-mono tracking-tighter truncate">{formData.codigo}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Código</p>
+                    <p className="text-sm font-black font-mono tracking-tighter truncate" style={{ color: "#334155" }}>{formData.codigo}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">RH</p>
-                    <p className="text-sm font-black text-slate-700 uppercase">{formData.rh || "—"}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>RH</p>
+                    <p className="text-sm font-black uppercase" style={{ color: "#334155" }}>{formData.rh || "—"}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Fecha Ingreso</p>
-                    <p className="text-sm font-black text-slate-700">{formData.fechaIngreso.split('-').reverse().join('/')}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Fecha Ingreso</p>
+                    <p className="text-sm font-black" style={{ color: "#334155" }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Cargo</p>
-                    <p className="text-sm font-black text-slate-700 uppercase line-clamp-1">{formData.cargo}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8" }}>Cargo</p>
+                    <p className="text-sm font-black uppercase line-clamp-1" style={{ color: "#334155" }}>{formData.cargo}</p>
                   </div>
                 </div>
               </div>
@@ -471,7 +474,7 @@ export default function AfiliarPage() {
               <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] font-black" style={{ color: COLORS.azul }}>@fundacionislacascajal</p>
-
+                  <p className="text-[8px] font-bold" style={{ color: "#94a3b8" }}>www.fundacionislacascajal.org</p>
                 </div>
 
                 <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul }}>
