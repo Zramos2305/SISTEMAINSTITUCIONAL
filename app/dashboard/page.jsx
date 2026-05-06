@@ -204,6 +204,51 @@ function formatearHoraAsistencia(h) {
   return typeof h === "object" ? "—" : h;
 }
 
+function calcularHorasTrabajadasDashboard(r) {
+  if (!r || !r.horaEntrada) return "—";
+  
+  const sec = (ts) => {
+    if (!ts) return 0;
+    if (ts.seconds) return ts.seconds;
+    if (ts.toDate) return Math.floor(ts.toDate().getTime() / 1000);
+    return Math.floor(new Date(ts).getTime() / 1000);
+  };
+  
+  const entrada = sec(r.horaEntrada);
+  const salidaAlmuerzo = sec(r.horaSalidaAlmuerzo);
+  const entradaAlmuerzo = sec(r.horaEntradaAlmuerzo);
+  
+  let salida = 0;
+  // Verificar si es el día actual comparando con formato local (Y-M-D)
+  const hoy = new Date().toLocaleDateString("en-CA"); // Formato YYYY-MM-DD
+  const esHoy = r.fecha === hoy || r.fecha === new Date().toISOString().split("T")[0];
+
+  if (r.horaSalida) {
+    salida = sec(r.horaSalida);
+  } else if (esHoy) {
+    salida = Math.floor(Date.now() / 1000);
+  } else {
+    return "Incompleto";
+  }
+
+  let totalSegundos = 0;
+
+  if (salidaAlmuerzo) {
+    totalSegundos += (salidaAlmuerzo - entrada);
+    if (entradaAlmuerzo) {
+       totalSegundos += (salida - entradaAlmuerzo);
+    }
+  } else {
+    totalSegundos += (salida - entrada);
+  }
+  
+  if (totalSegundos < 0) totalSegundos = 0;
+  
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  return `${horas}h ${minutos}m`;
+}
+
 function fmtDiferencia(minutos) {
   const m = Math.abs(minutos);
   if (m < 60) return `${m} min`;
@@ -946,6 +991,7 @@ function DashboardContent() {
                             <TableHead className="hidden lg:table-cell">Sal. Almuerzo</TableHead>
                             <TableHead className="hidden lg:table-cell">Reg. Almuerzo</TableHead>
                             <TableHead className="hidden md:table-cell">Salida</TableHead>
+                            <TableHead>T. Laborado</TableHead>
                             <TableHead className="hidden xl:table-cell">Modo</TableHead>
                             <TableHead>Acciones</TableHead>
                             <TableHead className="text-right">Eliminar</TableHead>
@@ -990,6 +1036,9 @@ function DashboardContent() {
                                     </span>
                                   )}
                                 </div>
+                              </TableCell>
+                              <TableCell className="font-semibold text-primary whitespace-nowrap">
+                                {calcularHorasTrabajadasDashboard(reg)}
                               </TableCell>
                               <TableCell className="hidden xl:table-cell">
                                 {reg.modoTrabajo === "teletrabajo" ? (
