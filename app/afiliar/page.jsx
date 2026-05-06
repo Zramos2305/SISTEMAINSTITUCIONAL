@@ -402,7 +402,7 @@ export default function AfiliarPage() {
                   className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
                   style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
                 />
-                <div 
+                <div
                   className="absolute top-0 right-0 w-1/3 h-full"
                   style={{ backgroundColor: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
                 />
@@ -419,7 +419,7 @@ export default function AfiliarPage() {
 
               {/* Foto de Perfil */}
               <div className="relative z-10 flex flex-col items-center mt-6">
-                <div 
+                <div
                   className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden"
                   style={{ backgroundColor: "#f1f5f9" }}
                 >
