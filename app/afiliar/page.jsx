@@ -205,12 +205,14 @@ export default function AfiliarPage() {
     if (!carnetRef.current) return;
     try {
       const canvas = await html2canvas(carnetRef.current, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
-        backgroundColor: null,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
       });
       const link = document.createElement("a");
-      link.download = `Carnet_${formData.nombre.replace(/\s+/g, '_')}.png`;
+      link.download = `Carnet_${formData.nombre.replace(/\s+/g, '_') || 'Afiliado'}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
       toast.success("Carnet descargado");
@@ -448,10 +450,9 @@ export default function AfiliarPage() {
                 />
               </div>
 
-              {/* Logo y Header */}
               <div className="relative z-10 pt-8 px-8 flex flex-col items-center">
                 <div className="bg-white p-2 rounded-full shadow-lg mb-3">
-                  <Image src="/logo.png" alt="Logo" width={60} height={60} className="rounded-full" />
+                  <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", borderRadius: "9999px" }} />
                 </div>
                 <h2 className="text-white font-black text-2xl tracking-tighter leading-none">ISLA CASCAJAL</h2>
                 <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-1">Fundación</p>
@@ -464,7 +465,7 @@ export default function AfiliarPage() {
                   style={{ backgroundColor: "#f1f5f9" }}
                 >
                   {fotoPreview ? (
-                    <Image src={fotoPreview} alt="Foto" fill className="object-cover" />
+                    <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ color: "#94a3b8" }}>
                       <User size={80} />
@@ -519,7 +520,7 @@ export default function AfiliarPage() {
 
                 <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul }}>
                   {qrDataUrl && (
-                    <Image src={qrDataUrl} alt="QR" width={70} height={70} />
+                    <img src={qrDataUrl} alt="QR" style={{ width: "70px", height: "70px" }} />
                   )}
                 </div>
               </div>
