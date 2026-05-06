@@ -141,8 +141,8 @@ export default function AfiliarPage() {
       // Calcular fecha de expiración
       const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
       let fExpiracion = new Date(fIngreso);
-      if (formData.duracion === "1_mes") {
-        fExpiracion.setMonth(fExpiracion.getMonth() + 1);
+      if (formData.duracion === "6_meses") {
+        fExpiracion.setMonth(fExpiracion.getMonth() + 6);
       } else {
         fExpiracion.setFullYear(fExpiracion.getFullYear() + 1);
       }
@@ -376,7 +376,7 @@ export default function AfiliarPage() {
                     <SelectValue placeholder="Seleccione duración" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1_mes">1 Mes</SelectItem>
+                    <SelectItem value="6_meses">6 Meses</SelectItem>
                     <SelectItem value="1_ano">1 Año</SelectItem>
                   </SelectContent>
                 </Select>
