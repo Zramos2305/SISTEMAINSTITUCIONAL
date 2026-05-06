@@ -451,12 +451,12 @@ export default function GenerarPage() {
 
                 {formData.tipo === "certificado" && (
                   <Field>
-                    <FieldLabel htmlFor="evento">Nombre del evento</FieldLabel>
+                    <FieldLabel htmlFor="evento">Asunto</FieldLabel>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="evento"
-                        placeholder="Ej: Diplomado en Gestión Comunitaria"
+                        placeholder="Ingrese el asunto del certificado"
                         value={formData.evento}
                         onChange={(e) => handleInputChange("evento", e.target.value)}
                         className="pl-10"
@@ -468,13 +468,13 @@ export default function GenerarPage() {
                 {(formData.tipo === "certificado" || formData.tipo === "documento") && (
                   <Field>
                     <FieldLabel htmlFor="descripcion">
-                      {formData.tipo === "documento" ? "Descripción" : "Descripción (Opcional)"}
+                      {formData.tipo === "documento" ? "Descripción" : "Descripción del asunto (Opcional)"}
                     </FieldLabel>
                     <div className="relative">
                       <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="descripcion"
-                        placeholder="Breve descripción del documento"
+                        placeholder={formData.tipo === "certificado" ? "Detalle adicional del asunto" : "Breve descripción del documento"}
                         value={formData.descripcion}
                         onChange={(e) => handleInputChange("descripcion", e.target.value)}
                         className="pl-10"
