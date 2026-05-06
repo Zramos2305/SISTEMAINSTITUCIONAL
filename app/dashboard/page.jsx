@@ -62,7 +62,6 @@ import {
   QrCode,
   User,
   FileText,
-  FileCheck,
   ToggleLeft,
   ToggleRight,
   Info,
@@ -605,16 +604,10 @@ function DashboardContent() {
               <span className="hidden sm:inline">Documentos</span>
             </TabsTrigger>
             {esSuperAdmin && (
-              <>
-                <TabsTrigger value="verificacion" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <FileCheck className="h-4 w-4" />
-                  <span className="hidden sm:inline">Verificación</span>
-                </TabsTrigger>
-                <TabsTrigger value="afiliados" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Afiliados</span>
-                </TabsTrigger>
-              </>
+              <TabsTrigger value="auditoria" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <ListChecks className="h-4 w-4" />
+                <span className="hidden sm:inline">Auditoría</span>
+              </TabsTrigger>
             )}
             {(esSuperAdmin || esRRHH) && (
               <TabsTrigger value="asistencia" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -1110,12 +1103,11 @@ function DashboardContent() {
             </TabsContent>
           )}
 
-          {/* ══════════════════ PESTAÑA: AUDITORÍA ══════════════════ */}
-          {esSuperAdmin && (
-            <TabsContent value="verificacion">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div>
+            {esSuperAdmin && (
+              <TabsContent value="auditoria">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <History className="h-5 w-5 text-primary" /> Historial de Auditoría
                     </CardTitle>
