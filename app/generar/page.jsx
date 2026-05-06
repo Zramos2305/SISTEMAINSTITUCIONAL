@@ -74,7 +74,7 @@ export default function GenerarPage() {
 
   const isFormValid = () => {
     if (!formData.nombre || !formData.cedula || !formData.tipo || !formData.fecha || !formData.oficina || !formData.dependencia) return false;
-    if (formData.tipo === "certificado" && !formData.evento) return false;
+    if (formData.tipo === "certificado" && (!formData.evento || !formData.descripcion)) return false;
     if (formData.tipo === "afiliado" && !formData.duracion) return false;
     if (formData.tipo === "documento" && !formData.descripcion) return false;
     return true;
@@ -468,7 +468,7 @@ export default function GenerarPage() {
                 {(formData.tipo === "certificado" || formData.tipo === "documento") && (
                   <Field>
                     <FieldLabel htmlFor="descripcion">
-                      {formData.tipo === "documento" ? "Descripción" : "Descripción del asunto (Opcional)"}
+                      {formData.tipo === "documento" ? "Descripción" : "Descripción del asunto"}
                     </FieldLabel>
                     <div className="relative">
                       <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
