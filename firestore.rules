@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* =========================
+       FUNCIONES SEGURAS
+    ==========================*/
+
+    function isLogged() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases//documents/usuarios/);
+    }
+
+    function userExists() {
+      return isLogged() && exists(/databases//documents/usuarios/);
+    }
+
+    function userData() {
+      return userDoc().data;
+    }
+
+    function isActiveUser() {
+      return userExists() && userData().activo == true;
+    }
+
+    function isSuperAdmin() {
+      return isActiveUser() && userData().rol == "superadmin";
+    }
+
+    function isRRHHOrSuperAdmin() {
+      return isActiveUser() &&
+        (userData().rol == "recursos_humanos" || userData().rol == "superadmin");
+    }
+
+    function employeeDoc(empId) {
+      return get(/databases//documents/empleados/);
+    }
+
+    function employeeExists(empId) {
+      return exists(/databases//documents/empleados/);
+    }
+
+    function isOwnerEmployee(empId) {
+      return isLogged()
+        && employeeExists(empId)
+        && employeeDoc(empId).data.uidAuth == request.auth.uid;
+    }
+
+    /* =========================
+       USUARIOS
+    ==========================*/
+
+    match /usuarios/{userId} {
+      allow read: if isRRHHOrSuperAdmin() || request.auth.uid == userId;
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* =========================
+       EMPLEADOS
+    ==========================*/
+
+    match /empleados/{empId} {
+      allow read: if isRRHHOrSuperAdmin() || isOwnerEmployee(empId);
+      allow create: if isRRHHOrSuperAdmin();
+      allow update: if isRRHHOrSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* =========================
+       ASISTENCIAS
+    ==========================*/
+    match /asistencias/{asistenciaId} {
+      allow read: if isRRHHOrSuperAdmin() ||
+        (isLogged() && userExists() && (
+           resource == null || resource.data.empleadoId == userData().empleadoId
+        ));
+      allow create: if isLogged()
+        && request.resource.data.empleadoId is string
+        && userExists()
+        && request.resource.data.empleadoId == userData().empleadoId;
+      allow update: if isLogged() &&
+        resource.data.empleadoId == userData().empleadoId;
+      allow delete: if isSuperAdmin();
+    }
+       /* =========================
+       AFILIADOS
+    ==========================*/
+    match /afiliados/{afiliadoId} {
+      // Permitir lectura pública para que el QR de verificación funcione sin login
+      allow read: if true;
+      
+      // Solo Superadmins pueden crear o editar afiliados
+      allow create, update: if isSuperAdmin();
+      
+      // Solo el Superadmin puede eliminar registros de afiliados
+      allow delete: if isSuperAdmin();
+    }
+
+    /* =========================
+       DOCUMENTOS QR
+    ==========================*/
+
+    match /documentos/{docId} {
+      allow read: if true;
+      allow create: if isRRHHOrSuperAdmin();
+      allow update: if isRRHHOrSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* =========================
+       AUDITORÍA (NUEVO)
+    ==========================*/
+
+    match /auditoria/{logId} {
+      // Solo el Superadmin puede ver el historial de auditoría
+      allow read: if isSuperAdmin();
+      
+      // RRHH y Superadmin pueden crear registros
+      allow create: if isRRHHOrSuperAdmin();
+      
+      // Los registros de auditoría nunca deben ser editados ni borrados
+      allow update, delete: if false;
+    }
+  }
+}
+
