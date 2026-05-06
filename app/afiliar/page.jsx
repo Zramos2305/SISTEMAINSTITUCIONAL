@@ -248,17 +248,16 @@ export default function AfiliarPage() {
             visibility: visible;
           }
           #carnet-a-imprimir {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%) scale(1.2);
-            margin: 0;
-            padding: 0;
-            border: none;
-            box-shadow: none;
+            position: absolute !important;
+            left: 50% !important;
+            top: 2cm !important;
+            transform: translateX(-50%) !important;
+            box-shadow: none !important;
+            border: none !important;
           }
-          header, .no-print, button, .container > div:first-child {
-            display: none !important;
+          @page {
+            size: portrait;
+            margin: 1cm;
           }
         }
       `}</style>
