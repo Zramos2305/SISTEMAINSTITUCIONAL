@@ -41,11 +41,25 @@ function VerificarContent() {
 
     const verificar = async () => {
       try {
+        // 1. Primero buscar en la colección 'documentos'
         const docRef = doc(db, "documentos", codigo);
         const docSnap = await getDoc(docRef);
 
+        let docData = null;
+
         if (docSnap.exists()) {
-          const docData = { codigo: docSnap.id, ...docSnap.data() };
+          docData = { codigo: docSnap.id, ...docSnap.data() };
+        } else {
+          // 2. Si no está en 'documentos', buscar en 'afiliados'
+          const afiliadoRef = doc(db, "afiliados", codigo);
+          const afiliadoSnap = await getDoc(afiliadoRef);
+
+          if (afiliadoSnap.exists()) {
+            docData = { codigo: afiliadoSnap.id, tipo: "afiliado", ...afiliadoSnap.data() };
+          }
+        }
+
+        if (docData) {
           setDocumento(docData);
           // "activo" → válido, cualquier otra cosa → inactivo
           if (docData.estado === "inactivo") {
