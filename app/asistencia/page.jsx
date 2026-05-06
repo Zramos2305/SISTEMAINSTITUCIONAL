@@ -386,13 +386,13 @@ function AsistenciaContent() {
       }
 
       // Registrar en Auditoría el movimiento del usuario
-      await registrarAuditoria({
+      /*await registrarAuditoria({
         user,
         userData: userData || empleadoData,
         accion: `Registro: ${accion.label}`,
         documentoId: `${hoy}_${empleadoId}`,
         detalles: `Registro de ${accion.label} (Modo: ${modalidadPermitida}) validado por servidor.`
-      });
+      });*/
 
       await cargarRegistro();
       toast.success(`✅ ${accion.label} registrado correctamente`);
