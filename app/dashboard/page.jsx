@@ -1205,28 +1205,6 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-info/20 bg-info/5 mt-6">
-                  <CardContent className="pt-6 pb-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-foreground flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-info" />
-                          Generación de Documentos
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Emitir certificados, afiliaciones y documentos institucionales con código QR verificable.
-                        </p>
-                      </div>
-                      <Button asChild size="lg" variant="outline" className="shrink-0 border-info text-info hover:bg-info/10">
-                        <Link href="/generar">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Emitir Documentos
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 <PersonalReadOnlyList />
               </div>
             </TabsContent>
