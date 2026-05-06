@@ -706,6 +706,7 @@ function AsistenciaContent() {
                         ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} después)</span>
                         : null
                   },
+                  { label: "Tiempo Laborado", val: horasTrabajadas },
                   { label: "IP Registro", val: registroHoy.ipPublica || "No reg." },
                   { label: "Red Inst.", val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
                 ].map((item) => (
