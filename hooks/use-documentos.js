@@ -9,34 +9,54 @@ export function useDocumentos() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "documentos"), orderBy("fecha", "desc"));
+    const qDocs = query(collection(db, "documentos"), orderBy("fecha", "desc"));
+    const qAfiliados = query(collection(db, "afiliados"), orderBy("fechaIngreso", "desc"));
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const docs = snapshot.docs.map((doc) => ({
-          codigo: doc.id,
-          ...doc.data(),
-        }));
-        setDocumentos(docs);
-        setIsLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching documentos:", error);
-        setIsLoading(false);
-      }
-    );
+    let dataDocs = [];
+    let dataAfiliados = [];
 
-    return () => unsubscribe();
+    const mergeAndSort = () => {
+      const combined = [...dataDocs, ...dataAfiliados];
+      combined.sort((a, b) => {
+        const dateA = new Date(a.fecha || a.fechaIngreso || 0);
+        const dateB = new Date(b.fecha || b.fechaIngreso || 0);
+        return dateB - dateA;
+      });
+      setDocumentos(combined);
+      setIsLoading(false);
+    };
+
+    const unsubDocs = onSnapshot(qDocs, (snapshot) => {
+      dataDocs = snapshot.docs.map((doc) => ({
+        codigo: doc.id,
+        ...doc.data(),
+        _collection: "documentos"
+      }));
+      mergeAndSort();
+    }, () => setIsLoading(false));
+
+    const unsubAfiliados = onSnapshot(qAfiliados, (snapshot) => {
+      dataAfiliados = snapshot.docs.map((doc) => ({
+        codigo: doc.id,
+        ...doc.data(),
+        tipo: "afiliado",
+        _collection: "afiliados"
+      }));
+      mergeAndSort();
+    }, () => setIsLoading(false));
+
+    return () => {
+      unsubDocs();
+      unsubAfiliados();
+    };
   }, []);
 
-  const eliminarDocumento = async (codigo) => {
-    await deleteDoc(doc(db, "documentos", codigo));
+  const eliminarDocumento = async (codigo, collectionName = "documentos") => {
+    await deleteDoc(doc(db, collectionName, codigo));
   };
 
-  // nuevoEstado: "activo" | "inactivo"
-  const actualizarEstado = async (codigo, nuevoEstado, extraData = {}) => {
-    await updateDoc(doc(db, "documentos", codigo), {
+  const actualizarEstado = async (codigo, nuevoEstado, extraData = {}, collectionName = "documentos") => {
+    await updateDoc(doc(db, collectionName, codigo), {
       estado: nuevoEstado,
       ...extraData,
     });

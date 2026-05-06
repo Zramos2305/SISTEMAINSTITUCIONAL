@@ -388,17 +388,20 @@ function DashboardContent() {
   // Elimina un documento seleccionado y resetea la variable de "codigoAEliminar"
   const handleEliminar = async () => {
     if (!codigoAEliminar) return;
+    const docEncontrado = documentos.find(d => d.codigo === codigoAEliminar);
+    const colName = docEncontrado?._collection || "documentos";
+
     try {
-      await eliminarDocumento(codigoAEliminar);
+      await eliminarDocumento(codigoAEliminar, colName);
       await registrarAuditoria({
         user,
         userData,
-        accion: "Eliminar Documento",
+        accion: "Eliminar Registro",
         documentoId: codigoAEliminar,
-        detalles: `Eliminación permanente del registro ${codigoAEliminar}`
+        detalles: `Eliminación permanente del registro ${codigoAEliminar} de la colección ${colName}`
       });
-      toast.success("Documento eliminado");
-      cargarAuditoria(); // Recargar logs inmediatamente
+      toast.success("Eliminado correctamente");
+      cargarAuditoria(); 
     } catch {
       toast.error("Error al eliminar");
     } finally {
@@ -408,19 +411,22 @@ function DashboardContent() {
 
   // Reactivar directamente (sin confirmación). Desactivar requiere confirmación.
   const handleToggleEstado = async (codigo, estadoActual) => {
-    if (estadoActual === "activo") return; // desactivar va por confirmación
+    if (estadoActual === "activo") return;
+    const docEncontrado = documentos.find(d => d.codigo === codigo);
+    const colName = docEncontrado?._collection || "documentos";
+
     setUpdatingStatus(codigo);
     try {
-      await actualizarEstado(codigo, "activo", { desactivadoManualmente: null, fechaDesactivacion: null });
+      await actualizarEstado(codigo, "activo", { desactivadoManualmente: null, fechaDesactivacion: null }, colName);
       await registrarAuditoria({
         user,
         userData,
-        accion: "Activar Afiliado",
+        accion: "Activar Registro",
         documentoId: codigo,
-        detalles: "Re-activación manual de afiliado inactivo"
+        detalles: `Re-activación manual de registro inactivo en ${colName}`
       });
-      toast.success("Afiliado activado");
-      cargarAuditoria(); // Recargar logs
+      toast.success("Activado correctamente");
+      cargarAuditoria();
     } catch {
       toast.error("Error al cambiar estado");
     } finally {
@@ -431,21 +437,22 @@ function DashboardContent() {
   // Confirmar inactivación manual: guarda metadatos adicionales en Firestore
   const handleConfirmarInactivar = async () => {
     if (!confirmarInactivacion) return;
+    const colName = confirmarInactivacion._collection || "documentos";
     setUpdatingStatus(confirmarInactivacion.codigo);
     try {
       await actualizarEstado(confirmarInactivacion.codigo, "inactivo", {
         desactivadoManualmente: true,
         fechaDesactivacion: new Date().toISOString(),
-      });
+      }, colName);
       await registrarAuditoria({
         user,
         userData,
-        accion: "Inactivar Afiliado",
+        accion: "Inactivar Registro",
         documentoId: confirmarInactivacion.codigo,
-        detalles: "Desactivación manual por el administrador"
+        detalles: `Desactivación manual por el administrador en ${colName}`
       });
-      toast.success("Afiliado desactivado manualmente");
-      cargarAuditoria(); // Recargar logs
+      toast.success("Desactivado manualmente");
+      cargarAuditoria();
     } catch {
       toast.error("Error al desactivar");
     } finally {
@@ -804,7 +811,7 @@ function DashboardContent() {
                           </TableCell>
 
                           <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
-                            {formatearFecha(doc.fecha)}
+                            {formatearFecha(doc.fecha || doc.fechaIngreso)}
                           </TableCell>
 
                           <TableCell className="text-right">
@@ -1279,14 +1286,55 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* NUIP */}
-              <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
-                <IdCard className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-semibold">NUIP</p>
-                  <p className="font-medium text-sm font-mono">{infoDoc.cedula || "-"}</p>
+              {/* NUIP y Datos de Afiliado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                  <IdCard className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">NUIP</p>
+                    <p className="font-medium text-sm font-mono">{infoDoc.cedula || "-"}</p>
+                  </div>
                 </div>
+                {infoDoc.tipo === "afiliado" && (
+                  <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                    <Droplets className="h-5 w-5 text-destructive shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-semibold">RH</p>
+                      <p className="font-medium text-sm uppercase">{infoDoc.rh || "-"}</p>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Datos de contacto para afiliados */}
+              {infoDoc.tipo === "afiliado" && (
+                <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Contacto y Ubicación</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Teléfono</p>
+                        <p className="text-sm font-medium">{infoDoc.telefono || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Correo</p>
+                        <p className="text-sm font-medium truncate max-w-[150px]">{infoDoc.correo || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1 border-t">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Dirección</p>
+                      <p className="text-sm font-medium">{infoDoc.direccion || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Emisión (Oficina y Dependencia) */}
               {(infoDoc.oficina || infoDoc.dependencia) && (
