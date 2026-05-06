@@ -215,6 +215,16 @@ export default function AfiliarPage() {
           logging: true,
           width: 380,
           height: 580,
+          onclone: (clonedDoc) => {
+            // Eliminar cualquier rastro de oklch que pueda estar en los estilos computados
+            const elements = clonedDoc.getElementsByTagName("*");
+            for (let i = 0; i < elements.length; i++) {
+              const style = elements[i].style;
+              if (style.color && style.color.includes("oklch")) style.color = "#000000";
+              if (style.backgroundColor && style.backgroundColor.includes("oklch")) style.backgroundColor = "#ffffff";
+              if (style.borderColor && style.borderColor.includes("oklch")) style.borderColor = "#000000";
+            }
+          }
         });
 
         const imgData = canvas.toDataURL("image/png");
