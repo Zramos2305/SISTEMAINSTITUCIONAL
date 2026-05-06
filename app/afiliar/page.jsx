@@ -205,7 +205,7 @@ export default function AfiliarPage() {
   const descargarCarnet = async () => {
     if (!carnetRef.current) return;
     setIsDownloading(true);
-    
+
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(carnetRef.current, {
@@ -216,7 +216,7 @@ export default function AfiliarPage() {
           width: 380,
           height: 580,
         });
-        
+
         const imgData = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, '_') || 'Afiliado'}.png`;
@@ -447,8 +447,8 @@ export default function AfiliarPage() {
             <div
               ref={carnetRef}
               className="relative w-[380px] h-[580px] rounded-[2rem] overflow-hidden mx-auto"
-              style={{ 
-                fontFamily: 'sans-serif', 
+              style={{
+                fontFamily: 'sans-serif',
                 backgroundColor: '#ffffff',
                 border: '1px solid #e2e8f0',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
@@ -485,7 +485,7 @@ export default function AfiliarPage() {
                   ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
                       <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                       </svg>
                     </div>
                   )}
