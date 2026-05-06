@@ -230,37 +230,11 @@ export default function AfiliarPage() {
     }
   };
 
-  const imprimirPDF = () => {
-    window.print();
-  };
-
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>;
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 pb-10">
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #carnet-a-imprimir, #carnet-a-imprimir * {
-            visibility: visible;
-          }
-          #carnet-a-imprimir {
-            position: absolute !important;
-            left: 50% !important;
-            top: 2cm !important;
-            transform: translateX(-50%) !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-          @page {
-            size: portrait;
-            margin: 1cm;
-          }
-        }
-      `}</style>
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
@@ -449,15 +423,6 @@ export default function AfiliarPage() {
                 >
                   {isSaving ? <Spinner className="mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
                   GUARDAR AFILIACIÓN
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 px-4 border-2"
-                  onClick={imprimirPDF}
-                  title="Imprimir o Guardar como PDF"
-                >
-                  <QrCode className="h-5 w-5" />
-                  <span className="ml-2 hidden sm:inline">PDF</span>
                 </Button>
                 <Button
                   variant="outline"
