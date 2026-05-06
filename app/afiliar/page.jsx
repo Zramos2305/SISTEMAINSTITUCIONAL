@@ -205,40 +205,42 @@ export default function AfiliarPage() {
 
   const descargarCarnet = async () => {
     if (!exportRef.current) return;
-
     setIsDownloading(true);
 
+    // APAGÓN TEMPORAL DE ESTILOS GLOBALES (Para evitar oklch)
+    const styleElements = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+    styleElements.forEach(el => {
+      if (el instanceof HTMLStyleElement || el instanceof HTMLLinkElement) {
+        el.disabled = true;
+      }
+    });
+
     try {
+      // Capturamos el contenedor que tiene sus propios estilos INLINE HEX
       const canvas = await html2canvas(exportRef.current, {
         scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          // ELIMINAR TODOS LOS ESTILOS GLOBALES QUE USAN OKLCH
-          const styleTags = clonedDoc.getElementsByTagName("style");
-          for (let i = styleTags.length - 1; i >= 0; i--) styleTags[i].remove();
-          
-          const linkTags = clonedDoc.getElementsByTagName("link");
-          for (let i = linkTags.length - 1; i >= 0; i--) {
-            if (linkTags[i].rel === "stylesheet") linkTags[i].remove();
-          }
-        }
       });
 
       const imgData = canvas.toDataURL("image/png");
-
       const link = document.createElement("a");
       link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, "_") || "Afiliado"}.png`;
       link.href = imgData;
       link.click();
-
       toast.success("Carnet descargado correctamente");
     } catch (err) {
-      console.error(err);
-      toast.error("No se pudo generar el carnet");
+      console.error("Error crítico carnet:", err);
+      toast.error("No se pudo generar el carnet. Intente nuevamente.");
     } finally {
+      // RESTAURAR ESTILOS
+      styleElements.forEach(el => {
+        if (el instanceof HTMLStyleElement || el instanceof HTMLLinkElement) {
+          el.disabled = false;
+        }
+      });
       setIsDownloading(false);
     }
   };
