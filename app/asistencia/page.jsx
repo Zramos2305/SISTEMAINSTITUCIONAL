@@ -355,6 +355,7 @@ function AsistenciaContent() {
 
       const snap = await getDoc(ref);
       const base = {
+        usuarioId: user.uid,
         [accion.campo]: serverTimestamp(),
         [`${accion.id}DiferenciaMinutos`]: minutosDiferencia,
         estadoActual: accion.estadoResultante,
@@ -372,6 +373,7 @@ function AsistenciaContent() {
       if (!snap.exists()) {
         await setDoc(ref, {
           fecha: hoy,
+          usuarioId: user.uid, // 🔥 IMPORTANTE
           empleadoId,
           nombre: empleadoData?.nombre || userData?.nombre || user?.email,
           cargo: empleadoData?.cargo || "",
