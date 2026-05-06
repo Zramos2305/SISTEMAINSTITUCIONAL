@@ -11,11 +11,11 @@ service cloud.firestore {
     }
 
     function userDoc() {
-      return get(/databases//documents/usuarios/);
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid));
     }
 
     function userExists() {
-      return isLogged() && exists(/databases//documents/usuarios/);
+      return isLogged() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
     }
 
     function userData() {
@@ -35,16 +35,18 @@ service cloud.firestore {
         (userData().rol == "recursos_humanos" || userData().rol == "superadmin");
     }
 
-    function isOwnerEmployee() {
-      return isLogged() && resource.data.uidAuth == request.auth.uid;
-    }
+    // NUEVO: Verificación sin usar get() para evitar loops
+   function isOwnerEmployee(empId) {
+  return isLogged() &&
+    get(/databases/$(database)/documents/empleados/$(empId)).data.uidAuth == request.auth.uid;
+}
 
     /* =========================
        USUARIOS
     ==========================*/
 
     match /usuarios/{userId} {
-      // IMPORTANTE: Primero comprobar si es el propio usuario para evitar loops infinitos
+      // CORRECCIÓN: Se evalúa primero request.auth.uid == userId para evitar el bucle infinito
       allow read: if request.auth.uid == userId || isRRHHOrSuperAdmin();
       allow create: if isSuperAdmin();
       allow update: if isSuperAdmin();
@@ -55,22 +57,27 @@ service cloud.firestore {
        EMPLEADOS
     ==========================*/
 
-    match /empleados/{empId} {
-      allow read: if isOwnerEmployee() || isRRHHOrSuperAdmin();
-      allow create: if isRRHHOrSuperAdmin();
-      allow update: if isOwnerEmployee() || isRRHHOrSuperAdmin();
-      allow delete: if isSuperAdmin();
-    }
+   match /empleados/{empId} {
+  allow read: if isOwnerEmployee(empId) || isRRHHOrSuperAdmin();
+  allow create: if isRRHHOrSuperAdmin();
+  allow update: if isOwnerEmployee(empId) || isRRHHOrSuperAdmin();
+  allow delete: if isSuperAdmin();
+}
 
-    /* =========================
-       ASISTENCIAS
-    ==========================*/
     match /asistencias/{asistenciaId} {
-      allow read: if (isLogged() && resource != null && resource.data.usuarioId == request.auth.uid) || isRRHHOrSuperAdmin();
-      allow create: if isLogged() && request.resource.data.usuarioId == request.auth.uid;
-      allow update: if isLogged() && resource.data.usuarioId == request.auth.uid;
-      allow delete: if isSuperAdmin();
-    }
+
+  allow read: if isLogged() &&
+    resource.data.usuarioId == request.auth.uid
+    || isRRHHOrSuperAdmin();
+
+  allow create: if isLogged() &&
+    request.resource.data.usuarioId == request.auth.uid;
+
+  allow update: if isLogged() &&
+    resource.data.usuarioId == request.auth.uid;
+
+  allow delete: if isSuperAdmin();
+}
     
     /* =========================
        AFILIADOS
@@ -93,7 +100,7 @@ service cloud.firestore {
     }
 
     /* =========================
-       AUDITOR�A
+       AUDITORÍA
     ==========================*/
 
     match /auditoria/{logId} {
@@ -103,4 +110,3 @@ service cloud.firestore {
     }
   }
 }
-
