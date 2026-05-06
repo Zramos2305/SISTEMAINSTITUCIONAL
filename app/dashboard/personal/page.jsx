@@ -76,6 +76,7 @@ const MODALIDAD_CONFIG = {
 
 function PersonalContent() {
   const { user, userData, logout } = useAuth();
+  const esSuperAdmin = userData?.rol === "superadmin";
   
   const [usuarios, setUsuarios] = useState([]);
   const { empleados, isLoading: cargandoEmpleados, recargar: recargarEmpleados, actualizarModalidad } = useEmpleados();
@@ -340,7 +341,7 @@ function PersonalContent() {
                           <div className="flex flex-col gap-1 items-start">
                             <Badge variant="outline" className={
                               u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                              u.rol === 'admin' ? 'bg-primary/10 text-primary border-primary/20' :
+                              u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
                               'bg-muted'
                             }>
                               {u.rol}
@@ -472,14 +473,15 @@ function PersonalContent() {
                 <Select 
                   value={formData.rol} 
                   onValueChange={v => setFormData({...formData, rol: v})}
+                  disabled={!esSuperAdmin}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="empleado">Empleado</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="superadmin">Superadmin</SelectItem>
+                    {esSuperAdmin && <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>}
+                    {esSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -648,7 +650,7 @@ function PersonalContent() {
 
 export default function PersonalPage() {
   return (
-    <ProtectedRoute allowedRoles={["superadmin"]}>
+    <ProtectedRoute allowedRoles={["superadmin", "recursos_humanos"]}>
       <PersonalContent />
     </ProtectedRoute>
   );

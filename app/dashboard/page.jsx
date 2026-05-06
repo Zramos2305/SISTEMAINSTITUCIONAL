@@ -304,6 +304,8 @@ function DashboardContent() {
   const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
 
   const esSuperAdmin = userData?.rol === "superadmin";
+  const esRRHH = userData?.rol === "recursos_humanos";
+  const puedeVerAsistenciasYPersonal = esSuperAdmin || esRRHH;
 
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -595,28 +597,40 @@ function DashboardContent() {
       <main className="container mx-auto px-4 py-6">
 
         <Tabs defaultValue="documentos">
-          {/* Pestañas — Lógica por Rol */}
-          <TabsList className="mb-6 flex flex-wrap h-auto">
-            <TabsTrigger value="documentos" className="gap-2">
+          {/* Pestañas de Navegación */}
+          <TabsList className="grid w-full grid-cols-2 md:flex md:w-auto overflow-x-auto overflow-y-hidden mb-6 h-auto p-1 bg-card border shadow-sm">
+            <TabsTrigger value="documentos" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
-              Documentos
+              <span className="hidden sm:inline">Documentos</span>
             </TabsTrigger>
             {esSuperAdmin && (
-              <TabsTrigger value="asistencia" className="gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Asistencia
+              <>
+                <TabsTrigger value="verificacion" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <FileCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Verificación</span>
+                </TabsTrigger>
+                <TabsTrigger value="afiliados" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Afiliados</span>
+                </TabsTrigger>
+              </>
+            )}
+            {(esSuperAdmin || esRRHH) && (
+              <TabsTrigger value="asistencia" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Asistencia</span>
+              </TabsTrigger>
+            )}
+            {(esSuperAdmin || esRRHH) && (
+              <TabsTrigger value="personal" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Personal</span>
               </TabsTrigger>
             )}
             {esSuperAdmin && (
-              <TabsTrigger value="personal" className="gap-2">
-                <Users className="h-4 w-4" />
-                Personal
-              </TabsTrigger>
-            )}
-            {esSuperAdmin && (
-              <TabsTrigger value="auditoria" className="gap-2">
-                <History className="h-4 w-4" />
-                Auditoría
+              <TabsTrigger value="auditoria" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <ListChecks className="h-4 w-4" />
+                <span className="hidden sm:inline">Auditoría</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -746,7 +760,7 @@ function DashboardContent() {
                 <Button asChild>
                   <Link href="/generar">
                     <Plus className="h-4 w-4 mr-2" />
-                    Generar
+                    Emitir Documentos
                   </Link>
                 </Button>
               </div>
@@ -906,8 +920,8 @@ function DashboardContent() {
 
           </TabsContent>
 
-          {/* ══════════════════ PESTAÑA: ASISTENCIA (solo superadmin) ══════════════════ */}
-          {esSuperAdmin && (
+          {/* ══════════════════ PESTAÑA: ASISTENCIA ══════════════════ */}
+          {(esSuperAdmin || esRRHH) && (
             <TabsContent value="asistencia">
 
               {/* stats rápidos */}
@@ -1097,7 +1111,7 @@ function DashboardContent() {
 
           {/* ══════════════════ PESTAÑA: AUDITORÍA ══════════════════ */}
           {esSuperAdmin && (
-            <TabsContent value="auditoria">
+            <TabsContent value="verificacion">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
@@ -1156,7 +1170,7 @@ function DashboardContent() {
           )}
 
           {/* ══════════════════ PESTAÑA: GESTIÓN DE PERSONAL ══════════════════ */}
-          {esSuperAdmin && (
+          {puedeVerAsistenciasYPersonal && (
             <TabsContent value="personal">
               <div className="space-y-6">
                 <div>
@@ -1185,6 +1199,28 @@ function DashboardContent() {
                         <Link href="/dashboard/personal">
                           <Users className="h-4 w-4 mr-2" />
                           Administrar Personal
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-info/20 bg-info/5 mt-6">
+                  <CardContent className="pt-6 pb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-foreground flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-info" />
+                          Generación de Documentos
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Emitir certificados, afiliaciones y documentos institucionales con código QR verificable.
+                        </p>
+                      </div>
+                      <Button asChild size="lg" variant="outline" className="shrink-0 border-info text-info hover:bg-info/10">
+                        <Link href="/generar">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Emitir Documentos
                         </Link>
                       </Button>
                     </div>
@@ -1573,7 +1609,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute allowedRoles={["superadmin", "admin"]}>
+    <ProtectedRoute allowedRoles={["superadmin", "recursos_humanos"]}>
       <DashboardContent />
     </ProtectedRoute>
   );

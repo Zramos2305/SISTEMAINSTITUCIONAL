@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ProtectedRoute from "@/components/protected-route";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -39,7 +40,7 @@ function generarCodigo() {
 }
 
 // Componente de Generar: Se encarga de la captura de datos y subida a Firebase
-export default function GenerarPage() {
+function GenerarContent() {
   const { user, userData, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     nombre: "",
@@ -584,5 +585,13 @@ export default function GenerarPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function GenerarPage() {
+  return (
+    <ProtectedRoute allowedRoles={["superadmin", "recursos_humanos"]}>
+      <GenerarContent />
+    </ProtectedRoute>
   );
 }
