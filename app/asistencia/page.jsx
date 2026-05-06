@@ -78,7 +78,9 @@ function getAcciones(modalidad, registro) {
   if (modalidad === "presencial") {
     return [
       { id: "entrada", label: "Registrar Entrada", icon: LogIn, campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-success hover:bg-success/90 text-success-foreground", show: !r?.horaEntrada, desc: "Marca el inicio de tu jornada presencial" },
-      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida, desc: "Marca el fin de tu jornada presencial" },
+      { id: "salidaAlmuerzo", label: "Salida Almuerzo", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Marca tu salida para almorzar" },
+      { id: "entradaAlmuerzo", label: "Regreso de Almuerzo", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "trabajando", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Regresa a tu jornada presencial" },
+      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Marca el fin de tu jornada presencial" },
     ].filter((a) => a.show);
   }
   if (modalidad === "teletrabajo") {
@@ -139,17 +141,12 @@ function BadgeConexion({ wifiValido, gpsValido, redValida }) {
 }
 
 function LineaTiempo({ registro, modalidad }) {
-  const pasos = modalidad === "presencial"
-    ? [
-      { label: "Entrada", hora: registro?.horaEntrada, icon: LogIn, ok: !!registro?.horaEntrada },
-      { label: "Salida", hora: registro?.horaSalida, icon: LogOut, ok: !!registro?.horaSalida },
-    ]
-    : [
-      { label: "Inicio TT", hora: registro?.horaEntrada, icon: Monitor, ok: !!registro?.horaEntrada },
-      { label: "Sal. almuerzo", hora: registro?.horaSalidaAlmuerzo, icon: Coffee, ok: !!registro?.horaSalidaAlmuerzo },
-      { label: "Reg. almuerzo", hora: registro?.horaEntradaAlmuerzo, icon: RotateCcw, ok: !!registro?.horaEntradaAlmuerzo },
-      { label: "Salida", hora: registro?.horaSalida, icon: LogOut, ok: !!registro?.horaSalida },
-    ];
+  const pasos = [
+    { label: modalidad === "presencial" ? "Entrada" : "Inicio TT", hora: registro?.horaEntrada, icon: modalidad === "presencial" ? LogIn : Monitor, ok: !!registro?.horaEntrada },
+    { label: "Sal. almuerzo", hora: registro?.horaSalidaAlmuerzo, icon: Coffee, ok: !!registro?.horaSalidaAlmuerzo },
+    { label: "Reg. almuerzo", hora: registro?.horaEntradaAlmuerzo, icon: RotateCcw, ok: !!registro?.horaEntradaAlmuerzo },
+    { label: "Salida", hora: registro?.horaSalida, icon: LogOut, ok: !!registro?.horaSalida },
+  ];
   return (
     <div className="flex items-start justify-between relative">
       <div className="absolute top-4 left-4 right-4 h-0.5 bg-border z-0" />
@@ -184,6 +181,7 @@ function AsistenciaContent() {
   const [redValida, setRedValida] = useState(false);
   const [ipActual, setIpActual] = useState("");
   const [coords, setCoords] = useState(null);
+  const [horasTrabajadas, setHorasTrabajadas] = useState("0h 0m");
 
   const hoy = fechaHoy();
   const diaActual = getDiaActualES();
@@ -194,6 +192,45 @@ function AsistenciaContent() {
   const modalidadPermitida = horarioHoy.modalidad;
   const modalidadCfg = MODALIDAD_DISPLAY[modalidadPermitida] || MODALIDAD_DISPLAY.libre;
   const ModIcon = modalidadCfg.icon;
+
+  // Calcular horas trabajadas dinámicamente
+  useEffect(() => {
+    const calc = () => {
+      if (!registroHoy || !registroHoy.horaEntrada) return;
+      const sec = (ts) => {
+        if (!ts) return 0;
+        if (ts.seconds) return ts.seconds;
+        if (ts.toDate) return Math.floor(ts.toDate().getTime() / 1000);
+        return Math.floor(new Date(ts).getTime() / 1000);
+      };
+      
+      const entrada = sec(registroHoy.horaEntrada);
+      const salidaAlmuerzo = sec(registroHoy.horaSalidaAlmuerzo);
+      const entradaAlmuerzo = sec(registroHoy.horaEntradaAlmuerzo);
+      const salida = registroHoy.horaSalida ? sec(registroHoy.horaSalida) : Math.floor(Date.now() / 1000);
+
+      let totalSegundos = 0;
+
+      if (salidaAlmuerzo) {
+        totalSegundos += (salidaAlmuerzo - entrada);
+        if (entradaAlmuerzo) {
+           totalSegundos += (salida - entradaAlmuerzo);
+        }
+      } else {
+        totalSegundos += (salida - entrada);
+      }
+      
+      if (totalSegundos < 0) totalSegundos = 0;
+      
+      const horas = Math.floor(totalSegundos / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      setHorasTrabajadas(`${horas}h ${minutos}m`);
+    };
+
+    calc();
+    const interval = setInterval(calc, 60000);
+    return () => clearInterval(interval);
+  }, [registroHoy]);
 
   // GPS
   useEffect(() => {
@@ -493,11 +530,20 @@ function AsistenciaContent() {
               <span>Modalidad autorizada hoy: <strong>{modalidadCfg.label}</strong></span>
               <span className="ml-auto text-xs opacity-70 capitalize">{diaActual}</span>
             </div>
-            {/* Estado actual */}
-            <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border ${estadoCfg.color}`}>
-              <span className={`w-2 h-2 rounded-full ${estadoCfg.dot} animate-pulse`} />
-              <EIcon className="h-4 w-4" />
-              <span className="font-medium text-sm">{estadoCfg.label}</span>
+            {/* Estado actual y Horas trabajadas */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border ${estadoCfg.color}`}>
+                <span className={`w-2 h-2 rounded-full ${estadoCfg.dot} animate-pulse`} />
+                <EIcon className="h-4 w-4" />
+                <span className="font-medium text-sm">{estadoCfg.label}</span>
+              </div>
+              
+              {registroHoy?.horaEntrada && (
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border bg-muted/30 text-foreground">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">Tiempo laborado: <strong>{horasTrabajadas}</strong></span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
