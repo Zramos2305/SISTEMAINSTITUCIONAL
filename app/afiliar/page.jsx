@@ -75,6 +75,8 @@ export default function AfiliarPage() {
     cargo: "Afiliado",
     duracion: "1_ano",
     foto: null, // base64 o blob url
+    oficina: "",
+    dependencia: "",
   });
 
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -104,7 +106,13 @@ export default function AfiliarPage() {
   }, [formData.codigo]);
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      if (field === "oficina") {
+        newData.dependencia = "";
+      }
+      return newData;
+    });
   };
 
   const handleFotoChange = (e) => {
@@ -124,8 +132,8 @@ export default function AfiliarPage() {
   };
 
   const handleGuardar = async () => {
-    if (!formData.nombre || !formData.cedula || !formData.rh || !formData.telefono) {
-      toast.error("Por favor completa los campos obligatorios");
+    if (!formData.nombre || !formData.cedula || !formData.rh || !formData.telefono || !formData.oficina || !formData.dependencia) {
+      toast.error("Por favor completa los campos obligatorios (incluye oficina y dependencia)");
       return;
     }
 
@@ -155,6 +163,7 @@ export default function AfiliarPage() {
         ...formData,
         fechaExpiracion: isoExpiracion,
         fechaInicioPeriodo: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
+        fecha: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
         periodos: [
           {
             inicio: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
@@ -192,6 +201,8 @@ export default function AfiliarPage() {
         cargo: "Afiliado",
         duracion: "1_ano",
         foto: null,
+        oficina: "",
+        dependencia: "",
       });
       setFotoPreview(null);
 
@@ -388,6 +399,84 @@ export default function AfiliarPage() {
                   <SelectContent>
                     <SelectItem value="6_meses">6 Meses</SelectItem>
                     <SelectItem value="1_ano">1 Año</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel>Oficina que emite</FieldLabel>
+                <Select
+                  value={formData.oficina}
+                  onValueChange={(value) => handleInputChange("oficina", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione la oficina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sede Principal">Sede Principal</SelectItem>
+                    <SelectItem value="Subdirección Regional Pacífico Norte">Subdirección Regional Pacífico Norte</SelectItem>
+                    <SelectItem value="Subdirección Regional Pacífico Sur">Subdirección Regional Pacífico Sur</SelectItem>
+                    <SelectItem value="Subdirección Regional Eje Cafetero">Subdirección Regional Eje Cafetero</SelectItem>
+                    <SelectItem value="Subdirección Regional Sur Central">Subdirección Regional Sur Central</SelectItem>
+                    <SelectItem value="Subdirección Regional Nor Caribe">Subdirección Regional Nor Caribe</SelectItem>
+                    <SelectItem value="Subdirección Regional Sur Caribe">Subdirección Regional Sur Caribe</SelectItem>
+                    <SelectItem value="Subdirección Regional Nor Oriente">Subdirección Regional Nor Oriente</SelectItem>
+                    <SelectItem value="Subdirección Regional Sur Oriente">Subdirección Regional Sur Oriente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel>Dependencia que emite</FieldLabel>
+                <Select
+                  value={formData.dependencia}
+                  onValueChange={(value) => handleInputChange("dependencia", value)}
+                  disabled={!formData.oficina}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione la dependencia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.oficina === "Sede Principal" ? (
+                      <>
+                        <SelectItem value="Representante Legal">Representante Legal</SelectItem>
+                        <SelectItem value="Dirección ejecutiva">Dirección Ejecutiva</SelectItem>
+                        <SelectItem value="Dirección administrativa">Dirección Administrativa</SelectItem>
+                        <SelectItem value="Revisaría fiscal">Revisaría Fiscal</SelectItem>
+                        <SelectItem value="Secretaría general">Secretaría General</SelectItem>
+                        <SelectItem value="Subdireccion de áreas">Subdireccion de Áreas</SelectItem>
+                        <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de Turismo, las Artes, las Culturas y los Saberes</SelectItem>
+                        <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de Extensión y Cosmovision Etnoeducativa</SelectItem>
+                        <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
+                        <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de Bienestar Social, Inclusión y Equidad</SelectItem>
+                        <SelectItem value="Coordinación jurídica">Coordinación Jurídica</SelectItem>
+                        <SelectItem value="Coordinación comercial">Coordinación Comercial</SelectItem>
+                        <SelectItem value="Coordinación de plantación y calidad">Coordinación de Planeación y Calidad</SelectItem>
+                        <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
+                        <SelectItem value="Coordinación de operaciones financieras">Coordinación de Operaciones Financieras</SelectItem>
+                        <SelectItem value="Coordinación del talento humano">Coordinación del Talento Humano</SelectItem>
+                        <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
+                        <SelectItem value="Área de operaciones logísticas">Área de Operaciones Logísticas</SelectItem>
+                        <SelectItem value="Área de tesorería">Área de Tesorería</SelectItem>
+                        <SelectItem value="Área de contabilidad">Área de Contabilidad</SelectItem>
+                        <SelectItem value="Área de práctica y pasantías">Área de Prácticas y Pasantías</SelectItem>
+                      </>
+                    ) : formData.oficina ? (
+                      <>
+                        <SelectItem value="Dirección Regional">Dirección Regional</SelectItem>
+                        <SelectItem value="Coordinación Jurídica">Coordinación Jurídica</SelectItem>
+                        <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
+                        <SelectItem value="Coordinación de Planeación y Calidad">Coordinación de Planeación y Calidad</SelectItem>
+                        <SelectItem value="Coordinación de Proyectos e Internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
+                        <SelectItem value="Coordinación de Operaciones Financieras">Coordinación de Operaciones Financieras</SelectItem>
+                        <SelectItem value="Coordinación del Talento Humano">Coordinación del Talento Humano</SelectItem>
+                        <SelectItem value="Coordinación de Comunicaciones y Canales Digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
+                        <SelectItem value="Área de Operaciones Logísticas">Área de Operaciones Logísticas</SelectItem>
+                        <SelectItem value="Área de Tesorería">Área de Tesorería</SelectItem>
+                        <SelectItem value="Área de Contabilidad">Área de Contabilidad</SelectItem>
+                        <SelectItem value="Área de Práctica y Pasantías">Área de Práctica y Pasantías</SelectItem>
+                      </>
+                    ) : null}
                   </SelectContent>
                 </Select>
               </Field>
