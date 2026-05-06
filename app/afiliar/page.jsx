@@ -19,17 +19,17 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { 
-  ArrowLeft, 
-  User, 
-  IdCard, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Droplets, 
-  Camera, 
-  Download, 
+import {
+  ArrowLeft,
+  User,
+  IdCard,
+  Calendar,
+  Phone,
+  Mail,
+  MapPin,
+  Droplets,
+  Camera,
+  Download,
   CheckCircle2,
   QrCode
 } from "lucide-react";
@@ -152,7 +152,7 @@ export default function AfiliarPage() {
       });
 
       toast.success("Afiliación guardada correctamente");
-      
+
       // Limpiar formulario o redirigir
       setFormData({
         codigo: generarCodigoAfiliado(),
@@ -220,7 +220,7 @@ export default function AfiliarPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
+
           {/* Formulario */}
           <Card className="shadow-lg">
             <CardHeader>
@@ -251,8 +251,8 @@ export default function AfiliarPage() {
                 <FieldLabel>Nombre Completo</FieldLabel>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Escriba el nombre completo" 
+                  <Input
+                    placeholder="Escriba el nombre completo"
                     className="pl-10"
                     value={formData.nombre}
                     onChange={(e) => handleInputChange("nombre", e.target.value)}
@@ -265,8 +265,8 @@ export default function AfiliarPage() {
                   <FieldLabel>Cédula / Documento</FieldLabel>
                   <div className="relative">
                     <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Número de identidad" 
+                    <Input
+                      placeholder="Número de identidad"
                       className="pl-10"
                       value={formData.cedula}
                       onChange={(e) => handleInputChange("cedula", e.target.value)}
@@ -277,8 +277,8 @@ export default function AfiliarPage() {
                   <FieldLabel>Grupo Sanguíneo RH</FieldLabel>
                   <div className="relative">
                     <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
-                    <Input 
-                      placeholder="Ej: O+" 
+                    <Input
+                      placeholder="Ej: O+"
                       className="pl-10 uppercase"
                       value={formData.rh}
                       onChange={(e) => handleInputChange("rh", e.target.value.toUpperCase())}
@@ -292,7 +292,7 @@ export default function AfiliarPage() {
                   <FieldLabel>Fecha de Afiliación</FieldLabel>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
+                    <Input
                       type="date"
                       className="pl-10"
                       value={formData.fechaIngreso}
@@ -304,8 +304,8 @@ export default function AfiliarPage() {
                   <FieldLabel>Teléfono</FieldLabel>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Número de celular" 
+                    <Input
+                      placeholder="Número de celular"
                       className="pl-10"
                       value={formData.telefono}
                       onChange={(e) => handleInputChange("telefono", e.target.value)}
@@ -319,9 +319,9 @@ export default function AfiliarPage() {
                   <FieldLabel>Correo Electrónico</FieldLabel>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
+                    <Input
                       type="email"
-                      placeholder="correo@ejemplo.com" 
+                      placeholder="correo@ejemplo.com"
                       className="pl-10"
                       value={formData.correo}
                       onChange={(e) => handleInputChange("correo", e.target.value)}
@@ -332,8 +332,8 @@ export default function AfiliarPage() {
                   <FieldLabel>Dirección</FieldLabel>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Dirección de residencia" 
+                    <Input
+                      placeholder="Dirección de residencia"
                       className="pl-10"
                       value={formData.direccion}
                       onChange={(e) => handleInputChange("direccion", e.target.value)}
@@ -351,10 +351,10 @@ export default function AfiliarPage() {
                     ) : (
                       <Camera className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
                     )}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={handleFotoChange}
                     />
                   </div>
@@ -366,7 +366,7 @@ export default function AfiliarPage() {
               </Field>
 
               <div className="pt-4 flex gap-3">
-                <Button 
+                <Button
                   className="flex-1 h-12 text-base font-bold shadow-md shadow-primary/20"
                   onClick={handleGuardar}
                   disabled={isSaving}
@@ -374,8 +374,8 @@ export default function AfiliarPage() {
                   {isSaving ? <Spinner className="mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
                   GUARDAR AFILIACIÓN
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="h-12 px-6 border-2"
                   onClick={descargarCarnet}
                 >
@@ -390,19 +390,19 @@ export default function AfiliarPage() {
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
               <QrCode className="h-4 w-4" /> Vista Previa del Carnet
             </h3>
-            
-            <div 
+
+            <div
               ref={carnetRef}
               className="relative w-[380px] h-[580px] bg-white rounded-[2rem] shadow-2xl overflow-hidden mx-auto border"
               style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
             >
               {/* Decoración Superior */}
               <div className="absolute top-0 left-0 w-full h-[180px] overflow-hidden">
-                <div 
+                <div
                   className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
                   style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
                 />
-                <div 
+                <div
                   className="absolute top-0 right-0 w-1/3 h-full"
                   style={{ background: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
                 />
@@ -428,9 +428,9 @@ export default function AfiliarPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Badge AFILIADO */}
-                <div 
+                <div
                   className="mt-[-20px] relative z-20 px-8 py-1.5 rounded-full shadow-lg border-2 border-white"
                   style={{ backgroundColor: COLORS.rojo }}
                 >
@@ -446,7 +446,7 @@ export default function AfiliarPage() {
                 <p className="text-slate-500 font-bold text-xs mt-1">
                   C.C. {formData.cedula || "XXXXXXXX"}
                 </p>
-                
+
                 <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
                   <div className="text-left">
                     <p className="text-[9px] font-black text-slate-400 uppercase">Código</p>
@@ -471,9 +471,9 @@ export default function AfiliarPage() {
               <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 px-10 flex items-end justify-between">
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] font-black" style={{ color: COLORS.azul }}>@fundacionislacascajal</p>
-                  <p className="text-[8px] font-bold text-slate-400">www.fundacionislacascajal.org</p>
+
                 </div>
-                
+
                 <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul }}>
                   {qrDataUrl && (
                     <Image src={qrDataUrl} alt="QR" width={70} height={70} />
