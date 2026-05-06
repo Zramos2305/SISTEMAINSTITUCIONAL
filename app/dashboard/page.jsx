@@ -603,12 +603,6 @@ function DashboardContent() {
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Documentos</span>
             </TabsTrigger>
-            {esSuperAdmin && (
-              <TabsTrigger value="auditoria" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <ListChecks className="h-4 w-4" />
-                <span className="hidden sm:inline">Auditoría</span>
-              </TabsTrigger>
-            )}
             {(esSuperAdmin || esRRHH) && (
               <TabsTrigger value="asistencia" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Clock className="h-4 w-4" />
