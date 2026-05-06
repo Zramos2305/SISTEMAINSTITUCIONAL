@@ -11,48 +11,50 @@
   --card-foreground: hsl(222.2 84% 4.9%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(222.2 84% 4.9%);
-  
+
   /* Primary: Azul Institucional */
   --primary: hsl(221.2 83.2% 53.3%);
   --primary-foreground: hsl(210 40% 98%);
-  
+
   /* Secondary: Gris suave */
   --secondary: hsl(210 40% 96.1%);
   --secondary-foreground: hsl(222.2 47.4% 11.2%);
-  
+
   /* Muted: Gris apagado para fondos secundarios */
   --muted: hsl(210 40% 96.1%);
   --muted-foreground: hsl(215.4 16.3% 46.9%);
-  
+
   /* Accent: Azul muy claro para hovers */
   --accent: hsl(210 40% 96.1%);
   --accent-foreground: hsl(222.2 47.4% 11.2%);
-  
+
   /* Destructive: Rojo */
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(210 40% 98%);
-  
+
   /* Success: Verde */
   --success: hsl(142.1 76.2% 36.3%);
   --success-foreground: hsl(355.7 100% 97.3%);
-  
+
   /* Info: Azul claro/Cyan */
   --info: hsl(199.4 89% 48%);
   --info-foreground: hsl(0 0% 100%);
-  
+
   --border: hsl(214.3 31.8% 91.4%);
   --input: hsl(214.3 31.8% 91.4%);
   --ring: hsl(221.2 83.2% 53.3%);
-  
+
   /* Charts */
   --chart-1: hsl(221.2 83.2% 53.3%);
   --chart-2: hsl(142.1 76.2% 36.3%);
   --chart-3: hsl(199.4 89% 48%);
-  --chart-4: hsl(47.9 95.8% 53.1%); /* Amarillo */
-  --chart-5: hsl(0 84.2% 60.2%); /* Rojo */
-  
+  --chart-4: hsl(47.9 95.8% 53.1%);
+  /* Amarillo */
+  --chart-5: hsl(0 84.2% 60.2%);
+  /* Rojo */
+
   --radius: 0.75rem;
-  
+
   /* Sidebar */
   --sidebar: hsl(222.2 84% 4.9%);
   --sidebar-foreground: hsl(210 40% 98%);
@@ -152,6 +154,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
