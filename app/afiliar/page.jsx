@@ -215,6 +215,16 @@ export default function AfiliarPage() {
         backgroundColor: "#ffffff",
         logging: false,
         allowTaint: true,
+        onclone: (clonedDoc) => {
+          // ELIMINAR TODOS LOS ESTILOS GLOBALES QUE USAN OKLCH
+          const styleTags = clonedDoc.getElementsByTagName("style");
+          for (let i = styleTags.length - 1; i >= 0; i--) styleTags[i].remove();
+          
+          const linkTags = clonedDoc.getElementsByTagName("link");
+          for (let i = linkTags.length - 1; i >= 0; i--) {
+            if (linkTags[i].rel === "stylesheet") linkTags[i].remove();
+          }
+        }
       });
 
       const imgData = canvas.toDataURL("image/png");
