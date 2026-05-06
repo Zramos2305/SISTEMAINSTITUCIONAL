@@ -468,7 +468,7 @@ export default function AfiliarPage() {
               </div>
 
               {/* QR y Footer */}
-              <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 px-10 flex items-end justify-between">
+              <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] font-black" style={{ color: COLORS.azul }}>@fundacionislacascajal</p>
 
