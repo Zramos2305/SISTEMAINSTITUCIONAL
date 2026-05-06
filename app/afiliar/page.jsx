@@ -78,6 +78,7 @@ export default function AfiliarPage() {
 
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(null);
 
   // Generar QR en tiempo real cuando cambia el código
@@ -203,12 +204,10 @@ export default function AfiliarPage() {
 
   const descargarCarnet = async () => {
     if (!carnetRef.current) return;
-    setIsSaving(true); // Usamos el spinner para feedback
+    setIsDownloading(true);
     
-    // Pequeño delay para asegurar que el DOM y las imágenes estén listos
     setTimeout(async () => {
       try {
-        console.log("Iniciando generación de carnet...");
         const canvas = await html2canvas(carnetRef.current, {
           scale: 2,
           useCORS: true,
@@ -218,18 +217,17 @@ export default function AfiliarPage() {
           height: 580,
         });
         
-        console.log("Canvas generado exitosamente");
         const imgData = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, '_') || 'Afiliado'}.png`;
         link.href = imgData;
         link.click();
-        toast.success("¡Carnet generado y descargado!");
+        toast.success("¡Carnet generado!");
       } catch (err) {
-        console.error("Error detallado al generar imagen:", err);
-        toast.error("Error técnico: " + (err.message || "Fallo al procesar imagen"));
+        console.error("Error carnet:", err);
+        toast.error("Error: " + (err.message || "Fallo al procesar"));
       } finally {
-        setIsSaving(false);
+        setIsDownloading(false);
       }
     }, 500);
   };
@@ -432,8 +430,9 @@ export default function AfiliarPage() {
                   variant="outline"
                   className="h-12 px-6 border-2"
                   onClick={descargarCarnet}
+                  disabled={isDownloading}
                 >
-                  <Download className="h-5 w-5" />
+                  {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
                 </Button>
               </div>
             </CardContent>
@@ -484,8 +483,10 @@ export default function AfiliarPage() {
                   {fotoPreview ? (
                     <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ color: "#94a3b8" }}>
-                      <User size={80} />
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                      </svg>
                     </div>
                   )}
                 </div>
