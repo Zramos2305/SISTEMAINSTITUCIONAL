@@ -60,6 +60,7 @@ function generarCodigoAfiliado() {
 export default function AfiliarPage() {
   const { user, userData, loading: authLoading } = useAuth();
   const carnetRef = useRef(null);
+  const exportRef = useRef(null);
 
   const [formData, setFormData] = useState({
     codigo: generarCodigoAfiliado(),
@@ -203,43 +204,33 @@ export default function AfiliarPage() {
   };
 
   const descargarCarnet = async () => {
-    if (!carnetRef.current) return;
+    if (!exportRef.current) return;
+
     setIsDownloading(true);
 
-    setTimeout(async () => {
-      try {
-        const canvas = await html2canvas(carnetRef.current, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: true,
-          width: 380,
-          height: 580,
-          onclone: (clonedDoc) => {
-            // Eliminar cualquier rastro de oklch que pueda estar en los estilos computados
-            const elements = clonedDoc.getElementsByTagName("*");
-            for (let i = 0; i < elements.length; i++) {
-              const style = elements[i].style;
-              if (style.color && style.color.includes("oklch")) style.color = "#000000";
-              if (style.backgroundColor && style.backgroundColor.includes("oklch")) style.backgroundColor = "#ffffff";
-              if (style.borderColor && style.borderColor.includes("oklch")) style.borderColor = "#000000";
-            }
-          }
-        });
+    try {
+      const canvas = await html2canvas(exportRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        allowTaint: true,
+      });
 
-        const imgData = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, '_') || 'Afiliado'}.png`;
-        link.href = imgData;
-        link.click();
-        toast.success("¡Carnet generado!");
-      } catch (err) {
-        console.error("Error carnet:", err);
-        toast.error("Error: " + (err.message || "Fallo al procesar"));
-      } finally {
-        setIsDownloading(false);
-      }
-    }, 500);
+      const imgData = canvas.toDataURL("image/png");
+
+      const link = document.createElement("a");
+      link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, "_") || "Afiliado"}.png`;
+      link.href = imgData;
+      link.click();
+
+      toast.success("Carnet descargado correctamente");
+    } catch (err) {
+      console.error(err);
+      toast.error("No se pudo generar el carnet");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>;
@@ -567,6 +558,142 @@ export default function AfiliarPage() {
             </p>
           </div>
 
+          </div>
+
+          {/* CONTENEDOR DE EXPORTACIÓN AISLADO (INVISIBLE) - PURO HEX / SIN TAILWIND */}
+          <div
+            style={{
+              position: "fixed",
+              left: "-99999px",
+              top: 0,
+              width: "380px",
+              height: "580px",
+              background: "#ffffff",
+              zIndex: -1
+            }}
+          >
+            <div ref={exportRef} style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}>
+              {/* Decoración Superior */}
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  left: '-40px',
+                  width: '120%',
+                  height: '120%',
+                  transform: 'rotate(15deg)',
+                  background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '33.33%',
+                  height: '100%',
+                  backgroundColor: COLORS.amarillo,
+                  opacity: 0.2
+                }} />
+              </div>
+
+              {/* Logo y Header */}
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', paddingLeft: '32px', paddingRight: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
+                </div>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, lineHeight: 1 }}>ISLA CASCAJAL</h2>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '4px', margin: 0 }}>Fundación</p>
+              </div>
+
+              {/* Foto de Perfil */}
+              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
+                <div style={{
+                  position: 'relative',
+                  width: '160px',
+                  height: '160px',
+                  borderRadius: '24px',
+                  border: '6px solid #ffffff',
+                  backgroundColor: '#f1f5f9',
+                  overflow: 'hidden'
+                }}>
+                  {fotoPreview ? (
+                    <img src={fotoPreview} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{
+                  marginTop: '-20px',
+                  position: 'relative',
+                  zIndex: 20,
+                  paddingLeft: '32px',
+                  paddingRight: '32px',
+                  paddingTop: '6px',
+                  paddingBottom: '6px',
+                  borderRadius: '9999px',
+                  border: '2px solid #ffffff',
+                  backgroundColor: COLORS.rojo
+                }}>
+                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase' }}>AFILIADO</span>
+                </div>
+              </div>
+
+              {/* Información Personal */}
+              <div style={{ marginTop: '16px', paddingLeft: '40px', paddingRight: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, textTransform: 'uppercase', color: '#1e293b', margin: 0, width: '100%' }}>
+                  {formData.nombre || "NOMBRE COMPLETO"}
+                </h3>
+                <p style={{ fontWeight: 'bold', fontSize: '12px', marginTop: '4px', color: '#64748b', margin: 0 }}>
+                  C.C. {formData.cedula || "XXXXXXXX"}
+                </p>
+
+                <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Código</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigo}</p>
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>RH</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.rh || "—"}</p>
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Vence</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* QR y Footer */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 900, color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
+                  <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#94a3b8', margin: 0 }}>www.fundacionislacascajal.org</p>
+                </div>
+
+                <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: `2px solid ${COLORS.azul}` }}>
+                  {qrDataUrl && (
+                    <img src={qrDataUrl} alt="QR" style={{ width: '70px', height: '70px' }} />
+                  )}
+                </div>
+              </div>
+
+              {/* Franjas de color decorativas */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
+                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
