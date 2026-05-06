@@ -50,7 +50,7 @@ const COLORS = {
 
 function generarCodigoAfiliado() {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigo = "AF-";
+  let codigo = "FICONG-";
   for (let i = 0; i < 8; i++) {
     codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
@@ -439,18 +439,18 @@ export default function AfiliarPage() {
               </div>
 
               {/* Información Personal */}
-              <div className="mt-8 px-10 flex flex-col items-center text-center">
-                <h3 className="text-2xl font-black text-slate-800 leading-tight uppercase truncate w-full">
+              <div className="mt-4 px-10 flex flex-col items-center text-center">
+                <h3 className="text-xl font-black text-slate-800 leading-tight uppercase line-clamp-2 w-full">
                   {formData.nombre || "NOMBRE COMPLETO"}
                 </h3>
                 <p className="text-slate-500 font-bold text-xs mt-1">
                   C.C. {formData.cedula || "XXXXXXXX"}
                 </p>
                 
-                <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 w-full">
+                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
                   <div className="text-left">
                     <p className="text-[9px] font-black text-slate-400 uppercase">Código</p>
-                    <p className="text-sm font-black text-slate-700 font-mono tracking-tighter">{formData.codigo}</p>
+                    <p className="text-sm font-black text-slate-700 font-mono tracking-tighter truncate">{formData.codigo}</p>
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-black text-slate-400 uppercase">RH</p>
@@ -462,7 +462,7 @@ export default function AfiliarPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-black text-slate-400 uppercase">Cargo</p>
-                    <p className="text-sm font-black text-slate-700 uppercase">{formData.cargo}</p>
+                    <p className="text-sm font-black text-slate-700 uppercase line-clamp-1">{formData.cargo}</p>
                   </div>
                 </div>
               </div>
