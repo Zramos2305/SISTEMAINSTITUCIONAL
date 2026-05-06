@@ -62,6 +62,7 @@ import {
   QrCode,
   User,
   FileText,
+  FileCheck,
   ToggleLeft,
   ToggleRight,
   Info,
