@@ -207,16 +207,7 @@ export default function AfiliarPage() {
     if (!exportRef.current) return;
     setIsDownloading(true);
 
-    // APAGÓN TEMPORAL DE ESTILOS GLOBALES (Para evitar oklch)
-    const styleElements = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
-    styleElements.forEach(el => {
-      if (el instanceof HTMLStyleElement || el instanceof HTMLLinkElement) {
-        el.disabled = true;
-      }
-    });
-
     try {
-      // Capturamos el contenedor que tiene sus propios estilos INLINE HEX
       const canvas = await html2canvas(exportRef.current, {
         scale: 3,
         useCORS: true,
@@ -232,15 +223,9 @@ export default function AfiliarPage() {
       link.click();
       toast.success("Carnet descargado correctamente");
     } catch (err) {
-      console.error("Error crítico carnet:", err);
-      toast.error("No se pudo generar el carnet. Intente nuevamente.");
+      console.error("Error carnet:", err);
+      toast.error("Error al generar el carnet");
     } finally {
-      // RESTAURAR ESTILOS
-      styleElements.forEach(el => {
-        if (el instanceof HTMLStyleElement || el instanceof HTMLLinkElement) {
-          el.disabled = false;
-        }
-      });
       setIsDownloading(false);
     }
   };
