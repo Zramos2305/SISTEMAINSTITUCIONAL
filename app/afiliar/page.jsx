@@ -72,6 +72,7 @@ export default function AfiliarPage() {
     direccion: "",
     estado: "activo",
     cargo: "Afiliado",
+    duracion: "1_ano",
     foto: null, // base64 o blob url
   });
 
@@ -137,8 +138,30 @@ export default function AfiliarPage() {
         return;
       }
 
+      // Calcular fecha de expiración
+      const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
+      let fExpiracion = new Date(fIngreso);
+      if (formData.duracion === "1_mes") {
+        fExpiracion.setMonth(fExpiracion.getMonth() + 1);
+      } else {
+        fExpiracion.setFullYear(fExpiracion.getFullYear() + 1);
+      }
+
+      const isoExpiracion = fExpiracion.toISOString();
+
       await setDoc(doc(db, "afiliados", formData.codigo), {
         ...formData,
+        fechaExpiracion: isoExpiracion,
+        fechaInicioPeriodo: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
+        periodos: [
+          {
+            inicio: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
+            fin: isoExpiracion,
+            duracion: formData.duracion,
+            tipo: "registro",
+            fecha: new Date().toISOString()
+          }
+        ],
         creadoPor: user.uid,
         fechaCreacion: new Date().toISOString(),
       });
@@ -165,6 +188,7 @@ export default function AfiliarPage() {
         direccion: "",
         estado: "activo",
         cargo: "Afiliado",
+        duracion: "1_ano",
         foto: null,
       });
       setFotoPreview(null);
@@ -341,6 +365,22 @@ export default function AfiliarPage() {
                   </div>
                 </Field>
               </div>
+
+              <Field className="max-w-[200px]">
+                <FieldLabel>Duración de Afiliación</FieldLabel>
+                <Select
+                  value={formData.duracion}
+                  onValueChange={(val) => handleInputChange("duracion", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione duración" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1_mes">1 Mes</SelectItem>
+                    <SelectItem value="1_ano">1 Año</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
 
               <Field>
                 <FieldLabel>Foto del Afiliado</FieldLabel>

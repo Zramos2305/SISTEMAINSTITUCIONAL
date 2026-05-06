@@ -1274,7 +1274,7 @@ function DashboardContent() {
                     <div className="bg-background p-3 rounded-lg border space-y-1">
                       <p className="text-xs text-muted-foreground uppercase font-semibold">Duración</p>
                       <p className="font-medium text-sm">
-                        {infoDoc.duracion === "6_meses" ? "6 Meses" : infoDoc.duracion === "1_ano" ? "1 Año" : "No especificada"}
+                        {infoDoc.duracion === "1_mes" ? "1 Mes" : infoDoc.duracion === "6_meses" ? "6 Meses" : infoDoc.duracion === "1_ano" ? "1 Año" : "No especificada"}
                       </p>
                     </div>
                   </div>
@@ -1386,7 +1386,7 @@ function DashboardContent() {
                               {periodo.tipo === "registro" ? "Registro Inicial" : `Renovación`}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              — {periodo.duracion === "6_meses" ? "6 Meses" : "1 Año"}
+                              — {periodo.duracion === "1_mes" ? "1 Mes" : periodo.duracion === "6_meses" ? "6 Meses" : "1 Año"}
                             </span>
                           </div>
                           <span className="text-muted-foreground text-xs">{expandido ? "▲" : "▼"}</span>
