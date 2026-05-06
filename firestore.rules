@@ -2,110 +2,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* =========================
-       FUNCIONES SEGURAS
-    ==========================*/
-
     function isLogged() {
       return request.auth != null;
     }
 
-    function userDoc() {
+    // leer directamente el documento auth sin llamar funciones encadenadas
+    function myUserDoc() {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid));
     }
 
-    function userExists() {
-      return isLogged() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    function myRole() {
+      return isLogged() ? myUserDoc().data.rol : null;
     }
 
-    function userData() {
-      return userDoc().data;
-    }
-
-    function isActiveUser() {
-      return userExists() && userData().activo == true;
+    function isActive() {
+      return isLogged() ? myUserDoc().data.activo == true : false;
     }
 
     function isSuperAdmin() {
-      return isActiveUser() && userData().rol == "superadmin";
+      return isActive() && myRole() == "superadmin";
     }
 
     function isRRHHOrSuperAdmin() {
-      return isActiveUser() &&
-        (userData().rol == "recursos_humanos" || userData().rol == "superadmin");
+      return isActive() &&
+        (myRole() == "recursos_humanos" || myRole() == "superadmin");
     }
 
-    // NUEVO: Verificación sin usar get() para evitar loops
-   function isOwnerEmployee(empId) {
-  return isLogged() &&
-    get(/databases/$(database)/documents/empleados/$(empId)).data.uidAuth == request.auth.uid;
-}
+    function isEmployeeOwner(empId) {
+      return isLogged() &&
+        get(/databases/$(database)/documents/empleados/$(empId)).data.uidAuth == request.auth.uid;
+    }
 
-    /* =========================
-       USUARIOS
-    ==========================*/
+    /* ================= USUARIOS ================= */
 
     match /usuarios/{userId} {
-      // CORRECCIÓN: Se evalúa primero request.auth.uid == userId para evitar el bucle infinito
-      allow read: if request.auth.uid == userId || isRRHHOrSuperAdmin();
+      allow read: if isLogged() && request.auth.uid == userId || isRRHHOrSuperAdmin();
       allow create: if isSuperAdmin();
       allow update: if isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    /* =========================
-       EMPLEADOS
-    ==========================*/
+    /* ================= EMPLEADOS ================= */
 
-   match /empleados/{empId} {
-  allow read: if isOwnerEmployee(empId) || isRRHHOrSuperAdmin();
-  allow create: if isRRHHOrSuperAdmin();
-  allow update: if isOwnerEmployee(empId) || isRRHHOrSuperAdmin();
-  allow delete: if isSuperAdmin();
-}
+    match /empleados/{empId} {
+      allow read: if isEmployeeOwner(empId) || isRRHHOrSuperAdmin();
+      allow create: if isRRHHOrSuperAdmin();
+      allow update: if isEmployeeOwner(empId) || isRRHHOrSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* ================= ASISTENCIAS ================= */
 
     match /asistencias/{asistenciaId} {
-
-  allow read: if isLogged() &&
-    resource.data.usuarioId == request.auth.uid
-    || isRRHHOrSuperAdmin();
-
-  allow create: if isLogged() &&
-    request.resource.data.usuarioId == request.auth.uid;
-
-  allow update: if isLogged() &&
-    resource.data.usuarioId == request.auth.uid;
-
-  allow delete: if isSuperAdmin();
-}
-    
-    /* =========================
-       AFILIADOS
-    ==========================*/
-    match /afiliados/{afiliadoId} {
-      allow read: if true;
-      allow create, update: if isSuperAdmin();
+      allow read: if (isLogged() && resource.data.usuarioId == request.auth.uid) || isRRHHOrSuperAdmin();
+      allow create: if isLogged() && request.resource.data.usuarioId == request.auth.uid;
+      allow update: if isLogged() && resource.data.usuarioId == request.auth.uid;
       allow delete: if isSuperAdmin();
     }
 
-    /* =========================
-       DOCUMENTOS QR
-    ==========================*/
+    /* ================= AFILIADOS ================= */
 
-    match /documentos/{docId} {
+    match /afiliados/{id} {
       allow read: if true;
-      allow create: if isRRHHOrSuperAdmin();
-      allow update: if isRRHHOrSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    /* ================= DOCUMENTOS ================= */
+
+    match /documentos/{id} {
+      allow read: if true;
+      allow create, update: if isRRHHOrSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    /* =========================
-       AUDITORÍA
-    ==========================*/
+    /* ================= AUDITORIA ================= */
 
-    match /auditoria/{logId} {
+    match /auditoria/{id} {
       allow read: if isSuperAdmin();
-      allow create: if isRRHHOrSuperAdmin();
+      allow create: if isLogged();
       allow update, delete: if false;
     }
   }
