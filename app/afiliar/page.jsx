@@ -694,8 +694,7 @@ export default function AfiliarPage() {
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+        </main>
+      </div>
+    );
+  }
