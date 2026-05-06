@@ -207,9 +207,8 @@ export default function AfiliarPage() {
       const canvas = await html2canvas(carnetRef.current, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: false,
+        logging: true,
       });
       const link = document.createElement("a");
       link.download = `Carnet_${formData.nombre.replace(/\s+/g, '_') || 'Afiliado'}.png`;
