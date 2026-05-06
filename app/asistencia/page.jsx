@@ -21,7 +21,7 @@ import {
   Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck
 } from "lucide-react";
 
-const IPS_AUTORIZADAS = ["181.57.30.136", "191.156.13.184"];
+const IPS_AUTORIZADAS = ["181.57.30.136", "191.156.13.184", "181.54.0.27"];
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ function horaActual() {
   return new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 function fechaHoy() { return new Date().toISOString().split("T")[0]; }
-function fmt(h) { 
+function fmt(h) {
   if (!h) return "—";
   if (typeof h.toDate === "function") {
     return h.toDate().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -37,7 +37,7 @@ function fmt(h) {
   if (h && typeof h.seconds === "number") {
     return new Date(h.seconds * 1000).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
   }
-  return typeof h === "object" ? "—" : h; 
+  return typeof h === "object" ? "—" : h;
 }
 
 function diffMinutos(hora1, hora2) {
@@ -203,7 +203,7 @@ function AsistenciaContent() {
         if (ts.toDate) return Math.floor(ts.toDate().getTime() / 1000);
         return Math.floor(new Date(ts).getTime() / 1000);
       };
-      
+
       const entrada = sec(registroHoy.horaEntrada);
       const salidaAlmuerzo = sec(registroHoy.horaSalidaAlmuerzo);
       const entradaAlmuerzo = sec(registroHoy.horaEntradaAlmuerzo);
@@ -214,14 +214,14 @@ function AsistenciaContent() {
       if (salidaAlmuerzo) {
         totalSegundos += (salidaAlmuerzo - entrada);
         if (entradaAlmuerzo) {
-           totalSegundos += (salida - entradaAlmuerzo);
+          totalSegundos += (salida - entradaAlmuerzo);
         }
       } else {
         totalSegundos += (salida - entrada);
       }
-      
+
       if (totalSegundos < 0) totalSegundos = 0;
-      
+
       const horas = Math.floor(totalSegundos / 3600);
       const minutos = Math.floor((totalSegundos % 3600) / 60);
       setHorasTrabajadas(`${horas}h ${minutos}m`);
@@ -345,7 +345,7 @@ function AsistenciaContent() {
 
       const ahora = new Date();
       const horaHHMM = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false });
-      
+
       let minutosDiferencia = 0;
       if (accion.id === "entrada") {
         minutosDiferencia = diffMinutos(horaHHMM, horarioHoy.entrada);
@@ -537,7 +537,7 @@ function AsistenciaContent() {
                 <EIcon className="h-4 w-4" />
                 <span className="font-medium text-sm">{estadoCfg.label}</span>
               </div>
-              
+
               {registroHoy?.horaEntrada && (
                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border bg-muted/30 text-foreground">
                   <Clock className="h-4 w-4 text-muted-foreground" />
@@ -688,23 +688,23 @@ function AsistenciaContent() {
                   { label: "Cargo", val: registroHoy.cargo || "—" },
                   { label: "Modalidad", val: registroHoy.modalidadAsignada || registroHoy.modoTrabajo || "—" },
                   { label: "Horario Prog.", val: `${registroHoy.horaProgramadaEntrada || '—'} a ${registroHoy.horaProgramadaSalida || '—'}` },
-                  { 
-                    label: "Entrada", 
+                  {
+                    label: "Entrada",
                     val: fmt(registroHoy.horaEntrada),
-                    extra: registroHoy.entradaDiferenciaMinutos > 0 
+                    extra: registroHoy.entradaDiferenciaMinutos > 0
                       ? <span className="text-[10px] text-destructive font-bold">({fmtDiferencia(registroHoy.entradaDiferenciaMinutos)} tarde)</span>
-                      : registroHoy.entradaDiferenciaMinutos < 0 
-                      ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.entradaDiferenciaMinutos)} antes)</span>
-                      : null
+                      : registroHoy.entradaDiferenciaMinutos < 0
+                        ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.entradaDiferenciaMinutos)} antes)</span>
+                        : null
                   },
-                  { 
-                    label: "Salida", 
+                  {
+                    label: "Salida",
                     val: fmt(registroHoy.horaSalida),
                     extra: registroHoy.salidaDiferenciaMinutos < 0
                       ? <span className="text-[10px] text-destructive font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} antes)</span>
                       : registroHoy.salidaDiferenciaMinutos > 0
-                      ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} después)</span>
-                      : null
+                        ? <span className="text-[10px] text-success font-bold">({fmtDiferencia(registroHoy.salidaDiferenciaMinutos)} después)</span>
+                        : null
                   },
                   { label: "IP Registro", val: registroHoy.ipPublica || "No reg." },
                   { label: "Red Inst.", val: registroHoy.redInstitucional ? "✅ Sí" : "❌ No" },
