@@ -203,22 +203,35 @@ export default function AfiliarPage() {
 
   const descargarCarnet = async () => {
     if (!carnetRef.current) return;
-    try {
-      const canvas = await html2canvas(carnetRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: true,
-      });
-      const link = document.createElement("a");
-      link.download = `Carnet_${formData.nombre.replace(/\s+/g, '_') || 'Afiliado'}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-      toast.success("Carnet descargado");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al generar la imagen del carnet");
-    }
+    setIsSaving(true); // Usamos el spinner para feedback
+    
+    // Pequeño delay para asegurar que el DOM y las imágenes estén listos
+    setTimeout(async () => {
+      try {
+        console.log("Iniciando generación de carnet...");
+        const canvas = await html2canvas(carnetRef.current, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: true,
+          width: 380,
+          height: 580,
+        });
+        
+        console.log("Canvas generado exitosamente");
+        const imgData = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `Carnet_${formData.nombre.trim().replace(/\s+/g, '_') || 'Afiliado'}.png`;
+        link.href = imgData;
+        link.click();
+        toast.success("¡Carnet generado y descargado!");
+      } catch (err) {
+        console.error("Error detallado al generar imagen:", err);
+        toast.error("Error técnico: " + (err.message || "Fallo al procesar imagen"));
+      } finally {
+        setIsSaving(false);
+      }
+    }, 500);
   };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>;
