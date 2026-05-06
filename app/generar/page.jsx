@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -71,6 +71,16 @@ export default function GenerarPage() {
     setDocumentoCreado(null);
     setMostrarPreview(false);
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tipoUrl = params.get("tipo");
+      if (tipoUrl) {
+        setFormData(prev => ({ ...prev, tipo: tipoUrl }));
+      }
+    }
+  }, []);
 
   const isFormValid = () => {
     if (!formData.nombre || !formData.cedula || !formData.tipo || !formData.fecha || !formData.oficina || !formData.dependencia) return false;

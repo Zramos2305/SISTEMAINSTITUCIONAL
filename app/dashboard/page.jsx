@@ -682,10 +682,16 @@ function DashboardContent() {
                   <CalendarIcon className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Calendario</span>
                 </Button>
+                <Button asChild variant="outline" className="border-info text-info hover:bg-info/10">
+                  <Link href="/generar?tipo=afiliado">
+                    <Users className="h-4 w-4 mr-2" />
+                    Afiliar
+                  </Link>
+                </Button>
                 <Button asChild>
                   <Link href="/generar">
                     <Plus className="h-4 w-4 mr-2" />
-                    Agregar
+                    Generar
                   </Link>
                 </Button>
               </div>
