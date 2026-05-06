@@ -35,18 +35,8 @@ service cloud.firestore {
         (userData().rol == "recursos_humanos" || userData().rol == "superadmin");
     }
 
-    function employeeDoc(empId) {
-      return get(/databases//documents/empleados/);
-    }
-
-    function employeeExists(empId) {
-      return exists(/databases//documents/empleados/);
-    }
-
-    function isOwnerEmployee(empId) {
-      return isLogged()
-        && employeeExists(empId)
-        && employeeDoc(empId).data.uidAuth == request.auth.uid;
+    function isOwnerEmployee() {
+      return isLogged() && resource.data.uidAuth == request.auth.uid;
     }
 
     /* =========================
@@ -54,7 +44,8 @@ service cloud.firestore {
     ==========================*/
 
     match /usuarios/{userId} {
-      allow read: if isRRHHOrSuperAdmin() || request.auth.uid == userId;
+      // IMPORTANTE: Primero comprobar si es el propio usuario para evitar loops infinitos
+      allow read: if request.auth.uid == userId || isRRHHOrSuperAdmin();
       allow create: if isSuperAdmin();
       allow update: if isSuperAdmin();
       allow delete: if isSuperAdmin();
@@ -65,9 +56,9 @@ service cloud.firestore {
     ==========================*/
 
     match /empleados/{empId} {
-      allow read: if isRRHHOrSuperAdmin() || isOwnerEmployee(empId);
+      allow read: if isOwnerEmployee() || isRRHHOrSuperAdmin();
       allow create: if isRRHHOrSuperAdmin();
-      allow update: if isRRHHOrSuperAdmin();
+      allow update: if isOwnerEmployee() || isRRHHOrSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 
@@ -75,29 +66,18 @@ service cloud.firestore {
        ASISTENCIAS
     ==========================*/
     match /asistencias/{asistenciaId} {
-      allow read: if isRRHHOrSuperAdmin() ||
-        (isLogged() && userExists() && (
-           resource == null || resource.data.empleadoId == userData().empleadoId
-        ));
-      allow create: if isLogged()
-        && request.resource.data.empleadoId is string
-        && userExists()
-        && request.resource.data.empleadoId == userData().empleadoId;
-      allow update: if isLogged() &&
-        resource.data.empleadoId == userData().empleadoId;
+      allow read: if (isLogged() && resource != null && resource.data.usuarioId == request.auth.uid) || isRRHHOrSuperAdmin();
+      allow create: if isLogged() && request.resource.data.usuarioId == request.auth.uid;
+      allow update: if isLogged() && resource.data.usuarioId == request.auth.uid;
       allow delete: if isSuperAdmin();
     }
-       /* =========================
+    
+    /* =========================
        AFILIADOS
     ==========================*/
     match /afiliados/{afiliadoId} {
-      // Permitir lectura pública para que el QR de verificación funcione sin login
       allow read: if true;
-      
-      // Solo Superadmins pueden crear o editar afiliados
       allow create, update: if isSuperAdmin();
-      
-      // Solo el Superadmin puede eliminar registros de afiliados
       allow delete: if isSuperAdmin();
     }
 
@@ -113,17 +93,12 @@ service cloud.firestore {
     }
 
     /* =========================
-       AUDITORÍA (NUEVO)
+       AUDITORÍA
     ==========================*/
 
     match /auditoria/{logId} {
-      // Solo el Superadmin puede ver el historial de auditoría
       allow read: if isSuperAdmin();
-      
-      // RRHH y Superadmin pueden crear registros
       allow create: if isRRHHOrSuperAdmin();
-      
-      // Los registros de auditoría nunca deben ser editados ni borrados
       allow update, delete: if false;
     }
   }
