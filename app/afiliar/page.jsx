@@ -230,11 +230,38 @@ export default function AfiliarPage() {
     }
   };
 
+  const imprimirPDF = () => {
+    window.print();
+  };
+
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>;
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 pb-10">
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #carnet-a-imprimir, #carnet-a-imprimir * {
+            visibility: visible;
+          }
+          #carnet-a-imprimir {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(1.2);
+            margin: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+          }
+          header, .no-print, button, .container > div:first-child {
+            display: none !important;
+          }
+        }
+      `}</style>
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
@@ -426,9 +453,19 @@ export default function AfiliarPage() {
                 </Button>
                 <Button
                   variant="outline"
+                  className="h-12 px-4 border-2"
+                  onClick={imprimirPDF}
+                  title="Imprimir o Guardar como PDF"
+                >
+                  <QrCode className="h-5 w-5" />
+                  <span className="ml-2 hidden sm:inline">PDF</span>
+                </Button>
+                <Button
+                  variant="outline"
                   className="h-12 px-6 border-2"
                   onClick={descargarCarnet}
                   disabled={isDownloading}
+                  title="Descargar como Imagen"
                 >
                   {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
                 </Button>
@@ -443,6 +480,7 @@ export default function AfiliarPage() {
             </h3>
 
             <div
+              id="carnet-a-imprimir"
               ref={carnetRef}
               className="relative w-[380px] h-[580px] rounded-[2rem] overflow-hidden mx-auto"
               style={{

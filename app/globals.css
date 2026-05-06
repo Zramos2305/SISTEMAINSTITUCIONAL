@@ -4,103 +4,103 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Paleta institucional Fundación Isla Cascajal */
-  --background: oklch(0.97 0.005 250);
-  --foreground: oklch(0.15 0.02 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 250);
+  /* Paleta institucional Fundación Isla Cascajal - Convertida a HSL para compatibilidad */
+  --background: hsl(250 5% 97%);
+  --foreground: hsl(250 15% 15%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(250 15% 15%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(250 15% 15%);
   
-  /* Primary: Azul marino institucional (#1e3a5f) */
-  --primary: oklch(0.32 0.08 250);
-  --primary-foreground: oklch(0.98 0 0);
+  /* Primary: Azul marino institucional */
+  --primary: hsl(250 30% 32%);
+  --primary-foreground: hsl(0 0% 98%);
   
   /* Secondary: Gris azulado claro */
-  --secondary: oklch(0.94 0.01 250);
-  --secondary-foreground: oklch(0.25 0.05 250);
+  --secondary: hsl(250 10% 94%);
+  --secondary-foreground: hsl(250 20% 25%);
   
   /* Muted: Gris suave */
-  --muted: oklch(0.95 0.005 250);
-  --muted-foreground: oklch(0.45 0.02 250);
+  --muted: hsl(250 5% 95%);
+  --muted-foreground: hsl(250 10% 45%);
   
   /* Accent: Azul más claro */
-  --accent: oklch(0.92 0.02 250);
-  --accent-foreground: oklch(0.25 0.05 250);
+  --accent: hsl(250 15% 92%);
+  --accent-foreground: hsl(250 20% 25%);
   
   /* Colores de estado */
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: hsl(25 70% 55%);
+  --destructive-foreground: hsl(0 0% 98%);
   
-  /* Success: Verde (#16a34a) */
-  --success: oklch(0.55 0.18 145);
-  --success-foreground: oklch(0.98 0 0);
+  /* Success: Verde */
+  --success: hsl(145 60% 55%);
+  --success-foreground: hsl(0 0% 98%);
   
-  /* Info: Azul (#2563eb) */
-  --info: oklch(0.55 0.2 260);
-  --info-foreground: oklch(0.98 0 0);
+  /* Info: Azul */
+  --info: hsl(260 70% 55%);
+  --info-foreground: hsl(0 0% 98%);
   
-  --border: oklch(0.90 0.01 250);
-  --input: oklch(0.90 0.01 250);
-  --ring: oklch(0.32 0.08 250);
+  --border: hsl(250 5% 90%);
+  --input: hsl(250 5% 90%);
+  --ring: hsl(250 30% 32%);
   
   /* Charts */
-  --chart-1: oklch(0.32 0.08 250);
-  --chart-2: oklch(0.55 0.18 145);
-  --chart-3: oklch(0.55 0.2 260);
-  --chart-4: oklch(0.7 0.15 85);
-  --chart-5: oklch(0.55 0.22 25);
+  --chart-1: hsl(250 30% 32%);
+  --chart-2: hsl(145 60% 55%);
+  --chart-3: hsl(260 70% 55%);
+  --chart-4: hsl(85 50% 70%);
+  --chart-5: hsl(25 70% 55%);
   
   --radius: 0.75rem;
   
   /* Sidebar */
-  --sidebar: oklch(0.25 0.06 250);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.98 0 0);
-  --sidebar-primary-foreground: oklch(0.25 0.06 250);
-  --sidebar-accent: oklch(0.30 0.06 250);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.35 0.05 250);
-  --sidebar-ring: oklch(0.5 0.1 250);
+  --sidebar: hsl(250 20% 25%);
+  --sidebar-foreground: hsl(0 0% 95%);
+  --sidebar-primary: hsl(0 0% 98%);
+  --sidebar-primary-foreground: hsl(250 20% 25%);
+  --sidebar-accent: hsl(250 25% 30%);
+  --sidebar-accent-foreground: hsl(0 0% 95%);
+  --sidebar-border: hsl(250 15% 35%);
+  --sidebar-ring: hsl(250 30% 50%);
 }
 
 .dark {
-  --background: oklch(0.15 0.02 250);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.18 0.02 250);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.18 0.02 250);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.55 0.15 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.25 0.03 250);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.25 0.03 250);
-  --muted-foreground: oklch(0.65 0.02 250);
-  --accent: oklch(0.28 0.04 250);
-  --accent-foreground: oklch(0.95 0 0);
-  --destructive: oklch(0.45 0.18 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --success: oklch(0.5 0.15 145);
-  --success-foreground: oklch(0.95 0 0);
-  --info: oklch(0.5 0.18 260);
-  --info-foreground: oklch(0.95 0 0);
-  --border: oklch(0.28 0.03 250);
-  --input: oklch(0.28 0.03 250);
-  --ring: oklch(0.5 0.1 250);
-  --chart-1: oklch(0.55 0.15 250);
-  --chart-2: oklch(0.6 0.15 145);
-  --chart-3: oklch(0.6 0.18 260);
-  --chart-4: oklch(0.75 0.12 85);
-  --chart-5: oklch(0.6 0.2 25);
-  --sidebar: oklch(0.12 0.02 250);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.55 0.15 250);
-  --sidebar-primary-foreground: oklch(0.95 0 0);
-  --sidebar-accent: oklch(0.22 0.03 250);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.25 0.03 250);
-  --sidebar-ring: oklch(0.45 0.08 250);
+  --background: hsl(250 15% 15%);
+  --foreground: hsl(0 0% 95%);
+  --card: hsl(250 10% 18%);
+  --card-foreground: hsl(0 0% 95%);
+  --popover: hsl(250 10% 18%);
+  --popover-foreground: hsl(0 0% 95%);
+  --primary: hsl(250 40% 55%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(250 10% 25%);
+  --secondary-foreground: hsl(0 0% 95%);
+  --muted: hsl(250 10% 25%);
+  --muted-foreground: hsl(250 10% 65%);
+  --accent: hsl(250 15% 28%);
+  --accent-foreground: hsl(0 0% 95%);
+  --destructive: hsl(25 60% 45%);
+  --destructive-foreground: hsl(0 0% 95%);
+  --success: hsl(145 50% 50%);
+  --success-foreground: hsl(0 0% 95%);
+  --info: hsl(260 60% 50%);
+  --info-foreground: hsl(0 0% 95%);
+  --border: hsl(250 10% 28%);
+  --input: hsl(250 10% 28%);
+  --ring: hsl(250 30% 50%);
+  --chart-1: hsl(250 40% 55%);
+  --chart-2: hsl(145 50% 60%);
+  --chart-3: hsl(260 60% 60%);
+  --chart-4: hsl(85 40% 75%);
+  --chart-5: hsl(25 70% 60%);
+  --sidebar: hsl(250 10% 12%);
+  --sidebar-foreground: hsl(0 0% 95%);
+  --sidebar-primary: hsl(250 40% 55%);
+  --sidebar-primary-foreground: hsl(0 0% 95%);
+  --sidebar-accent: hsl(250 10% 22%);
+  --sidebar-accent-foreground: hsl(0 0% 95%);
+  --sidebar-border: hsl(250 10% 25%);
+  --sidebar-ring: hsl(250 25% 45%);
 }
 
 @theme inline {
