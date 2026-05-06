@@ -683,7 +683,7 @@ function DashboardContent() {
                   <span className="hidden sm:inline">Calendario</span>
                 </Button>
                 <Button asChild variant="outline" className="border-info text-info hover:bg-info/10">
-                  <Link href="/generar?tipo=afiliado">
+                  <Link href="/afiliar">
                     <Users className="h-4 w-4 mr-2" />
                     Afiliar
                   </Link>

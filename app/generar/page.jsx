@@ -76,7 +76,7 @@ export default function GenerarPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tipoUrl = params.get("tipo");
-      if (tipoUrl) {
+      if (tipoUrl && tipoUrl !== "afiliado") {
         setFormData(prev => ({ ...prev, tipo: tipoUrl }));
       }
     }
@@ -85,7 +85,6 @@ export default function GenerarPage() {
   const isFormValid = () => {
     if (!formData.nombre || !formData.cedula || !formData.tipo || !formData.fecha || !formData.oficina || !formData.dependencia) return false;
     if (formData.tipo === "certificado" && (!formData.evento || !formData.descripcion)) return false;
-    if (formData.tipo === "afiliado" && !formData.duracion) return false;
     if (formData.tipo === "documento" && !formData.descripcion) return false;
     return true;
   };
@@ -154,9 +153,7 @@ export default function GenerarPage() {
         dependencia: formData.dependencia,
         evento: formData.tipo === "certificado" ? formData.evento : null,
         descripcion: (formData.tipo === "certificado" || formData.tipo === "documento") ? formData.descripcion.trim() : null,
-        duracion: formData.tipo === "afiliado" ? formData.duracion : null,
-        fechaExpiracion: fechaExpiracion ? fechaExpiracion.toISOString() : null,
-        estado: "activo", // ← siempre "activo" al crear
+        estado: "activo",
         fecha: fechaCreacion.toISOString(),
       });
 
@@ -435,29 +432,11 @@ export default function GenerarPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="certificado">Certificado</SelectItem>
-                      <SelectItem value="afiliado">Afiliado</SelectItem>
                       <SelectItem value="documento">Documento</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
 
-                {formData.tipo === "afiliado" && (
-                  <Field>
-                    <FieldLabel htmlFor="duracion">Duración de afiliación</FieldLabel>
-                    <Select
-                      value={formData.duracion}
-                      onValueChange={(value) => handleInputChange("duracion", value)}
-                    >
-                      <SelectTrigger id="duracion">
-                        <SelectValue placeholder="Seleccione la duración" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6_meses">6 Meses</SelectItem>
-                        <SelectItem value="1_ano">1 Año</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                )}
 
                 {formData.tipo === "certificado" && (
                   <Field>
