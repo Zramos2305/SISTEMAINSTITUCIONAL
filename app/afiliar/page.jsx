@@ -726,20 +726,6 @@ export default function AfiliarPage() {
                     <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
                   </div>
                 </div>
-
-                {formData.beneficiarios?.length > 0 && (
-                  <div className="mt-4 w-full bg-muted/20 p-2 rounded-xl border border-dashed border-muted-foreground/30">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 text-center">Beneficiarios</p>
-                    <div className="grid grid-cols-1 gap-1">
-                      {formData.beneficiarios.map((b, i) => (
-                        <div key={i} className="flex justify-between items-center px-2">
-                          <span className="text-[9px] font-bold text-primary truncate max-w-[120px] uppercase">{b.nombre}</span>
-                          <span className="text-[9px] font-mono text-muted-foreground">{b.nuip}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
@@ -879,20 +865,6 @@ export default function AfiliarPage() {
                     <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                   </div>
                 </div>
-
-                {formData.beneficiarios?.length > 0 && (
-                  <div style={{ marginTop: '12px', width: '100%', backgroundColor: '#f1f5f9', padding: '8px', borderRadius: '12px', border: '1px dashed #94a3b8' }}>
-                    <p style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', color: '#64748b', marginBottom: '4px', textAlign: 'center', margin: 0 }}>Beneficiarios</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
-                      {formData.beneficiarios.map((b, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px', paddingRight: '8px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: 'bold', color: COLORS.azul, textTransform: 'uppercase', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '120px' }}>{b.nombre}</span>
-                          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#64748b' }}>{b.nuip}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* QR y Footer */}
