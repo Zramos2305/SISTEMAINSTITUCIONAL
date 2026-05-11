@@ -102,7 +102,7 @@ const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar
 // Función auxiliar para dar formato legible a la fecha (por ejemplo: "22 oct 2023, 14:30")
 function formatearFecha(fecha) {
   if (!fecha) return "-";
-  
+
   let dateObj;
   if (typeof fecha.toDate === "function") {
     dateObj = fecha.toDate();
@@ -177,11 +177,11 @@ async function descargarQR(docObj) {
 // ─── helpers de asistencia ───────────────────────────────────────────────────
 
 const ESTADO_ASISTENCIA = {
-  trabajando:        { label: "En jornada",   color: "bg-success/15 text-success border-success/30",             icon: Briefcase,     dot: "bg-success" },
-  almuerzo:          { label: "En almuerzo",  color: "bg-amber-500/15 text-amber-600 border-amber-500/30",       icon: Coffee,        dot: "bg-amber-500" },
-  teletrabajo_activo:{ label: "Teletrabajo",  color: "bg-primary/15 text-primary border-primary/30",            icon: Monitor,       dot: "bg-primary" },
-  finalizado:        { label: "Finalizado",   color: "bg-muted text-muted-foreground border-border",            icon: CheckCircle2,  dot: "bg-muted-foreground" },
-  fuera_de_jornada:  { label: "Sin registro", color: "bg-muted text-muted-foreground border-border",            icon: Clock,         dot: "bg-muted-foreground" },
+  trabajando: { label: "En jornada", color: "bg-success/15 text-success border-success/30", icon: Briefcase, dot: "bg-success" },
+  almuerzo: { label: "En almuerzo", color: "bg-amber-500/15 text-amber-600 border-amber-500/30", icon: Coffee, dot: "bg-amber-500" },
+  teletrabajo_activo: { label: "Teletrabajo", color: "bg-primary/15 text-primary border-primary/30", icon: Monitor, dot: "bg-primary" },
+  finalizado: { label: "Finalizado", color: "bg-muted text-muted-foreground border-border", icon: CheckCircle2, dot: "bg-muted-foreground" },
+  fuera_de_jornada: { label: "Sin registro", color: "bg-muted text-muted-foreground border-border", icon: Clock, dot: "bg-muted-foreground" },
 };
 
 function BadgeEstado({ estado }) {
@@ -209,18 +209,18 @@ function formatearHoraAsistencia(h) {
 
 function calcularHorasTrabajadasDashboard(r) {
   if (!r || !r.horaEntrada) return "—";
-  
+
   const sec = (ts) => {
     if (!ts) return 0;
     if (ts.seconds) return ts.seconds;
     if (ts.toDate) return Math.floor(ts.toDate().getTime() / 1000);
     return Math.floor(new Date(ts).getTime() / 1000);
   };
-  
+
   const entrada = sec(r.horaEntrada);
   const salidaAlmuerzo = sec(r.horaSalidaAlmuerzo);
   const entradaAlmuerzo = sec(r.horaEntradaAlmuerzo);
-  
+
   let salida = 0;
   // Verificar si es el día actual comparando con formato local (Y-M-D)
   const hoy = new Date().toLocaleDateString("en-CA"); // Formato YYYY-MM-DD
@@ -239,14 +239,14 @@ function calcularHorasTrabajadasDashboard(r) {
   if (salidaAlmuerzo) {
     totalSegundos += (salidaAlmuerzo - entrada);
     if (entradaAlmuerzo) {
-       totalSegundos += (salida - entradaAlmuerzo);
+      totalSegundos += (salida - entradaAlmuerzo);
     }
   } else {
     totalSegundos += (salida - entrada);
   }
-  
+
   if (totalSegundos < 0) totalSegundos = 0;
-  
+
   const horas = Math.floor(totalSegundos / 3600);
   const minutos = Math.floor((totalSegundos % 3600) / 60);
   return `${horas}h ${minutos}m`;
@@ -327,11 +327,11 @@ function DashboardContent() {
     new Date().toISOString().split("T")[0]
   );
   const [busquedaAsistencia, setBusquedaAsistencia] = useState("");
-  const [logsAuditoria, setLogsAuditoria]           = useState([]);
-  const [cargandoAuditoria, setCargandoAuditoria]   = useState(false);
-  const [busquedaAuditoria, setBusquedaAuditoria]   = useState("");
+  const [logsAuditoria, setLogsAuditoria] = useState([]);
+  const [cargandoAuditoria, setCargandoAuditoria] = useState(false);
+  const [busquedaAuditoria, setBusquedaAuditoria] = useState("");
   const [seleccionadosAuditoria, setSeleccionadosAuditoria] = useState([]);
-  const [verBitacoraDoc, setVerBitacoraDoc]         = useState(null);
+  const [verBitacoraDoc, setVerBitacoraDoc] = useState(null);
   const { registros, cargando: cargandoAsistencias, recargar } = useAsistencias(fechaAsistencia);
 
   const registrosFiltrados = useMemo(() => {
@@ -345,9 +345,9 @@ function DashboardContent() {
   }, [registros, busquedaAsistencia]);
 
   const statsAsistencia = useMemo(() => {
-    const total       = registros.length;
-    const trabajando  = registros.filter((r) => r.estadoActual === "trabajando" || r.estadoActual === "teletrabajo_activo").length;
-    const almuerzo    = registros.filter((r) => r.estadoActual === "almuerzo").length;
+    const total = registros.length;
+    const trabajando = registros.filter((r) => r.estadoActual === "trabajando" || r.estadoActual === "teletrabajo_activo").length;
+    const almuerzo = registros.filter((r) => r.estadoActual === "almuerzo").length;
     const finalizados = registros.filter((r) => r.estadoActual === "finalizado").length;
     return { total, trabajando, almuerzo, finalizados };
   }, [registros]);
@@ -386,7 +386,7 @@ function DashboardContent() {
     try {
       const snap = await getDocs(collection(db, "auditoria"));
       const docs = snap.docs;
-      
+
       // Eliminar en lotes de 500 (límite de Firestore)
       for (let i = 0; i < docs.length; i += 500) {
         const batch = writeBatch(db);
@@ -394,7 +394,7 @@ function DashboardContent() {
         chunk.forEach((d) => batch.delete(d.ref));
         await batch.commit();
       }
-      
+
       toast.success("Todos los registros de auditoría han sido eliminados");
       setSeleccionadosAuditoria([]);
       cargarAuditoria();
@@ -445,7 +445,7 @@ function DashboardContent() {
 
   const handleEliminarAsistencia = async (asistencia) => {
     if (!confirm(`¿Estás seguro de eliminar el registro de asistencia de ${asistencia.nombre} del día ${asistencia.fecha}?`)) return;
-    
+
     try {
       await deleteDoc(doc(db, "asistencias", asistencia.id));
       await registrarAuditoria({
@@ -532,7 +532,7 @@ function DashboardContent() {
         detalles: `Eliminación permanente del registro ${codigoAEliminar} de la colección ${colName}`
       });
       toast.success("Eliminado correctamente");
-      cargarAuditoria(); 
+      cargarAuditoria();
     } catch {
       toast.error("Error al eliminar");
     } finally {
@@ -706,286 +706,286 @@ function DashboardContent() {
 
           {/* ══════════════════ PESTAÑA: DOCUMENTOS ══════════════════ */}
           <TabsContent value="documentos">
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Documentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold">{stats.total}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Certificados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-success" />
-                <span className="text-2xl font-bold">{stats.certificados}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Afiliados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-info" />
-                <span className="text-2xl font-bold">{stats.afiliados}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Documentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold">{stats.documentosGenerales}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Actions & Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col lg:flex-row gap-4 justify-between">
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={() => exportarCSV(documentos, "todos")}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Todos
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-success border-success/30 hover:bg-success/10"
-                  onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "certificado"), "certificados")}
-                >
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  Certificados
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-info border-info/30 hover:bg-info/10"
-                  onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "afiliado"), "afiliados")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Afiliados
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-primary border-primary/30 hover:bg-primary/10"
-                  onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "documento"), "documentos_generales")}
-                >
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Documentos
-                </Button>
-              </div>
-
-              <div className="flex flex-1 gap-3 max-w-xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nombre, código o NUIP..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={filtroTipo} onValueChange={(value) => setFiltroTipo(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="certificado">Certificados</SelectItem>
-                    <SelectItem value="afiliado">Afiliados</SelectItem>
-                    <SelectItem value="documento">Documentos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowCalendar(true)}>
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Calendario</span>
-                </Button>
-                <Button asChild variant="outline" className="border-info text-info hover:bg-info/10">
-                  <Link href="/afiliar">
-                    <Users className="h-4 w-4 mr-2" />
-                    Afiliar
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/generar">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Emitir Documentos
-                  </Link>
-                </Button>
-              </div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Documentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <span className="text-2xl font-bold">{stats.total}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Certificados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-success" />
+                    <span className="text-2xl font-bold">{stats.certificados}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Afiliados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-info" />
+                    <span className="text-2xl font-bold">{stats.afiliados}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Documentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="h-5 w-5 text-primary" />
+                    <span className="text-2xl font-bold">{stats.documentosGenerales}</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner className="h-8 w-8" />
-              </div>
-            ) : documentosFiltrados.length === 0 ? (
-              <Empty
-                title="Sin documentos"
-                description={
-                  busqueda || filtroTipo !== "todos"
-                    ? "No se encontraron documentos con los filtros aplicados"
-                    : "Aún no hay documentos registrados"
-                }
-                className="py-12"
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead className="hidden md:table-cell">NUIP</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead className="hidden lg:table-cell">Detalle</TableHead>
-                      <TableHead className="hidden sm:table-cell">Estado</TableHead>
-                      <TableHead className="hidden xl:table-cell">Fecha</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documentosFiltrados.map((doc) => {
-                      const isExpired = doc.tipo === "afiliado" && doc.fechaExpiracion && new Date() > new Date(doc.fechaExpiracion);
-                      const esActivo = doc.estado === "activo" && !isExpired;
-                      const cargando = updatingStatus === doc.codigo;
+            {/* Actions & Filters */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col lg:flex-row gap-4 justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => exportarCSV(documentos, "todos")}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-success border-success/30 hover:bg-success/10"
+                      onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "certificado"), "certificados")}
+                    >
+                      <GraduationCap className="h-4 w-4 mr-2" />
+                      Certificados
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-info border-info/30 hover:bg-info/10"
+                      onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "afiliado"), "afiliados")}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Afiliados
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-primary border-primary/30 hover:bg-primary/10"
+                      onClick={() => exportarCSV(documentos.filter((d) => d.tipo === "documento"), "documentos_generales")}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Documentos
+                    </Button>
+                  </div>
 
-                      return (
-                        <TableRow key={doc.codigo}>
-                          <TableCell className="font-mono text-sm">{doc.codigo}</TableCell>
-                          <TableCell className="font-medium">{doc.nombre}</TableCell>
-                          <TableCell className="hidden md:table-cell">{doc.cedula || "-"}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={doc.tipo === "certificado" ? "default" : doc.tipo === "documento" ? "outline" : "secondary"}
-                              className={
-                                doc.tipo === "certificado"
-                                  ? "bg-success/10 text-success border-success/20"
-                                  : doc.tipo === "documento"
-                                    ? "bg-primary/10 text-primary border-primary/20"
-                                    : "bg-info/10 text-info border-info/20"
-                              }
-                            >
-                              {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "Afiliado"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell">
-                            {doc.tipo === "certificado" ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") : doc.tipo === "documento" ? doc.descripcion || "General" : "Miembro"}
-                          </TableCell>
+                  <div className="flex flex-1 gap-3 max-w-xl">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nombre, código o NUIP..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select value={filtroTipo} onValueChange={(value) => setFiltroTipo(value)}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="certificado">Certificados</SelectItem>
+                        <SelectItem value="afiliado">Afiliados</SelectItem>
+                        <SelectItem value="documento">Documentos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                          {/* ESTADO — toggle con confirmación para desactivar */}
-                          <TableCell className="hidden sm:table-cell">
-                            {doc.tipo === "afiliado" ? (
-                              <button
-                                onClick={() => {
-                                  if (isExpired) {
-                                    setReactivarDoc(doc);
-                                    setDuracionReactivacion("6_meses");
-                                  } else if (esActivo) {
-                                    setConfirmarInactivacion(doc);
-                                  } else {
-                                    handleToggleEstado(doc.codigo, doc.estado);
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowCalendar(true)}>
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Calendario</span>
+                    </Button>
+                    <Button asChild variant="outline" className="border-info text-info hover:bg-info/10">
+                      <Link href="/afiliar">
+                        <Users className="h-4 w-4 mr-2" />
+                        Afiliar
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/generar">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Emitir Documentos
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Table */}
+            <Card>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner className="h-8 w-8" />
+                  </div>
+                ) : documentosFiltrados.length === 0 ? (
+                  <Empty
+                    title="Sin documentos"
+                    description={
+                      busqueda || filtroTipo !== "todos"
+                        ? "No se encontraron documentos con los filtros aplicados"
+                        : "Aún no hay documentos registrados"
+                    }
+                    className="py-12"
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Código</TableHead>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead className="hidden md:table-cell">NUIP</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="hidden lg:table-cell">Detalle</TableHead>
+                          <TableHead className="hidden sm:table-cell">Estado</TableHead>
+                          <TableHead className="hidden xl:table-cell">Fecha</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {documentosFiltrados.map((doc) => {
+                          const isExpired = doc.tipo === "afiliado" && doc.fechaExpiracion && new Date() > new Date(doc.fechaExpiracion);
+                          const esActivo = doc.estado === "activo" && !isExpired;
+                          const cargando = updatingStatus === doc.codigo;
+
+                          return (
+                            <TableRow key={doc.codigo}>
+                              <TableCell className="font-mono text-sm">{doc.codigo}</TableCell>
+                              <TableCell className="font-medium">{doc.nombre}</TableCell>
+                              <TableCell className="hidden md:table-cell">{doc.cedula || "-"}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={doc.tipo === "certificado" ? "default" : doc.tipo === "documento" ? "outline" : "secondary"}
+                                  className={
+                                    doc.tipo === "certificado"
+                                      ? "bg-success/10 text-success border-success/20"
+                                      : doc.tipo === "documento"
+                                        ? "bg-primary/10 text-primary border-primary/20"
+                                        : "bg-info/10 text-info border-info/20"
                                   }
-                                }}
-                                disabled={cargando}
-                                className={`
+                                >
+                                  {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "Afiliado"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                {doc.tipo === "certificado" ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") : doc.tipo === "documento" ? doc.descripcion || "General" : "Miembro"}
+                              </TableCell>
+
+                              {/* ESTADO — toggle con confirmación para desactivar */}
+                              <TableCell className="hidden sm:table-cell">
+                                {doc.tipo === "afiliado" ? (
+                                  <button
+                                    onClick={() => {
+                                      if (isExpired) {
+                                        setReactivarDoc(doc);
+                                        setDuracionReactivacion("6_meses");
+                                      } else if (esActivo) {
+                                        setConfirmarInactivacion(doc);
+                                      } else {
+                                        handleToggleEstado(doc.codigo, doc.estado);
+                                      }
+                                    }}
+                                    disabled={cargando}
+                                    className={`
                                   inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
                                   border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
                                   ${isExpired
-                                    ? "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
-                                    : esActivo
-                                      ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
-                                      : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
-                                  }
+                                        ? "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
+                                        : esActivo
+                                          ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
+                                          : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
+                                      }
                                 `}
-                              >
-                                {cargando ? (
-                                  <Spinner className="h-3 w-3" />
-                                ) : esActivo ? (
-                                  <ToggleRight className="h-3.5 w-3.5" />
+                                  >
+                                    {cargando ? (
+                                      <Spinner className="h-3 w-3" />
+                                    ) : esActivo ? (
+                                      <ToggleRight className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <ToggleLeft className="h-3.5 w-3.5" />
+                                    )}
+                                    {isExpired ? "Vencido" : esActivo ? "Activo" : "Inactivo"}
+                                  </button>
                                 ) : (
-                                  <ToggleLeft className="h-3.5 w-3.5" />
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-success/10 text-success border-success/30 opacity-80 cursor-default">
+                                    <ToggleRight className="h-3.5 w-3.5" />
+                                    Activo
+                                  </div>
                                 )}
-                                {isExpired ? "Vencido" : esActivo ? "Activo" : "Inactivo"}
-                              </button>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-success/10 text-success border-success/30 opacity-80 cursor-default">
-                                <ToggleRight className="h-3.5 w-3.5" />
-                                Activo
-                              </div>
-                            )}
-                          </TableCell>
+                              </TableCell>
 
-                          <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
-                            {formatearFecha(doc.fecha || doc.fechaIngreso)}
-                          </TableCell>
+                              <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
+                                {formatearFecha(doc.fecha || doc.fechaIngreso)}
+                              </TableCell>
 
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-info hover:text-info"
-                                title="Información"
-                                onClick={() => setInfoDoc(doc)}
-                              >
-                                <Info className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => descargarQR(doc)}
-                                title="Descargar QR"
-                              >
-                                <QrCode className="h-4 w-4" />
-                              </Button>
-                                {esSuperAdmin && (
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="text-destructive hover:text-destructive"
-                                    title="Eliminar"
-                                    onClick={() => setCodigoAEliminar(doc.codigo)}
+                                    className="text-info hover:text-info"
+                                    title="Información"
+                                    onClick={() => setInfoDoc(doc)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Info className="h-4 w-4" />
                                   </Button>
-                                )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => descargarQR(doc)}
+                                    title="Descargar QR"
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                  {esSuperAdmin && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive"
+                                      title="Eliminar"
+                                      onClick={() => setCodigoAEliminar(doc.codigo)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
           </TabsContent>
 
@@ -996,10 +996,10 @@ function DashboardContent() {
               {/* stats rápidos */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 {[
-                  { label: "Registros hoy",  val: statsAsistencia.total,       icon: Users,        color: "text-primary" },
-                  { label: "En jornada",     val: statsAsistencia.trabajando,   icon: Briefcase,    color: "text-success" },
-                  { label: "En almuerzo",    val: statsAsistencia.almuerzo,     icon: Coffee,       color: "text-amber-500" },
-                  { label: "Finalizados",    val: statsAsistencia.finalizados,  icon: CheckCircle2, color: "text-muted-foreground" },
+                  { label: "Registros hoy", val: statsAsistencia.total, icon: Users, color: "text-primary" },
+                  { label: "En jornada", val: statsAsistencia.trabajando, icon: Briefcase, color: "text-success" },
+                  { label: "En almuerzo", val: statsAsistencia.almuerzo, icon: Coffee, color: "text-amber-500" },
+                  { label: "Finalizados", val: statsAsistencia.finalizados, icon: CheckCircle2, color: "text-muted-foreground" },
                 ].map(({ label, val, icon: Icon, color }) => (
                   <Card key={label}>
                     <CardHeader className="pb-2">
@@ -1155,10 +1155,10 @@ function DashboardContent() {
                               </TableCell>
                               <TableCell className="text-right">
                                 {esSuperAdmin && (
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
                                     onClick={() => handleEliminarAsistencia(reg)}
                                     title="Eliminar Asistencia"
                                   >
@@ -1178,109 +1178,109 @@ function DashboardContent() {
             </TabsContent>
           )}
 
-            {esSuperAdmin && (
-              <TabsContent value="auditoria">
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                    <Card className="flex-1 w-full">
-                      <CardContent className="pt-4 pb-4">
-                        <div className="flex flex-col sm:flex-row gap-3 items-center">
-                          <div className="relative flex-1 w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder="Buscar en auditoría (usuario, acción, ID...)"
-                              value={busquedaAuditoria}
-                              onChange={(e) => setBusquedaAuditoria(e.target.value)}
-                              className="pl-10"
-                            />
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
-                              <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} />
-                              Actualizar
-                            </Button>
-                            {seleccionadosAuditoria.length > 0 && (
-                              <Button variant="destructive" size="sm" onClick={handleEliminarSeleccionadosAuditoria}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar ({seleccionadosAuditoria.length})
-                              </Button>
-                            )}
-                            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleEliminarTodoAuditoria} disabled={cargandoAuditoria || logsAuditoria.length === 0}>
+          {esSuperAdmin && (
+            <TabsContent value="auditoria">
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                  <Card className="flex-1 w-full">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex flex-col sm:flex-row gap-3 items-center">
+                        <div className="relative flex-1 w-full">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Buscar en auditoría (usuario, acción, ID...)"
+                            value={busquedaAuditoria}
+                            onChange={(e) => setBusquedaAuditoria(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
+                            <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} />
+                            Actualizar
+                          </Button>
+                          {seleccionadosAuditoria.length > 0 && (
+                            <Button variant="destructive" size="sm" onClick={handleEliminarSeleccionadosAuditoria}>
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Borrar Todo
+                              Eliminar ({seleccionadosAuditoria.length})
                             </Button>
-                          </div>
+                          )}
+                          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleEliminarTodoAuditoria} disabled={cargandoAuditoria || logsAuditoria.length === 0}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Borrar Todo
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <History className="h-5 w-5 text-primary" /> Historial de Auditoría
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">Registro de acciones administrativas realizadas en el sistema.</p>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {cargandoAuditoria ? (
-                        <div className="flex items-center justify-center py-20"><Spinner className="h-8 w-8" /></div>
-                      ) : logsAuditoriaFiltrados.length === 0 ? (
-                        <div className="py-20 text-center text-muted-foreground">
-                          {busquedaAuditoria ? "No se encontraron resultados para tu búsqueda." : "No hay registros de auditoría aún."}
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-muted/50">
-                                <TableHead className="w-12">
-                                  <Checkbox 
-                                    checked={seleccionadosAuditoria.length === logsAuditoriaFiltrados.length && logsAuditoriaFiltrados.length > 0}
-                                    onCheckedChange={handleSelectAllAuditoria}
-                                  />
-                                </TableHead>
-                                <TableHead>Fecha/Hora</TableHead>
-                                <TableHead>Administrador</TableHead>
-                                <TableHead>Acción</TableHead>
-                                <TableHead>Documento/ID</TableHead>
-                                <TableHead>Detalles</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {logsAuditoriaFiltrados.map((log) => (
-                                <TableRow key={log.id} className={seleccionadosAuditoria.includes(log.id) ? "bg-muted/30" : ""}>
-                                  <TableCell>
-                                    <Checkbox 
-                                      checked={seleccionadosAuditoria.includes(log.id)}
-                                      onCheckedChange={(checked) => handleSelectOneAuditoria(log.id, checked)}
-                                    />
-                                  </TableCell>
-                                  <TableCell className="text-xs font-medium whitespace-nowrap">
-                                    {log.fecha?.toDate ? log.fecha.toDate().toLocaleString('es-CO') : 'Reciente'}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex flex-col">
-                                      <span className="text-sm font-semibold">{log.usuarioNombre}</span>
-                                      <span className="text-[10px] text-muted-foreground">{log.usuarioEmail}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="secondary" className="text-[10px] uppercase">{log.accion}</Badge>
-                                  </TableCell>
-                                  <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
-                                  <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
-              </TabsContent>
-            )}
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <History className="h-5 w-5 text-primary" /> Historial de Auditoría
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Registro de acciones administrativas realizadas en el sistema.</p>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {cargandoAuditoria ? (
+                      <div className="flex items-center justify-center py-20"><Spinner className="h-8 w-8" /></div>
+                    ) : logsAuditoriaFiltrados.length === 0 ? (
+                      <div className="py-20 text-center text-muted-foreground">
+                        {busquedaAuditoria ? "No se encontraron resultados para tu búsqueda." : "No hay registros de auditoría aún."}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead className="w-12">
+                                <Checkbox
+                                  checked={seleccionadosAuditoria.length === logsAuditoriaFiltrados.length && logsAuditoriaFiltrados.length > 0}
+                                  onCheckedChange={handleSelectAllAuditoria}
+                                />
+                              </TableHead>
+                              <TableHead>Fecha/Hora</TableHead>
+                              <TableHead>Administrador</TableHead>
+                              <TableHead>Acción</TableHead>
+                              <TableHead>Documento/ID</TableHead>
+                              <TableHead>Detalles</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {logsAuditoriaFiltrados.map((log) => (
+                              <TableRow key={log.id} className={seleccionadosAuditoria.includes(log.id) ? "bg-muted/30" : ""}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={seleccionadosAuditoria.includes(log.id)}
+                                    onCheckedChange={(checked) => handleSelectOneAuditoria(log.id, checked)}
+                                  />
+                                </TableCell>
+                                <TableCell className="text-xs font-medium whitespace-nowrap">
+                                  {log.fecha?.toDate ? log.fecha.toDate().toLocaleString('es-CO') : 'Reciente'}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-semibold">{log.usuarioNombre}</span>
+                                    <span className="text-[10px] text-muted-foreground">{log.usuarioEmail}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-[10px] uppercase">{log.accion}</Badge>
+                                </TableCell>
+                                <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
 
           {/* ══════════════════ PESTAÑA: GESTIÓN DE PERSONAL ══════════════════ */}
           {puedeVerAsistenciasYPersonal && (

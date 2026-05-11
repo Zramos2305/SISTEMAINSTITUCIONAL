@@ -304,11 +304,11 @@ export default function AfiliarPage() {
       const imgData = canvas.toDataURL("image/png");
       const { jsPDF } = await import("jspdf");
       const pdf = new jsPDF("p", "mm", "a4");
-      
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const ratio = canvas.height / canvas.width;
-      
+
       let finalImgWidth = pdfWidth;
       let finalImgHeight = pdfWidth * ratio;
 
@@ -325,26 +325,26 @@ export default function AfiliarPage() {
       // INSERTAR QR DIRECTAMENTE EN EL PDF (Capa superior)
       if (qrDataUrl) {
         const qrSize = 35; // 35mm
-        const marginX = pdfWidth - qrSize - 20; 
-        const marginY = pageHeight - qrSize - 30; 
-        
+        const marginX = pdfWidth - qrSize - 20;
+        const marginY = pageHeight - qrSize - 30;
+
         pdf.setFillColor(255, 255, 255);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
-        
-        pdf.setDrawColor(5, 49, 138); 
+
+        pdf.setDrawColor(5, 49, 138);
         pdf.setLineWidth(0.5);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'D');
 
         pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
-        
+
         pdf.setTextColor(5, 49, 138);
         pdf.setFontSize(8);
         pdf.setFont("helvetica", "bold");
-        pdf.text("VERIFICACIÓN DIGITAL", marginX + (qrSize/2), marginY + qrSize + 6, { align: "center" });
+        pdf.text("VERIFICACIÓN DIGITAL", marginX + (qrSize / 2), marginY + qrSize + 6, { align: "center" });
       }
 
       pdf.save(`Certificado_Afiliacion_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
-      
+
       toast.success("Certificado generado correctamente");
     } catch (err) {
       console.error("Error certificado:", err);
@@ -634,10 +634,10 @@ export default function AfiliarPage() {
                   )}
                   {formData.beneficiarios?.map((ben, idx) => (
                     <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
                         onClick={() => handleRemoveBeneficiario(idx)}
                       >
@@ -646,8 +646,8 @@ export default function AfiliarPage() {
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
-                          <Input 
-                            value={ben.nombre} 
+                          <Input
+                            value={ben.nombre}
                             onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
                             className="h-8 text-xs"
                             placeholder="Nombre"
@@ -655,8 +655,8 @@ export default function AfiliarPage() {
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
-                          <Input 
-                            value={ben.nuip} 
+                          <Input
+                            value={ben.nuip}
                             onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
                             className="h-8 text-xs font-mono"
                             placeholder="Documento"
@@ -840,236 +840,236 @@ export default function AfiliarPage() {
             </p>
           </div>
 
-          </div>
+        </div>
 
-          {/* CONTENEDOR DE EXPORTACIÓN AISLADO (INVISIBLE) - PURO HEX / SIN TAILWIND */}
-          <div
-            style={{
-              position: "fixed",
-              left: "-99999px",
-              top: 0,
-              width: "380px",
-              height: "580px",
-              background: "#ffffff",
-              zIndex: -1
-            }}
-          >
-            <div ref={exportRef} style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}>
-              {/* Decoración Superior */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '-40px',
-                  left: '-40px',
-                  width: '120%',
-                  height: '120%',
-                  transform: 'rotate(15deg)',
-                  background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '33.33%',
-                  height: '100%',
-                  backgroundColor: COLORS.amarillo,
-                  opacity: 0.2
-                }} />
-              </div>
-
-              {/* Logo y Header */}
-              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', paddingLeft: '32px', paddingRight: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
-                </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, lineHeight: 1 }}>ISLA CASCAJAL</h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '4px', margin: 0 }}>Fundación</p>
-              </div>
-
-              {/* Foto de Perfil */}
-              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
-                <div style={{
-                  position: 'relative',
-                  width: '160px',
-                  height: '160px',
-                  borderRadius: '24px',
-                  border: '6px solid #ffffff',
-                  backgroundColor: '#f1f5f9',
-                  overflow: 'hidden'
-                }}>
-                  {fotoPreview ? (
-                    <img src={fotoPreview} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{
-                  marginTop: '-20px',
-                  position: 'relative',
-                  zIndex: 20,
-                  paddingLeft: '32px',
-                  paddingRight: '32px',
-                  paddingTop: '6px',
-                  paddingBottom: '6px',
-                  borderRadius: '9999px',
-                  border: '2px solid #ffffff',
-                  backgroundColor: COLORS.rojo
-                }}>
-                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase' }}>AFILIADO</span>
-                </div>
-              </div>
-
-              {/* Información Personal */}
-              <div style={{ marginTop: '16px', paddingLeft: '40px', paddingRight: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, textTransform: 'uppercase', color: '#1e293b', margin: 0, width: '100%' }}>
-                  {formData.nombre || "NOMBRE COMPLETO"}
-                </h3>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', marginTop: '4px', color: '#64748b', margin: 0 }}>
-                  C.C. {formData.cedula || "XXXXXXXX"}
-                </p>
-
-                <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Código</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigo}</p>
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>RH</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.rh || "—"}</p>
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>País</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.pais || "—"}</p>
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* QR y Footer */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', boxSizing: 'border-box' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 900, color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
-                </div>
-
-                <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: `2px solid ${COLORS.azul}` }}>
-                  {qrDataUrl && (
-                    <img src={qrDataUrl} alt="QR" style={{ width: '70px', height: '70px' }} />
-                  )}
-                </div>
-              </div>
-
-              {/* Franjas de color decorativas */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
-                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
-              </div>
+        {/* CONTENEDOR DE EXPORTACIÓN AISLADO (INVISIBLE) - PURO HEX / SIN TAILWIND */}
+        <div
+          style={{
+            position: "fixed",
+            left: "-99999px",
+            top: 0,
+            width: "380px",
+            height: "580px",
+            background: "#ffffff",
+            zIndex: -1
+          }}
+        >
+          <div ref={exportRef} style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}>
+            {/* Decoración Superior */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute',
+                top: '-40px',
+                left: '-40px',
+                width: '120%',
+                height: '120%',
+                transform: 'rotate(15deg)',
+                background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
+              }} />
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '33.33%',
+                height: '100%',
+                backgroundColor: COLORS.amarillo,
+                opacity: 0.2
+              }} />
             </div>
-          </div>
 
-          {/* CERTIFICADO DE AFILIACIÓN (INVISIBLE PARA EXPORTACIÓN) */}
-          <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
-            <div 
-              ref={certificadoRef} 
-              data-certificate="true"
-              style={{ 
-                width: "800px", 
-                padding: "80px", 
-                background: "white", 
-                fontFamily: "'Times New Roman', serif", 
-                color: "#1a1a1a",
-                lineHeight: "1.8",
-                boxSizing: "border-box"
-              }}
-            >
-              {/* Header con Logo */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
-                <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
-                <div style={{ textAlign: "right" }}>
-                  <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "-1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                  <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase", letterSpacing: "2px" }}>Sistema Institucional de Afiliaciones</p>
-                </div>
+            {/* Logo y Header */}
+            <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', paddingLeft: '32px', paddingRight: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
+                <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
               </div>
+              <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, lineHeight: 1 }}>ISLA CASCAJAL</h2>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '4px', margin: 0 }}>Fundación</p>
+            </div>
 
-              {/* Título */}
-              <div style={{ textAlign: "center", marginBottom: "50px" }}>
-                <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
-              </div>
-
-              {/* Contenido */}
-              <div style={{ fontSize: "18px", textAlign: "justify" }}>
-                <p style={{ marginBottom: "25px" }}>
-                  La Fundación Isla Cascajal certifica que el(la) ciudadano(a):
-                </p>
-
-                <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase", color: "#000" }}>
-                  {formData.nombre || "[NOMBRE COMPLETO DEL AFILIADO]"}
-                </p>
-
-                <p style={{ marginBottom: "25px" }}>
-                  identificado(a) con NUIP / documento de identidad No. <strong>{formData.cedula || "[NÚMERO DE DOCUMENTO]"}</strong>, se encuentra afiliado(a) y registrado(a) oficialmente en nuestra base institucional como miembro activo de la organización.
-                </p>
-
-                <p style={{ marginBottom: "25px" }}>
-                  La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional <strong>{formData.codigo}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
-                </p>
-
-                <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "80%", backgroundColor: "#f9f9f9" }}>
-                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Tipo de afiliación:</strong> AFILIADO</p>
-                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Estado actual:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
-                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Cargo / relación institucional:</strong> {formData.cargo || "Afiliado"}</p>
-                </div>
-
-                {formData.beneficiarios?.length > 0 && (
-                  <div style={{ margin: "25px 0", padding: "20px", border: "1px solid #eee", borderRadius: "12px", backgroundColor: "#fff" }}>
-                    <p style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", color: COLORS.azul, borderBottom: "1px solid #eee", paddingBottom: "5px" }}>Beneficiarios Autorizados:</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                      {formData.beneficiarios.map((b, i) => (
-                        <div key={i} style={{ fontSize: "14px", color: "#444" }}>
-                          • <span style={{ fontWeight: "bold" }}>{b.nombre}</span> <br/>
-                          <span style={{ fontSize: "12px", marginLeft: "12px" }}>NUIP: {b.nuip}</span>
-                        </div>
-                      ))}
-                    </div>
+            {/* Foto de Perfil */}
+            <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
+              <div style={{
+                position: 'relative',
+                width: '160px',
+                height: '160px',
+                borderRadius: '24px',
+                border: '6px solid #ffffff',
+                backgroundColor: '#f1f5f9',
+                overflow: 'hidden'
+              }}>
+                {fotoPreview ? (
+                  <img src={fotoPreview} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                    </svg>
                   </div>
                 )}
-
-                <p style={{ marginBottom: "60px" }}>
-                  Este certificado se expide a solicitud del interesado para los fines que estime convenientes.
-                </p>
               </div>
 
-              {/* Footer / Firmas */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "80px" }}>
-                <div style={{ textAlign: "left" }}>
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Fundación Isla Cascajal</p>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>Sistema Institucional de Afiliaciones</p>
-                  <p style={{ margin: "15px 0 30px 0", fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</p>
-                  
-                  <div style={{ marginTop: "50px" }}>
-                    <div style={{ width: "250px", borderBottom: "1px solid #000", marginBottom: "10px" }}></div>
-                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Coordinación Comercial</p>
-                    <p style={{ margin: 0, fontSize: "14px" }}>Fundación Isla Cascajal</p>
-                  </div>
+              <div style={{
+                marginTop: '-20px',
+                position: 'relative',
+                zIndex: 20,
+                paddingLeft: '32px',
+                paddingRight: '32px',
+                paddingTop: '6px',
+                paddingBottom: '6px',
+                borderRadius: '9999px',
+                border: '2px solid #ffffff',
+                backgroundColor: COLORS.rojo
+              }}>
+                <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase' }}>AFILIADO</span>
+              </div>
+            </div>
+
+            {/* Información Personal */}
+            <div style={{ marginTop: '16px', paddingLeft: '40px', paddingRight: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, textTransform: 'uppercase', color: '#1e293b', margin: 0, width: '100%' }}>
+                {formData.nombre || "NOMBRE COMPLETO"}
+              </h3>
+              <p style={{ fontWeight: 'bold', fontSize: '12px', marginTop: '4px', color: '#64748b', margin: 0 }}>
+                C.C. {formData.cedula || "XXXXXXXX"}
+              </p>
+
+              <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Código</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigo}</p>
                 </div>
-                
-                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
-                  {/* El QR se inserta directamente en el PDF para mayor precisión */}
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>RH</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.rh || "—"}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>País</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.pais || "—"}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                 </div>
               </div>
             </div>
+
+            {/* QR y Footer */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '10px', fontWeight: 900, color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
+              </div>
+
+              <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: `2px solid ${COLORS.azul}` }}>
+                {qrDataUrl && (
+                  <img src={qrDataUrl} alt="QR" style={{ width: '70px', height: '70px' }} />
+                )}
+              </div>
+            </div>
+
+            {/* Franjas de color decorativas */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
+              <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+              <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+              <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+              <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
+            </div>
           </div>
-        </main>
-      </div>
-    );
-  }
+        </div>
+
+        {/* CERTIFICADO DE AFILIACIÓN (INVISIBLE PARA EXPORTACIÓN) */}
+        <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
+          <div
+            ref={certificadoRef}
+            data-certificate="true"
+            style={{
+              width: "800px",
+              padding: "80px",
+              background: "white",
+              fontFamily: "'Times New Roman', serif",
+              color: "#1a1a1a",
+              lineHeight: "1.8",
+              boxSizing: "border-box"
+            }}
+          >
+            {/* Header con Logo */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
+              <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+              <div style={{ textAlign: "right" }}>
+                <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "-1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase", letterSpacing: "2px" }}>Sistema Institucional de Afiliaciones</p>
+              </div>
+            </div>
+
+            {/* Título */}
+            <div style={{ textAlign: "center", marginBottom: "50px" }}>
+              <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
+            </div>
+
+            {/* Contenido */}
+            <div style={{ fontSize: "18px", textAlign: "justify" }}>
+              <p style={{ marginBottom: "25px" }}>
+                La Fundación Isla Cascajal certifica que el(la) ciudadano(a):
+              </p>
+
+              <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase", color: "#000" }}>
+                {formData.nombre || "[NOMBRE COMPLETO DEL AFILIADO]"}
+              </p>
+
+              <p style={{ marginBottom: "25px" }}>
+                identificado(a) con NUIP / documento de identidad No. <strong>{formData.cedula || "[NÚMERO DE DOCUMENTO]"}</strong>, se encuentra afiliado(a) y registrado(a) oficialmente en nuestra base institucional como miembro activo de la organización.
+              </p>
+
+              <p style={{ marginBottom: "25px" }}>
+                La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional <strong>{formData.codigo}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
+              </p>
+
+              <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "80%", backgroundColor: "#f9f9f9" }}>
+                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Tipo de afiliación:</strong> AFILIADO</p>
+                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Estado actual:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
+                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Cargo / relación institucional:</strong> {formData.cargo || "Afiliado"}</p>
+              </div>
+
+              {formData.beneficiarios?.length > 0 && (
+                <div style={{ margin: "25px 0", padding: "20px", border: "1px solid #eee", borderRadius: "12px", backgroundColor: "#fff" }}>
+                  <p style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", color: COLORS.azul, borderBottom: "1px solid #eee", paddingBottom: "5px" }}>Beneficiarios Autorizados:</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    {formData.beneficiarios.map((b, i) => (
+                      <div key={i} style={{ fontSize: "14px", color: "#444" }}>
+                        • <span style={{ fontWeight: "bold" }}>{b.nombre}</span> <br />
+                        <span style={{ fontSize: "12px", marginLeft: "12px" }}>NUIP: {b.nuip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p style={{ marginBottom: "60px" }}>
+                Este certificado se expide a solicitud del interesado para los fines que estime convenientes.
+              </p>
+            </div>
+
+            {/* Footer / Firmas */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "80px" }}>
+              <div style={{ textAlign: "left" }}>
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Fundación Isla Cascajal</p>
+                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>Sistema Institucional de Afiliaciones</p>
+                <p style={{ margin: "15px 0 30px 0", fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</p>
+
+                <div style={{ marginTop: "50px" }}>
+                  <div style={{ width: "250px", borderBottom: "1px solid #000", marginBottom: "10px" }}></div>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Coordinación Comercial</p>
+                  <p style={{ margin: 0, fontSize: "14px" }}>Fundación Isla Cascajal</p>
+                </div>
+              </div>
+
+              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
+                {/* El QR se inserta directamente en el PDF para mayor precisión */}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
