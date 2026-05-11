@@ -239,6 +239,9 @@ export default function AfiliarPage() {
         foto: null,
         oficina: "",
         dependencia: "",
+        pais: "Colombia",
+        ciudad: "",
+        beneficiarios: [],
       });
       setFotoPreview(null);
 
@@ -552,10 +555,10 @@ export default function AfiliarPage() {
                   </Button>
                 </FieldLabel>
                 <div className="space-y-3">
-                  {formData.beneficiarios.length === 0 && (
+                  {formData.beneficiarios?.length === 0 && (
                     <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
                   )}
-                  {formData.beneficiarios.map((ben, idx) => (
+                  {formData.beneficiarios?.map((ben, idx) => (
                     <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
                       <Button 
                         type="button" 
