@@ -105,7 +105,7 @@ export default function AfiliarPage() {
       try {
         const link = VERIFICACION_BASE_URL + formData.codigo;
         const url = await QRCode.toDataURL(link, {
-          width: 150,
+          width: 400,
           margin: 1,
           color: {
             dark: COLORS.azul,
@@ -309,6 +309,33 @@ export default function AfiliarPage() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      // INSERTAR QR DIRECTAMENTE EN EL PDF (Capa superior)
+      if (qrDataUrl) {
+        // Posicionarlo en la esquina inferior derecha similar al diseño
+        // A4 es 210 x 297 mm
+        const qrSize = 35; // 35mm
+        const marginX = pdfWidth - qrSize - 25; // 25mm de margen derecho
+        const marginY = pdfHeight - qrSize - 35; // 35mm de margen inferior
+        
+        // Fondo blanco para el QR para asegurar visibilidad
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
+        
+        // Borde azul
+        pdf.setDrawColor(5, 49, 138); // COLORS.azul en RGB
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'D');
+
+        pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
+        
+        // Texto debajo del QR
+        pdf.setTextColor(5, 49, 138);
+        pdf.setFontSize(8);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("VERIFICACIÓN DIGITAL", marginX + (qrSize/2), marginY + qrSize + 6, { align: "center" });
+      }
+
       pdf.save(`Certificado_Afiliacion_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
       
       toast.success("Certificado generado correctamente");
