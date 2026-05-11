@@ -289,19 +289,24 @@ export default function AfiliarPage() {
 
     try {
       const canvas = await html2canvas(certificadoRef.current, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
+        onclone: (clonedDoc) => {
+          // Asegurarse de que el elemento sea visible para html2canvas en el clon
+          const el = clonedDoc.querySelector('[data-certificate]');
+          if (el) el.style.position = 'static';
+        }
       });
 
       const imgData = canvas.toDataURL("image/png");
       const { jsPDF } = await import("jspdf");
       const pdf = new jsPDF("p", "mm", "a4");
       
-      const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Certificado_Afiliacion_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
@@ -941,6 +946,7 @@ export default function AfiliarPage() {
           <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
             <div 
               ref={certificadoRef} 
+              data-certificate="true"
               style={{ 
                 width: "800px", 
                 padding: "80px", 
