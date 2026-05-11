@@ -1062,11 +1062,8 @@ export default function AfiliarPage() {
                   </div>
                 </div>
                 
-                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ padding: "8px", border: `2px solid ${COLORS.azul}`, borderRadius: "12px", backgroundColor: "#fff" }}>
-                    {qrDataUrl && <img src={qrDataUrl} alt="QR" style={{ width: "120px", height: "120px" }} />}
-                  </div>
-                  <p style={{ fontSize: "10px", fontWeight: "bold", color: COLORS.azul, marginTop: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>Verificación de Autenticidad</p>
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "150px" }}>
+                  {/* El QR se inserta directamente en el PDF para mayor precisión */}
                 </div>
               </div>
             </div>
