@@ -1243,7 +1243,6 @@ function DashboardContent() {
                                 <TableHead>Acción</TableHead>
                                 <TableHead>Documento/ID</TableHead>
                                 <TableHead>Detalles</TableHead>
-                                <TableHead className="text-right">Acción</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1269,24 +1268,6 @@ function DashboardContent() {
                                   </TableCell>
                                   <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
                                   <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
-                                  <TableCell className="text-right">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                      onClick={() => {
-                                        if (confirm("¿Eliminar este registro de auditoría?")) {
-                                          setSeleccionadosAuditoria(prev => prev.filter(id => id !== log.id));
-                                          deleteDoc(doc(db, "auditoria", log.id)).then(() => {
-                                            toast.success("Registro eliminado");
-                                            cargarAuditoria();
-                                          });
-                                        }
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
