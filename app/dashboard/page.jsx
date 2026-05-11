@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { PersonalReadOnlyList } from "@/components/personal-read-only";
 import { useDocumentos } from "@/hooks/use-documentos";
-import { collection, getDocs, query, where, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, deleteDoc, doc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Empty } from "@/components/ui/empty";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Search,
@@ -326,6 +327,8 @@ function DashboardContent() {
   const [busquedaAsistencia, setBusquedaAsistencia] = useState("");
   const [logsAuditoria, setLogsAuditoria]           = useState([]);
   const [cargandoAuditoria, setCargandoAuditoria]   = useState(false);
+  const [busquedaAuditoria, setBusquedaAuditoria]   = useState("");
+  const [seleccionadosAuditoria, setSeleccionadosAuditoria] = useState([]);
   const [verBitacoraDoc, setVerBitacoraDoc]         = useState(null);
   const { registros, cargando: cargandoAsistencias, recargar } = useAsistencias(fechaAsistencia);
 
@@ -347,6 +350,19 @@ function DashboardContent() {
     return { total, trabajando, almuerzo, finalizados };
   }, [registros]);
 
+  const logsAuditoriaFiltrados = useMemo(() => {
+    if (!busquedaAuditoria.trim()) return logsAuditoria;
+    const t = busquedaAuditoria.toLowerCase();
+    return logsAuditoria.filter(
+      (log) =>
+        log.usuarioNombre?.toLowerCase().includes(t) ||
+        log.usuarioEmail?.toLowerCase().includes(t) ||
+        log.accion?.toLowerCase().includes(t) ||
+        log.documentoId?.toLowerCase().includes(t) ||
+        log.detalles?.toLowerCase().includes(t)
+    );
+  }, [logsAuditoria, busquedaAuditoria]);
+
   const cargarAuditoria = useCallback(async () => {
     if (!esSuperAdmin) return;
     setCargandoAuditoria(true);
@@ -361,6 +377,69 @@ function DashboardContent() {
       setCargandoAuditoria(false);
     }
   }, [esSuperAdmin]);
+
+  const handleEliminarTodoAuditoria = async () => {
+    if (!confirm("¿Estás seguro de eliminar TODOS los registros de auditoría? Esta acción es irreversible.")) return;
+    setCargandoAuditoria(true);
+    try {
+      const snap = await getDocs(collection(db, "auditoria"));
+      const docs = snap.docs;
+      
+      // Eliminar en lotes de 500 (límite de Firestore)
+      for (let i = 0; i < docs.length; i += 500) {
+        const batch = writeBatch(db);
+        const chunk = docs.slice(i, i + 500);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+      
+      toast.success("Todos los registros de auditoría han sido eliminados");
+      setSeleccionadosAuditoria([]);
+      cargarAuditoria();
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al eliminar registros");
+    } finally {
+      setCargandoAuditoria(false);
+    }
+  };
+
+  const handleEliminarSeleccionadosAuditoria = async () => {
+    if (seleccionadosAuditoria.length === 0) return;
+    if (!confirm(`¿Estás seguro de eliminar los ${seleccionadosAuditoria.length} registros seleccionados?`)) return;
+    setCargandoAuditoria(true);
+    try {
+      const batch = writeBatch(db);
+      seleccionadosAuditoria.forEach((id) => {
+        batch.delete(doc(db, "auditoria", id));
+      });
+      await batch.commit();
+      toast.success("Registros seleccionados eliminados");
+      setSeleccionadosAuditoria([]);
+      cargarAuditoria();
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al eliminar registros");
+    } finally {
+      setCargandoAuditoria(false);
+    }
+  };
+
+  const handleSelectAllAuditoria = (checked) => {
+    if (checked) {
+      setSeleccionadosAuditoria(logsAuditoriaFiltrados.map(log => log.id));
+    } else {
+      setSeleccionadosAuditoria([]);
+    }
+  };
+
+  const handleSelectOneAuditoria = (id, checked) => {
+    if (checked) {
+      setSeleccionadosAuditoria(prev => [...prev, id]);
+    } else {
+      setSeleccionadosAuditoria(prev => prev.filter(item => item !== id));
+    }
+  };
 
   const handleEliminarAsistencia = async (asistencia) => {
     if (!confirm(`¿Estás seguro de eliminar el registro de asistencia de ${asistencia.nombre} del día ${asistencia.fecha}?`)) return;
@@ -1099,62 +1178,126 @@ function DashboardContent() {
 
             {esSuperAdmin && (
               <TabsContent value="auditoria">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <History className="h-5 w-5 text-primary" /> Historial de Auditoría
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">Registro de acciones administrativas realizadas en el sistema.</p>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                    <Card className="flex-1 w-full">
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex flex-col sm:flex-row gap-3 items-center">
+                          <div className="relative flex-1 w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Buscar en auditoría (usuario, acción, ID...)"
+                              value={busquedaAuditoria}
+                              onChange={(e) => setBusquedaAuditoria(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
+                              <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} />
+                              Actualizar
+                            </Button>
+                            {seleccionadosAuditoria.length > 0 && (
+                              <Button variant="destructive" size="sm" onClick={handleEliminarSeleccionadosAuditoria}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar ({seleccionadosAuditoria.length})
+                              </Button>
+                            )}
+                            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleEliminarTodoAuditoria} disabled={cargandoAuditoria || logsAuditoria.length === 0}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Borrar Todo
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
-                    <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} /> Actualizar
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {cargandoAuditoria ? (
-                    <div className="flex items-center justify-center py-20"><Spinner className="h-8 w-8" /></div>
-                  ) : logsAuditoria.length === 0 ? (
-                    <div className="py-20 text-center text-muted-foreground">No hay registros de auditoría aún.</div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead>Fecha/Hora</TableHead>
-                            <TableHead>Administrador</TableHead>
-                            <TableHead>Acción</TableHead>
-                            <TableHead>Documento/ID</TableHead>
-                            <TableHead>Detalles</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {logsAuditoria.map((log) => (
-                            <TableRow key={log.id}>
-                              <TableCell className="text-xs font-medium whitespace-nowrap">
-                                {log.fecha?.toDate ? log.fecha.toDate().toLocaleString('es-CO') : 'Reciente'}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-semibold">{log.usuarioNombre}</span>
-                                  <span className="text-[10px] text-muted-foreground">{log.usuarioEmail}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className="text-[10px] uppercase">{log.accion}</Badge>
-                              </TableCell>
-                              <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <History className="h-5 w-5 text-primary" /> Historial de Auditoría
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">Registro de acciones administrativas realizadas en el sistema.</p>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {cargandoAuditoria ? (
+                        <div className="flex items-center justify-center py-20"><Spinner className="h-8 w-8" /></div>
+                      ) : logsAuditoriaFiltrados.length === 0 ? (
+                        <div className="py-20 text-center text-muted-foreground">
+                          {busquedaAuditoria ? "No se encontraron resultados para tu búsqueda." : "No hay registros de auditoría aún."}
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/50">
+                                <TableHead className="w-12">
+                                  <Checkbox 
+                                    checked={seleccionadosAuditoria.length === logsAuditoriaFiltrados.length && logsAuditoriaFiltrados.length > 0}
+                                    onCheckedChange={handleSelectAllAuditoria}
+                                  />
+                                </TableHead>
+                                <TableHead>Fecha/Hora</TableHead>
+                                <TableHead>Administrador</TableHead>
+                                <TableHead>Acción</TableHead>
+                                <TableHead>Documento/ID</TableHead>
+                                <TableHead>Detalles</TableHead>
+                                <TableHead className="text-right">Acción</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {logsAuditoriaFiltrados.map((log) => (
+                                <TableRow key={log.id} className={seleccionadosAuditoria.includes(log.id) ? "bg-muted/30" : ""}>
+                                  <TableCell>
+                                    <Checkbox 
+                                      checked={seleccionadosAuditoria.includes(log.id)}
+                                      onCheckedChange={(checked) => handleSelectOneAuditoria(log.id, checked)}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-xs font-medium whitespace-nowrap">
+                                    {log.fecha?.toDate ? log.fecha.toDate().toLocaleString('es-CO') : 'Reciente'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-semibold">{log.usuarioNombre}</span>
+                                      <span className="text-[10px] text-muted-foreground">{log.usuarioEmail}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="secondary" className="text-[10px] uppercase">{log.accion}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs font-mono">{log.documentoId}</TableCell>
+                                  <TableCell className="text-xs text-muted-foreground max-w-xs">{log.detalles}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                      onClick={() => {
+                                        if (confirm("¿Eliminar este registro de auditoría?")) {
+                                          setSeleccionadosAuditoria(prev => prev.filter(id => id !== log.id));
+                                          deleteDoc(doc(db, "auditoria", log.id)).then(() => {
+                                            toast.success("Registro eliminado");
+                                            cargarAuditoria();
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            )}
 
           {/* ══════════════════ PESTAÑA: GESTIÓN DE PERSONAL ══════════════════ */}
           {puedeVerAsistenciasYPersonal && (
