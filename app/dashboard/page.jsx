@@ -88,7 +88,10 @@ import {
   ClipboardList,
   Droplets,
   Phone,
-  Mail
+  Mail,
+  Globe,
+  Map,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -1509,6 +1512,42 @@ function DashboardContent() {
                       <p className="text-[10px] text-muted-foreground uppercase">Dirección</p>
                       <p className="text-sm font-medium">{infoDoc.direccion || "-"}</p>
                     </div>
+                  </div>
+                  {(infoDoc.pais || infoDoc.ciudad) && (
+                    <div className="grid grid-cols-2 gap-4 pt-1 border-t">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">País</p>
+                          <p className="text-sm font-medium">{infoDoc.pais || "-"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Map className="h-4 w-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Ciudad</p>
+                          <p className="text-sm font-medium">{infoDoc.ciudad || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Beneficiarios */}
+              {infoDoc.tipo === "afiliado" && Array.isArray(infoDoc.beneficiarios) && infoDoc.beneficiarios.length > 0 && (
+                <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Beneficiarios</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {infoDoc.beneficiarios.map((ben, i) => (
+                      <div key={i} className="flex justify-between items-center p-2 bg-background rounded border border-dashed">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3 w-3 text-primary" />
+                          <span className="text-xs font-semibold uppercase">{ben.nombre}</span>
+                        </div>
+                        <span className="text-xs font-mono text-muted-foreground">{ben.nuip}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

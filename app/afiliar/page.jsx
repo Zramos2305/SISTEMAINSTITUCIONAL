@@ -31,7 +31,12 @@ import {
   Camera,
   Download,
   CheckCircle2,
-  QrCode
+  QrCode,
+  Globe,
+  Map,
+  Plus,
+  Trash2,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -77,6 +82,9 @@ export default function AfiliarPage() {
     foto: null, // base64 o blob url
     oficina: "",
     dependencia: "",
+    pais: "Colombia",
+    ciudad: "",
+    beneficiarios: [], // Array de { nombre: "", nuip: "" }
   });
 
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -113,6 +121,30 @@ export default function AfiliarPage() {
       }
       return newData;
     });
+  };
+
+  const handleAddBeneficiario = () => {
+    if (formData.beneficiarios.length >= 5) {
+      toast.error("Máximo 5 beneficiarios permitidos");
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      beneficiarios: [...prev.beneficiarios, { nombre: "", nuip: "" }]
+    }));
+  };
+
+  const handleBeneficiarioChange = (index, field, value) => {
+    const newBeneficiarios = [...formData.beneficiarios];
+    newBeneficiarios[index][field] = value;
+    setFormData(prev => ({ ...prev, beneficiarios: newBeneficiarios }));
+  };
+
+  const handleRemoveBeneficiario = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      beneficiarios: prev.beneficiarios.filter((_, i) => i !== index)
+    }));
   };
 
   const handleFotoChange = (e) => {
@@ -361,6 +393,33 @@ export default function AfiliarPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field>
+                  <FieldLabel>País</FieldLabel>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Ej: Colombia"
+                      className="pl-10"
+                      value={formData.pais}
+                      onChange={(e) => handleInputChange("pais", e.target.value)}
+                    />
+                  </div>
+                </Field>
+                <Field>
+                  <FieldLabel>Ciudad</FieldLabel>
+                  <div className="relative">
+                    <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Ej: Buenaventura"
+                      className="pl-10"
+                      value={formData.ciudad}
+                      onChange={(e) => handleInputChange("ciudad", e.target.value)}
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field>
                   <FieldLabel>Correo Electrónico</FieldLabel>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -479,6 +538,53 @@ export default function AfiliarPage() {
                     ) : null}
                   </SelectContent>
                 </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel className="flex justify-between items-center">
+                  Beneficiarios (Opcional - Máx 5)
+                  <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]">
+                    <Plus className="h-3 w-3 mr-1" /> Agregar
+                  </Button>
+                </FieldLabel>
+                <div className="space-y-3">
+                  {formData.beneficiarios.length === 0 && (
+                    <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
+                  )}
+                  {formData.beneficiarios.map((ben, idx) => (
+                    <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRemoveBeneficiario(idx)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
+                          <Input 
+                            value={ben.nombre} 
+                            onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
+                            className="h-8 text-xs"
+                            placeholder="Nombre"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
+                          <Input 
+                            value={ben.nuip} 
+                            onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
+                            className="h-8 text-xs font-mono"
+                            placeholder="Documento"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Field>
 
               <Field>
@@ -608,14 +714,28 @@ export default function AfiliarPage() {
                     <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.rh || "—"}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Vence</p>
-                    <p className="text-sm font-black" style={{ color: "#334155", margin: 0 }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>País</p>
+                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.pais || "—"}</p>
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Cargo</p>
                     <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
                   </div>
                 </div>
+
+                {formData.beneficiarios?.length > 0 && (
+                  <div className="mt-4 w-full bg-muted/20 p-2 rounded-xl border border-dashed border-muted-foreground/30">
+                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 text-center">Beneficiarios</p>
+                    <div className="grid grid-cols-1 gap-1">
+                      {formData.beneficiarios.map((b, i) => (
+                        <div key={i} className="flex justify-between items-center px-2">
+                          <span className="text-[9px] font-bold text-primary truncate max-w-[120px] uppercase">{b.nombre}</span>
+                          <span className="text-[9px] font-mono text-muted-foreground">{b.nuip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* QR y Footer */}
@@ -749,14 +869,28 @@ export default function AfiliarPage() {
                     <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.rh || "—"}</p>
                   </div>
                   <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Vence</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.fechaIngreso.split('-').reverse().join('/')}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>País</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.pais || "—"}</p>
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
                     <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                   </div>
                 </div>
+
+                {formData.beneficiarios?.length > 0 && (
+                  <div style={{ marginTop: '12px', width: '100%', backgroundColor: '#f1f5f9', padding: '8px', borderRadius: '12px', border: '1px dashed #94a3b8' }}>
+                    <p style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', color: '#64748b', marginBottom: '4px', textAlign: 'center', margin: 0 }}>Beneficiarios</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
+                      {formData.beneficiarios.map((b, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px', paddingRight: '8px' }}>
+                          <span style={{ fontSize: '9px', fontWeight: 'bold', color: COLORS.azul, textTransform: 'uppercase', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '120px' }}>{b.nombre}</span>
+                          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#64748b' }}>{b.nuip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* QR y Footer */}

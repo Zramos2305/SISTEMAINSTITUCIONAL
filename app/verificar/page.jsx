@@ -18,6 +18,9 @@ import {
   AlertCircle,
   ArrowLeft,
   QrCode,
+  Globe,
+  Map,
+  Users
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -360,6 +363,39 @@ function VerificarContent() {
                     <div>
                       <p className="text-xs text-muted-foreground">Estado</p>
                       <p className="font-medium capitalize">{documento.estado}</p>
+                    </div>
+                  </div>
+                )}
+                {documento.tipo === "afiliado" && (documento.pais || documento.ciudad) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <Globe className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">País</p>
+                        <p className="font-medium">{documento.pais || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <Map className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Ciudad</p>
+                        <p className="font-medium">{documento.ciudad || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {documento.tipo === "afiliado" && Array.isArray(documento.beneficiarios) && documento.beneficiarios.length > 0 && (
+                  <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider flex items-center gap-2">
+                      <Users className="h-4 w-4" /> Beneficiarios Autorizados
+                    </p>
+                    <div className="space-y-2">
+                      {documento.beneficiarios.map((ben, i) => (
+                        <div key={i} className="flex justify-between items-center p-2 bg-background rounded border border-dashed">
+                          <span className="text-xs font-semibold uppercase">{ben.nombre}</span>
+                          <span className="text-xs font-mono text-muted-foreground">{ben.nuip}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
