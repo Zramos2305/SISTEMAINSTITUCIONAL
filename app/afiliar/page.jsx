@@ -306,24 +306,25 @@ export default function AfiliarPage() {
       const pdf = new jsPDF("p", "mm", "a4");
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      // Si la imagen es más alta que la página, la escalamos para que quepa
+      const finalImgHeight = Math.min(pdfHeight, pageHeight - 10);
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, finalImgHeight);
 
       // INSERTAR QR DIRECTAMENTE EN EL PDF (Capa superior)
       if (qrDataUrl) {
-        // Posicionarlo en la esquina inferior derecha similar al diseño
-        // A4 es 210 x 297 mm
         const qrSize = 35; // 35mm
-        const marginX = pdfWidth - qrSize - 25; // 25mm de margen derecho
-        const marginY = pdfHeight - qrSize - 35; // 35mm de margen inferior
+        const marginX = pdfWidth - qrSize - 20; // 20mm de margen derecho
+        const marginY = pageHeight - qrSize - 30; // POSICIÓN FIJA RESPECTO A LA PÁGINA (Margen inferior)
         
-        // Fondo blanco para el QR para asegurar visibilidad
+        // Fondo blanco para el QR
         pdf.setFillColor(255, 255, 255);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
         
         // Borde azul
-        pdf.setDrawColor(5, 49, 138); // COLORS.azul en RGB
+        pdf.setDrawColor(5, 49, 138); 
         pdf.setLineWidth(0.5);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'D');
 
@@ -1021,6 +1022,20 @@ export default function AfiliarPage() {
                   <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Estado actual:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
                   <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Cargo / relación institucional:</strong> {formData.cargo || "Afiliado"}</p>
                 </div>
+
+                {formData.beneficiarios?.length > 0 && (
+                  <div style={{ margin: "25px 0", padding: "20px", border: "1px solid #eee", borderRadius: "12px", backgroundColor: "#fff" }}>
+                    <p style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", color: COLORS.azul, borderBottom: "1px solid #eee", paddingBottom: "5px" }}>Beneficiarios Autorizados:</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                      {formData.beneficiarios.map((b, i) => (
+                        <div key={i} style={{ fontSize: "14px", color: "#444" }}>
+                          • <span style={{ fontWeight: "bold" }}>{b.nombre}</span> <br/>
+                          <span style={{ fontSize: "12px", marginLeft: "12px" }}>NUIP: {b.nuip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <p style={{ marginBottom: "60px" }}>
                   Este certificado se expide a solicitud del interesado para los fines que estime convenientes.
