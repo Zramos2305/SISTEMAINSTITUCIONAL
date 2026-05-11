@@ -307,30 +307,36 @@ export default function AfiliarPage() {
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const ratio = canvas.height / canvas.width;
+      
+      let finalImgWidth = pdfWidth;
+      let finalImgHeight = pdfWidth * ratio;
 
-      // Si la imagen es más alta que la página, la escalamos para que quepa
-      const finalImgHeight = Math.min(pdfHeight, pageHeight - 10);
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, finalImgHeight);
+      // Si la altura calculada supera la página, ajustamos proporcionalmente
+      if (finalImgHeight > pageHeight) {
+        finalImgHeight = pageHeight;
+        finalImgWidth = finalImgHeight / ratio;
+      }
+
+      // Centrar horizontalmente si el ancho es menor al de la página
+      const xOffset = (pdfWidth - finalImgWidth) / 2;
+      pdf.addImage(imgData, "PNG", xOffset, 0, finalImgWidth, finalImgHeight);
 
       // INSERTAR QR DIRECTAMENTE EN EL PDF (Capa superior)
       if (qrDataUrl) {
         const qrSize = 35; // 35mm
-        const marginX = pdfWidth - qrSize - 20; // 20mm de margen derecho
-        const marginY = pageHeight - qrSize - 30; // POSICIÓN FIJA RESPECTO A LA PÁGINA (Margen inferior)
+        const marginX = pdfWidth - qrSize - 20; 
+        const marginY = pageHeight - qrSize - 30; 
         
-        // Fondo blanco para el QR
         pdf.setFillColor(255, 255, 255);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
         
-        // Borde azul
         pdf.setDrawColor(5, 49, 138); 
         pdf.setLineWidth(0.5);
         pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'D');
 
         pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
         
-        // Texto debajo del QR
         pdf.setTextColor(5, 49, 138);
         pdf.setFontSize(8);
         pdf.setFont("helvetica", "bold");
