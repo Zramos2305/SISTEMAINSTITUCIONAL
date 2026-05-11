@@ -90,8 +90,7 @@ import {
   Phone,
   Mail,
   Globe,
-  Map,
-  Users
+  Map
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
