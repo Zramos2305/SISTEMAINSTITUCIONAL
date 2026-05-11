@@ -42,6 +42,7 @@ import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
 import html2canvas from "html2canvas";
+import { FileText as FileTextIcon } from "lucide-react";
 
 const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar?doc=";
 
@@ -70,6 +71,7 @@ export default function AfiliarPage() {
   const { user, userData, loading: authLoading } = useAuth();
   const carnetRef = useRef(null);
   const exportRef = useRef(null);
+  const certificadoRef = useRef(null);
 
   const [formData, setFormData] = useState({
     codigo: generarCodigoAfiliado(),
@@ -94,6 +96,7 @@ export default function AfiliarPage() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(null);
 
   // Generar QR en tiempo real cuando cambia el código
@@ -277,6 +280,38 @@ export default function AfiliarPage() {
       toast.error("Error al generar el carnet");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const descargarCertificado = async () => {
+    if (!certificadoRef.current) return;
+    setIsDownloadingCert(true);
+
+    try {
+      const canvas = await html2canvas(certificadoRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Certificado_Afiliacion_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
+      
+      toast.success("Certificado generado correctamente");
+    } catch (err) {
+      console.error("Error certificado:", err);
+      toast.error("Error al generar el certificado");
+    } finally {
+      setIsDownloadingCert(false);
     }
   };
 
@@ -635,6 +670,15 @@ export default function AfiliarPage() {
                 >
                   {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
                 </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 flex-1 border-2 text-primary hover:bg-primary/5"
+                  onClick={descargarCertificado}
+                  disabled={isDownloadingCert}
+                >
+                  {isDownloadingCert ? <Spinner className="mr-2" /> : <FileTextIcon className="mr-2 h-5 w-5" />}
+                  CERTIFICADO PDF
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -892,7 +936,89 @@ export default function AfiliarPage() {
               </div>
             </div>
           </div>
+
+          {/* CERTIFICADO DE AFILIACIÓN (INVISIBLE PARA EXPORTACIÓN) */}
+          <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
+            <div 
+              ref={certificadoRef} 
+              style={{ 
+                width: "800px", 
+                padding: "80px", 
+                background: "white", 
+                fontFamily: "'Times New Roman', serif", 
+                color: "#1a1a1a",
+                lineHeight: "1.8",
+                boxSizing: "border-box"
+              }}
+            >
+              {/* Header con Logo */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
+                <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+                <div style={{ textAlign: "right" }}>
+                  <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "-1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase", letterSpacing: "2px" }}>Sistema Institucional de Afiliaciones</p>
+                </div>
+              </div>
+
+              {/* Título */}
+              <div style={{ textAlign: "center", marginBottom: "50px" }}>
+                <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
+              </div>
+
+              {/* Contenido */}
+              <div style={{ fontSize: "18px", textAlign: "justify" }}>
+                <p style={{ marginBottom: "25px" }}>
+                  La Fundación Isla Cascajal certifica que el(la) ciudadano(a):
+                </p>
+
+                <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase", color: "#000" }}>
+                  {formData.nombre || "[NOMBRE COMPLETO DEL AFILIADO]"}
+                </p>
+
+                <p style={{ marginBottom: "25px" }}>
+                  identificado(a) con NUIP / documento de identidad No. <strong>{formData.cedula || "[NÚMERO DE DOCUMENTO]"}</strong>, se encuentra afiliado(a) y registrado(a) oficialmente en nuestra base institucional como miembro activo de la organización.
+                </p>
+
+                <p style={{ marginBottom: "25px" }}>
+                  La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional <strong>{formData.codigo}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
+                </p>
+
+                <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "80%", backgroundColor: "#f9f9f9" }}>
+                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Tipo de afiliación:</strong> AFILIADO</p>
+                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Estado actual:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
+                  <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Cargo / relación institucional:</strong> {formData.cargo || "Afiliado"}</p>
+                </div>
+
+                <p style={{ marginBottom: "60px" }}>
+                  Este certificado se expide a solicitud del interesado para los fines que estime convenientes.
+                </p>
+              </div>
+
+              {/* Footer / Firmas */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "80px" }}>
+                <div style={{ textAlign: "left" }}>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>Sistema Institucional de Afiliaciones</p>
+                  <p style={{ margin: "15px 0 30px 0", fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</p>
+                  
+                  <div style={{ marginTop: "50px" }}>
+                    <div style={{ width: "250px", borderBottom: "1px solid #000", marginBottom: "10px" }}></div>
+                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>Coordinación Comercial</p>
+                    <p style={{ margin: 0, fontSize: "14px" }}>Fundación Isla Cascajal</p>
+                  </div>
+                </div>
+                
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ padding: "8px", border: `2px solid ${COLORS.azul}`, borderRadius: "12px", backgroundColor: "#fff" }}>
+                    {qrDataUrl && <img src={qrDataUrl} alt="QR" style={{ width: "120px", height: "120px" }} />}
+                  </div>
+                  <p style={{ fontSize: "10px", fontWeight: "bold", color: COLORS.azul, marginTop: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>Verificación de Autenticidad</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </main>
       </div>
     );
   }
+
