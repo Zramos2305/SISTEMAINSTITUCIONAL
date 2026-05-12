@@ -93,14 +93,17 @@ export default function AfiliarPage() {
     direccion: "",
     estado: "activo",
     cargo: "Afiliado",
-    duracion: "1_ano",
-    foto: null, // base64 o blob url
+    foto: null,
     oficina: "",
     dependencia: "",
     pais: "Colombia",
     ciudad: "",
-    beneficiarios: [], // Array de { nombre: "", nuip: "" }
-    tipoAfiliacion: "educativa",
+    beneficiarios: [],
+    seleccionMembresias: {
+      educativa: true,
+      integral: false,
+      duracionIntegral: "6_meses"
+    }
   });
 
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -183,109 +186,100 @@ export default function AfiliarPage() {
 
   const handleGuardar = async () => {
     if (!formData.nombre || !formData.cedula || !formData.rh || !formData.telefono || !formData.oficina || !formData.dependencia) {
-      toast.error("Por favor completa los campos obligatorios (incluye oficina y dependencia)");
+      toast.error("Por favor completa los campos obligatorios");
+      return;
+    }
+
+    if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
+      toast.error("Seleccione al menos un tipo de membresía");
       return;
     }
 
     setIsSaving(true);
     try {
-      // 1. Buscar si la persona ya existe como AFILIADO (Persona)
-      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
-      const snap = await getDocs(q);
-      
-      let afiliadoId;
-      let isNewAffiliate = true;
-
-      if (!snap.empty) {
-        // La persona ya existe
-        afiliadoId = snap.docs[0].id;
-        isNewAffiliate = false;
-        
-        // Actualizar datos personales por si cambiaron
-        await setDoc(doc(db, "afiliados", afiliadoId), {
-          nombre: formData.nombre,
-          cedula: formData.cedula,
-          telefono: formData.telefono,
-          correo: formData.correo,
-          direccion: formData.direccion,
-          rh: formData.rh,
-          foto: formData.foto,
-          pais: formData.pais,
-          ciudad: formData.ciudad,
-          fechaUltimaActualizacion: new Date().toISOString()
-        }, { merge: true });
-      } else {
-        // Crear nueva persona (Afiliado)
-        afiliadoId = formData.codigo; // Usamos el código FIC- generado inicialmente
-        await setDoc(doc(db, "afiliados", afiliadoId), {
-          nombre: formData.nombre,
-          cedula: formData.cedula,
-          telefono: formData.telefono,
-          correo: formData.correo,
-          direccion: formData.direccion,
-          rh: formData.rh,
-          foto: formData.foto,
-          pais: formData.pais,
-          ciudad: formData.ciudad,
-          codigoInstitucional: afiliadoId,
-          fechaCreacion: new Date().toISOString(),
-          creadoPor: user.uid
-        });
-      }
-
-      // 2. Calcular vigencia para la NUEVA AFILIACIÓN
       const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
       const year = fIngreso.getFullYear();
       const month = fIngreso.getMonth();
       
-      let fExpiracion;
-      if (formData.tipoAfiliacion === "educativa") {
-        if (month <= 4) fExpiracion = new Date(year, 4, 30, 23, 59, 59);
-        else if (month <= 10) fExpiracion = new Date(year, 10, 30, 23, 59, 59);
-        else fExpiracion = new Date(year + 1, 4, 30, 23, 59, 59);
-      } else {
-        fExpiracion = new Date(fIngreso);
-        fExpiracion.setMonth(fExpiracion.getMonth() + 6);
+      const nuevasMembresias = [];
+
+      if (formData.seleccionMembresias.educativa) {
+        let fExpEdu;
+        if (month <= 4) fExpEdu = new Date(year, 4, 30, 23, 59, 59);
+        else if (month <= 10) fExpEdu = new Date(year, 10, 30, 23, 59, 59);
+        else fExpEdu = new Date(year + 1, 4, 30, 23, 59, 59);
+
+        nuevasMembresias.push({
+          tipo: "educativa",
+          estado: "activo",
+          fechaInicio: fIngreso.toISOString(),
+          fechaExpiracion: fExpEdu.toISOString(),
+          codigo: `EDU-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+        });
       }
 
-      const isoExpiracion = fExpiracion.toISOString();
-      const afiliacionId = generarCodigoAfiliacion();
+      if (formData.seleccionMembresias.integral) {
+        const fExpInt = new Date(fIngreso);
+        const meses = formData.seleccionMembresias.duracionIntegral === "6_meses" ? 6 : 12;
+        fExpInt.setMonth(fExpInt.getMonth() + meses);
 
-      // 3. Crear el registro en la colección 'afiliaciones'
-      const nuevaAfiliacion = {
-        afiliadoId: afiliadoId,
-        nombreAfiliado: formData.nombre,
-        documentoAfiliado: formData.cedula,
-        tipoAfiliacion: formData.tipoAfiliacion,
-        fechaInicio: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
-        fechaExpiracion: isoExpiracion,
-        estado: "activo",
+        nuevasMembresias.push({
+          tipo: "integral",
+          estado: "activo",
+          fechaInicio: fIngreso.toISOString(),
+          fechaExpiracion: fExpInt.toISOString(),
+          codigo: `INT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+        });
+      }
+
+      // Buscar si ya existe
+      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
+      const snap = await getDocs(q);
+      
+      let finalId = formData.codigo;
+      let dataToSave = {
+        nombre: formData.nombre,
+        cedula: formData.cedula,
+        telefono: formData.telefono,
+        correo: formData.correo,
+        direccion: formData.direccion,
+        rh: formData.rh,
+        foto: formData.foto,
+        pais: formData.pais,
+        ciudad: formData.ciudad,
         oficina: formData.oficina,
         dependencia: formData.dependencia,
         beneficiarios: formData.beneficiarios,
-        fechaCreacion: new Date().toISOString(),
-        creadoPor: user.uid,
-        codigoAfiliacion: afiliacionId
+        estado: "activo",
+        membresias: nuevasMembresias,
+        fechaUltimaActualizacion: new Date().toISOString()
       };
 
-      await setDoc(doc(db, "afiliaciones", afiliacionId), nuevaAfiliacion);
-
-      // Guardamos el ID de la afiliación para la pantalla de éxito/descargas
-      setFormData(prev => ({ ...prev, codigoAfiliacion: afiliacionId }));
+      if (!snap.empty) {
+        finalId = snap.docs[0].id;
+        // Fusionar membresías si ya existen (opcional, pero aquí las sobrescribimos/agregamos según la lógica de 'Nueva Afiliación')
+        await setDoc(doc(db, "afiliados", finalId), dataToSave, { merge: true });
+      } else {
+        dataToSave.codigoInstitucional = finalId;
+        dataToSave.fechaCreacion = new Date().toISOString();
+        dataToSave.creadoPor = user.uid;
+        await setDoc(doc(db, "afiliados", finalId), dataToSave);
+      }
 
       await registrarAuditoria({
         user,
         userData,
-        accion: "Nueva Afiliación",
-        documentoId: afiliacionId,
-        detalles: `Se registró afiliación ${formData.tipoAfiliacion} para ${formData.nombre} (${afiliadoId})`
+        accion: "Registro/Actualización Afiliado",
+        documentoId: finalId,
+        detalles: `Registro completo con membresías: ${nuevasMembresias.map(m => m.tipo).join(", ")}`
       });
 
-      toast.success(isNewAffiliate ? "Afiliado y membresía creados" : "Nueva membresía añadida al afiliado");
+      setFormData(prev => ({ ...prev, codigo: finalId, membresias: nuevasMembresias }));
+      toast.success("Afiliación guardada correctamente");
       setIsSuccess(true);
     } catch (err) {
       console.error(err);
-      toast.error("Error al procesar el registro");
+      toast.error("Error al guardar");
     } finally {
       setIsSaving(false);
     }
@@ -595,22 +589,54 @@ export default function AfiliarPage() {
                 </Field>
               </div>
 
-              <Field className="max-w-[200px]">
-                <FieldLabel>Tipo de Afiliación</FieldLabel>
-                <Select
-                  value={formData.tipoAfiliacion}
-                  onValueChange={(val) => handleInputChange("tipoAfiliacion", val)}
-                  disabled={isSaving}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="educativa">Afiliación Educativa</SelectItem>
-                    <SelectItem value="integral">Afiliación Integral</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
+              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+                <p className="text-xs font-bold uppercase text-muted-foreground">Seleccione las Membresías</p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="edu"
+                      checked={formData.seleccionMembresias.educativa}
+                      onCheckedChange={(v) => setFormData(p => ({
+                        ...p,
+                        seleccionMembresias: { ...p.seleccionMembresias, educativa: !!v }
+                      }))}
+                    />
+                    <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educativa</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="int"
+                      checked={formData.seleccionMembresias.integral}
+                      onCheckedChange={(v) => setFormData(p => ({
+                        ...p,
+                        seleccionMembresias: { ...p.seleccionMembresias, integral: !!v }
+                      }))}
+                    />
+                    <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
+                  </div>
+                </div>
+
+                {formData.seleccionMembresias.integral && (
+                  <div className="pt-2 animate-in slide-in-from-top-1 duration-200">
+                    <FieldLabel>Duración de Afiliación Integral</FieldLabel>
+                    <Select
+                      value={formData.seleccionMembresias.duracionIntegral}
+                      onValueChange={(v) => setFormData(p => ({
+                        ...p,
+                        seleccionMembresias: { ...p.seleccionMembresias, duracionIntegral: v }
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6_meses">6 Meses</SelectItem>
+                        <SelectItem value="1_ano">1 Año</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
 
               <Field>
                 <FieldLabel>Oficina que emite</FieldLabel>
@@ -866,26 +892,15 @@ export default function AfiliarPage() {
                     <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
                   </div>
                   <div className="text-left col-span-2">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Vigencia / Tipo</p>
-                    <p className="text-[11px] font-black uppercase" style={{ color: COLORS.azul, margin: 0 }}>
-                      {formData.tipoAfiliacion === "educativa" ? "Educativa" : "Integral"} — {
-                        (() => {
-                          const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
-                          const year = fIngreso.getFullYear();
-                          const month = fIngreso.getMonth();
-                          let fExp;
-                          if (formData.tipoAfiliacion === "educativa") {
-                            if (month <= 4) fExp = new Date(year, 4, 30);
-                            else if (month <= 10) fExp = new Date(year, 10, 30);
-                            else fExp = new Date(year + 1, 4, 30);
-                          } else {
-                            fExp = new Date(fIngreso);
-                            fExp.setMonth(fExp.getMonth() + 6);
-                          }
-                          return fExp.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
-                        })()
-                      }
-                    </p>
+                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Membresías Activas</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {formData.seleccionMembresias.educativa && (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
+                      )}
+                      {formData.seleccionMembresias.integral && (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -947,8 +962,14 @@ export default function AfiliarPage() {
                       <p className="font-mono font-bold text-lg">{formData.cedula}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Tipo de Afiliación</p>
-                      <p className="font-bold capitalize">{formData.tipoAfiliacion}</p>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Membresías Activas</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {formData.membresias?.map(m => (
+                          <Badge key={m.tipo} variant="secondary" className="capitalize">
+                            {m.tipo}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div className="p-6 space-y-4 bg-muted/20">
@@ -959,24 +980,8 @@ export default function AfiliarPage() {
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Fecha de Vencimiento</p>
-                      <p className="font-bold text-primary">
-                        {(() => {
-                          const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
-                          const year = fIngreso.getFullYear();
-                          const month = fIngreso.getMonth();
-                          let fExp;
-                          if (formData.tipoAfiliacion === "educativa") {
-                            if (month <= 4) fExp = new Date(year, 4, 30);
-                            else if (month <= 10) fExp = new Date(year, 10, 30);
-                            else fExp = new Date(year + 1, 4, 30);
-                          } else {
-                            fExp = new Date(fIngreso);
-                            fExp.setMonth(fExp.getMonth() + 6);
-                          }
-                          return fExp.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
-                        })()}
-                      </p>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Estado General</p>
+                      <Badge className="bg-success text-success-foreground">ACTIVO</Badge>
                     </div>
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Oficina / Dependencia</p>
@@ -1014,7 +1019,7 @@ export default function AfiliarPage() {
                 className="h-14 font-bold gap-3"
                 asChild
               >
-                <Link href={`/verificar?doc=${formData.codigoAfiliacion}`} target="_blank">
+                <Link href={`/verificar?doc=${formData.codigo}`} target="_blank">
                   <QrCode className="h-5 w-5" />
                   VER AFILIACIÓN PÚBLICA
                 </Link>
@@ -1133,8 +1138,8 @@ export default function AfiliarPage() {
 
               <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
                 <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cód. Registro</p>
-                  <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigoAfiliacion}</p>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cód. Institucional</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigo}</p>
                 </div>
                 <div style={{ textAlign: 'left' }}>
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>RH</p>
@@ -1148,27 +1153,15 @@ export default function AfiliarPage() {
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
                   <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                 </div>
-                <div style={{ textAlign: 'left', gridColumn: 'span 2' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Vigencia / Tipo</p>
-                  <p style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: COLORS.azul, margin: 0 }}>
-                    {formData.tipoAfiliacion === "educativa" ? "Educativa" : "Integral"} — {
-                      (() => {
-                        const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
-                        const year = fIngreso.getFullYear();
-                        const month = fIngreso.getMonth();
-                        let fExp;
-                        if (formData.tipoAfiliacion === "educativa") {
-                          if (month <= 4) fExp = new Date(year, 4, 30);
-                          else if (month <= 10) fExp = new Date(year, 10, 30);
-                          else fExp = new Date(year + 1, 4, 30);
-                        } else {
-                          fExp = new Date(fIngreso);
-                          fExp.setMonth(fExp.getMonth() + 6);
-                        }
-                        return fExp.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
-                      })()
-                    }
-                  </p>
+                <div style={{ marginTop: '12px', width: '200%', gridColumn: 'span 2' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                    {formData.membresias?.map(m => (
+                      <span key={m.tipo} style={{ fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '4px', background: COLORS.azul + '20', color: COLORS.azul, border: `1px solid ${COLORS.azul}40` }}>
+                        {m.tipo.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

@@ -11,17 +11,15 @@ export function useDocumentos() {
   useEffect(() => {
     const qDocs = query(collection(db, "documentos"), orderBy("fecha", "desc"));
     const qAfiliados = query(collection(db, "afiliados"), orderBy("fechaCreacion", "desc"));
-    const qAfiliaciones = query(collection(db, "afiliaciones"), orderBy("fechaCreacion", "desc"));
 
     let dataDocs = [];
     let dataAfiliados = [];
-    let dataAfiliaciones = [];
 
     const mergeAndSort = () => {
-      const combined = [...dataDocs, ...dataAfiliados, ...dataAfiliaciones];
+      const combined = [...dataDocs, ...dataAfiliados];
       combined.sort((a, b) => {
-        const dateA = new Date(a.fecha || a.fechaIngreso || a.fechaCreacion || 0);
-        const dateB = new Date(b.fecha || b.fechaIngreso || b.fechaCreacion || 0);
+        const dateA = new Date(a.fecha || a.fechaCreacion || 0);
+        const dateB = new Date(b.fecha || b.fechaCreacion || 0);
         return dateB - dateA;
       });
       setDocumentos(combined);
@@ -47,20 +45,9 @@ export function useDocumentos() {
       mergeAndSort();
     }, () => setIsLoading(false));
 
-    const unsubAfiliaciones = onSnapshot(qAfiliaciones, (snapshot) => {
-      dataAfiliaciones = snapshot.docs.map((doc) => ({
-        codigo: doc.id,
-        ...doc.data(),
-        tipo: "afiliacion_individual",
-        _collection: "afiliaciones"
-      }));
-      mergeAndSort();
-    }, () => setIsLoading(false));
-
     return () => {
       unsubDocs();
       unsubAfiliados();
-      unsubAfiliaciones();
     };
   }, []);
 

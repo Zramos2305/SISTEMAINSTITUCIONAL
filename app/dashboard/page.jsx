@@ -506,9 +506,8 @@ function DashboardContent() {
   const stats = useMemo(() => {
     const certificados = documentos.filter((d) => d.tipo === "certificado").length;
     const afiliados = documentos.filter((d) => d.tipo === "afiliado").length;
-    const afiliaciones = documentos.filter((d) => d.tipo === "afiliacion_individual").length;
     const documentosGenerales = documentos.filter((d) => d.tipo === "documento").length;
-    return { total: documentos.length, certificados, afiliados, afiliaciones, documentosGenerales };
+    return { total: documentos.length, certificados, afiliados, documentosGenerales };
   }, [documentos]);
 
   // Lista de fechas de expiración para marcar en el calendario
@@ -628,33 +627,29 @@ function DashboardContent() {
         nuevaExpiracion.setMonth(nuevaExpiracion.getMonth() + 6);
       }
 
-      if (reactivarDoc.tipo === "afiliacion_individual") {
-        // Actualizar membresía existente
-        await actualizarEstado(reactivarDoc.codigo, "activo", {
-          fechaExpiracion: nuevaExpiracion.toISOString(),
-          fechaRenovacion: ahora.toISOString(),
-          desactivadoManualmente: null,
-          fechaDesactivacion: null
-        }, "afiliaciones");
+      // Nueva membresía a insertar/actualizar
+      const nuevaMembresia = {
+        tipo: tipoMembresia,
+        fechaInicio: ahora.toISOString(),
+        fechaExpiracion: nuevaExpiracion.toISOString(),
+        codigo: `FIC-MEM-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+      };
+
+      // Actualizar el documento del afiliado
+      const nuevasMembresias = [...(reactivarDoc.membresias || [])];
+      // Si ya tiene una de este tipo, la reemplazamos (renovación) o la agregamos
+      const index = nuevasMembresias.findIndex(m => m.tipo === tipoMembresia);
+      if (index >= 0) {
+        nuevasMembresias[index] = nuevaMembresia;
       } else {
-        // Crear nueva membresía para esta persona
-        const afiliacionId = generarCodigoAfiliacion();
-        await setDoc(doc(db, "afiliaciones", afiliacionId), {
-          afiliadoId: reactivarDoc.codigo,
-          nombreAfiliado: reactivarDoc.nombre,
-          documentoAfiliado: reactivarDoc.cedula,
-          tipoAfiliacion: tipoMembresia,
-          fechaInicio: ahora.toISOString(),
-          fechaExpiracion: nuevaExpiracion.toISOString(),
-          estado: "activo",
-          oficina: reactivarDoc.oficina || "Sede Principal",
-          dependencia: reactivarDoc.dependencia || "Administración",
-          beneficiarios: reactivarDoc.beneficiarios || [],
-          fechaCreacion: ahora.toISOString(),
-          creadoPor: user.uid,
-          codigoAfiliacion: afiliacionId
-        });
+        nuevasMembresias.push(nuevaMembresia);
       }
+
+      await actualizarEstado(reactivarDoc.codigo, "activo", {
+        membresias: nuevasMembresias,
+        desactivadoManualmente: null,
+        fechaDesactivacion: null
+      }, "afiliados");
 
       await registrarAuditoria({
         user,
@@ -675,20 +670,43 @@ function DashboardContent() {
     }
   };
 
-  const descargarCertificadoDesdeDashboard = async (afil) => {
-    // Buscar datos del afiliado (persona) para el certificado
-    const persona = documentos.find(d => d.tipo === "afiliado" && d.codigo === afil.afiliadoId);
-    if (!persona) {
-      toast.error("No se encontraron datos del afiliado");
-      return;
-    }
+  const descargarCarnetDesdeDashboard = async (persona) => {
+    setCurrentCertData({ persona });
+    toast.info("Generando carnet...");
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const element = document.getElementById("hidden-carnet-dashboard");
+      if (!element) throw new Error("Template no encontrado");
 
-    setCurrentCertData({ afil, persona });
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        borderRadius: 32
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `Carnet_${persona.nombre.replace(/\s+/g, "_")}.png`;
+      link.href = imgData;
+      link.click();
+      toast.success("Carnet descargado");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar carnet");
+    } finally {
+      setCurrentCertData(null);
+    }
+  };
+
+  const descargarCertificadoDesdeDashboard = async (persona) => {
+    setCurrentCertData({ persona });
     setIsDownloadingCert(true);
     toast.info("Generando certificado...");
 
     try {
-      // Pequeña espera para asegurar que el DOM oculto se actualice con los datos
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const element = document.getElementById("hidden-cert-dashboard");
@@ -709,7 +727,7 @@ function DashboardContent() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
       // Generar QR
-      const qrDataUrl = await QRCode.toDataURL(`${window.location.origin}/verificar?doc=${afil.codigo}`);
+      const qrDataUrl = await QRCode.toDataURL(`${window.location.origin}/verificar?doc=${persona.codigo}`);
       const qrSize = 35;
       const marginX = pdfWidth - qrSize - 20;
       const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
@@ -718,7 +736,7 @@ function DashboardContent() {
       pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
       pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
 
-      pdf.save(`Certificado_${persona.nombre.replace(/\s+/g, "_")}_${afil.tipoAfiliacion}.pdf`);
+      pdf.save(`Certificado_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
       toast.success("Certificado descargado");
     } catch (err) {
       console.error(err);
@@ -832,23 +850,12 @@ function DashboardContent() {
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Membresías Totales</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <IdCard className="h-5 w-5 text-success" />
-                    <span className="text-2xl font-bold">{stats.afiliaciones}</span>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Otros Documentos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="h-5 w-5 text-primary" />
-                    <span className="text-2xl font-bold">{stats.documentosGenerales + stats.certificados}</span>
+                    <span className="text-2xl font-bold">{stats.documentosGenerales}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -993,7 +1000,7 @@ function DashboardContent() {
                                           : "bg-info/10 text-info border-info/20"
                                   }
                                 >
-                                  {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : doc.tipo === "afiliacion_individual" ? "Membresía" : "Persona"}
+                                  {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "Persona"}
                                 </Badge>
                               </TableCell>
                               <TableCell className="hidden lg:table-cell">
@@ -1547,77 +1554,42 @@ function DashboardContent() {
           </DialogHeader>
           {infoDoc && (
             <div className="space-y-3 pt-2">
-              {/* AFILIACIONES VINCULADAS (Solo para vista de Persona) */}
+              {/* MEMBRESÍAS (DENTRO DEL AFILIADO) */}
               {infoDoc.tipo === "afiliado" && (
                 <div className="space-y-3">
-                  <p className="text-xs text-primary uppercase font-bold tracking-wider">Membresías Vinculadas</p>
+                  <p className="text-xs text-primary uppercase font-bold tracking-wider">Membresías Activas</p>
                   <div className="space-y-2">
-                    {documentos
-                      .filter(d => d.tipo === "afiliacion_individual" && d.afiliadoId === infoDoc.codigo)
-                      .map((afil) => {
-                        const isExpired = afil.fechaExpiracion && new Date() > new Date(afil.fechaExpiracion);
-                        return (
-                          <div key={afil.codigo} className="bg-background border rounded-lg p-3 flex justify-between items-center shadow-sm">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="capitalize text-[10px]">
-                                  {afil.tipoAfiliacion}
-                                </Badge>
-                                <span className={`text-[10px] font-bold ${isExpired ? "text-destructive" : "text-success"}`}>
-                                  {isExpired ? "VENCIDA" : "ACTIVA"}
-                                </span>
-                              </div>
-                              <p className="text-xs font-medium">Cód: {afil.codigo}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {formatearFecha(afil.fechaInicio)} — {formatearFecha(afil.fechaExpiracion)}
-                              </p>
+                    {infoDoc.membresias?.map((m, idx) => {
+                      const isExpired = m.fechaExpiracion && new Date() > new Date(m.fechaExpiracion);
+                      return (
+                        <div key={idx} className="bg-background border rounded-lg p-3 flex justify-between items-center shadow-sm">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="capitalize text-[10px]">
+                                {m.tipo}
+                              </Badge>
+                              <span className={`text-[10px] font-bold ${isExpired ? "text-destructive" : "text-success"}`}>
+                                {isExpired ? "VENCIDA" : "ACTIVA"}
+                              </span>
                             </div>
-                            <Button size="sm" variant="outline" className="h-8 text-xs gap-2" onClick={() => descargarCertificadoDesdeDashboard(afil)}>
-                              <Download className="h-3 w-3" /> Certificado
-                            </Button>
+                            <p className="text-xs font-medium">Cód: {m.codigo}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatearFecha(m.fechaInicio)} — {formatearFecha(m.fechaExpiracion)}
+                            </p>
                           </div>
-                        );
-                      })}
-                    {documentos.filter(d => d.tipo === "afiliacion_individual" && d.afiliadoId === infoDoc.codigo).length === 0 && (
+                        </div>
+                      );
+                    })}
+                    {(!infoDoc.membresias || infoDoc.membresias.length === 0) && (
                       <div className="bg-muted/30 border border-dashed rounded-lg p-6 text-center">
-                        <p className="text-xs text-muted-foreground italic">No se encontraron membresías vinculadas bajo el nuevo sistema.</p>
-                        {/* Compatibilidad: Mostrar datos del mismo registro si tiene vigencia antigua */}
-                        {infoDoc.fechaExpiracion && (
-                          <div className="mt-4 pt-4 border-t text-left space-y-2">
-                            <p className="text-[10px] font-bold uppercase text-primary">Membresía Heredada (Migración)</p>
-                            <div className="bg-primary/5 p-2 rounded text-[10px]">
-                              Tipo: {infoDoc.tipoAfiliacion || "No especificado"} | Expira: {formatearFecha(infoDoc.fechaExpiracion)}
-                            </div>
-                          </div>
-                        )}
+                        <p className="text-xs text-muted-foreground italic">No se encontraron membresías registradas.</p>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Vista de Membresía Individual */}
-              {infoDoc.tipo === "afiliacion_individual" && (
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-3">
-                  <p className="text-xs text-primary uppercase font-bold tracking-wider">Detalles de la Membresía</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-background p-3 rounded-lg border space-y-1">
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Inicio</p>
-                      <p className="font-medium text-sm">{formatearFecha(infoDoc.fechaInicio)}</p>
-                    </div>
-                    <div className="bg-background p-3 rounded-lg border space-y-1">
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Tipo</p>
-                      <p className="font-medium text-sm capitalize">{infoDoc.tipoAfiliacion}</p>
-                    </div>
-                  </div>
-                  <div className="bg-background p-3 rounded-lg border text-center space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Expira</p>
-                    <p className={`font-semibold text-base ${new Date() > new Date(infoDoc.fechaExpiracion) ? "text-destructive" : "text-success"}`}>
-                      {formatearFecha(infoDoc.fechaExpiracion)}
-                    </p>
-                  </div>
-                </div>
-              )}
+
 
               {/* NUIP y Datos de Afiliado */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1887,52 +1859,127 @@ function DashboardContent() {
       {/* TEMPLATE OCULTO PARA CERTIFICADOS (Dashboard) */}
       <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
         {currentCertData && (
-          <div
-            id="hidden-cert-dashboard"
-            style={{
-              width: "800px",
-              padding: "80px",
-              background: "white",
-              fontFamily: "'Times New Roman', serif",
-              color: "#1a1a1a",
-              lineHeight: "1.8",
-              boxSizing: "border-box"
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
-              <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
-              <div style={{ textAlign: "right" }}>
-                <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>Sistema Institucional de Afiliaciones</p>
+          <>
+            {/* Template de Certificado */}
+            <div
+              id="hidden-cert-dashboard"
+              style={{
+                width: "800px",
+                padding: "80px",
+                background: "white",
+                fontFamily: "'Times New Roman', serif",
+                color: "#1a1a1a",
+                lineHeight: "1.8",
+                boxSizing: "border-box"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
+                <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+                <div style={{ textAlign: "right" }}>
+                  <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>Sistema Institucional de Afiliaciones</p>
+                </div>
+              </div>
+
+              <div style={{ textAlign: "center", marginBottom: "50px" }}>
+                <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
+              </div>
+
+              <div style={{ fontSize: "18px", textAlign: "justify" }}>
+                <p>La Fundación Isla Cascajal certifica que el(la) ciudadano(a):</p>
+                <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase" }}>
+                  {currentCertData.persona.nombre}
+                </p>
+                <p>
+                  identificado(a) con NUIP No. <strong>{currentCertData.persona.cedula}</strong>, se encuentra afiliado(a) oficialmente bajo el código institucional <strong>{currentCertData.persona.codigo}</strong>.
+                </p>
+                <p>
+                  A la fecha de expedición de este documento, el afiliado cuenta con las siguientes membresías institucionales vigentes:
+                </p>
+                <div style={{ margin: "20px 0", padding: "15px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  {currentCertData.persona.membresias?.map((m, idx) => (
+                    <p key={idx} style={{ margin: "5px 0", fontSize: "16px" }}>
+                      • <strong>{m.tipo.toUpperCase()}</strong>: Vigente hasta el {formatearFecha(m.fechaExpiracion)}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "100px" }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: "bold" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
+                  <div style={{ marginTop: "40px", width: "200px", borderBottom: "1px solid #000" }}></div>
+                  <p style={{ margin: 0, fontSize: "14px" }}>Coordinación Comercial</p>
+                </div>
               </div>
             </div>
 
-            <div style={{ textAlign: "center", marginBottom: "50px" }}>
-              <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
-            </div>
+            {/* Template de Carnet */}
+            <div 
+              id="hidden-carnet-dashboard"
+              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  left: '-40px',
+                  width: '120%',
+                  height: '120%',
+                  transform: 'rotate(15deg)',
+                  background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
+                }} />
+              </div>
 
-            <div style={{ fontSize: "18px", textAlign: "justify" }}>
-              <p>La Fundación Isla Cascajal certifica que el(la) ciudadano(a):</p>
-              <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase" }}>
-                {currentCertData.persona.nombre}
-              </p>
-              <p>
-                identificado(a) con NUIP No. <strong>{currentCertData.persona.cedula}</strong>, se encuentra afiliado(a) oficialmente bajo el código institucional <strong>{currentCertData.persona.codigo}</strong>.
-              </p>
-              <p>
-                Este certificado avala la membresía tipo <strong>{currentCertData.afil.tipoAfiliacion.toUpperCase()}</strong> con código de registro <strong>{currentCertData.afil.codigo}</strong>, vigente desde el <strong>{formatearFecha(currentCertData.afil.fechaInicio)}</strong> hasta el <strong>{formatearFecha(currentCertData.afil.fechaExpiracion)}</strong>.
-              </p>
-            </div>
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
+                </div>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0 }}>ISLA CASCAJAL</h2>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>Fundación</p>
+              </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "100px" }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: "bold" }}>Fundación Isla Cascajal</p>
-                <p style={{ margin: 0, fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
-                <div style={{ marginTop: "40px", width: "200px", borderBottom: "1px solid #000" }}></div>
-                <p style={{ margin: 0, fontSize: "14px" }}>Coordinación Comercial</p>
+              <div style={{ marginTop: '40px', padding: '0 40px', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0 }}>
+                  {currentCertData.persona.nombre}
+                </h3>
+                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  NUIP {currentCertData.persona.cedula}
+                </p>
+
+                <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'left' }}>
+                  <div>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>CÓDIGO</p>
+                    <p style={{ fontSize: '12px', fontBold: 900, color: COLORS.azul, margin: 0 }}>{currentCertData.persona.codigo}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>RH</p>
+                    <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.rojo, margin: 0 }}>{currentCertData.persona.rh || "—"}</p>
+                  </div>
+                  <div style={{ gridColumn: 'span 2', marginTop: '10px' }}>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>MEMBRESÍAS</p>
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                      {currentCertData.persona.membresias?.map(m => (
+                        <span key={m.tipo} style={{ fontSize: '9px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px', background: COLORS.azul + '15', color: COLORS.azul }}>
+                          {m.tipo.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10` }}>
+                  {/* El QR real se genera en el PDF, aquí podríamos poner un placeholder o dejarlo para el canvas */}
+                  <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
