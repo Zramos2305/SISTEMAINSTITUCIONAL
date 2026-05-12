@@ -670,46 +670,16 @@ function DashboardContent() {
     }
   };
 
-  const descargarCarnetDesdeDashboard = async (persona) => {
-    setCurrentCertData({ persona });
-    toast.info("Generando carnet...");
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const element = document.getElementById("hidden-carnet-dashboard");
-      if (!element) throw new Error("Template no encontrado");
-
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        borderRadius: 32
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `Carnet_${persona.nombre.replace(/\s+/g, "_")}.png`;
-      link.href = imgData;
-      link.click();
-      toast.success("Carnet descargado");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al generar carnet");
-    } finally {
-      setCurrentCertData(null);
-    }
-  };
-
-  const descargarCertificadoDesdeDashboard = async (persona) => {
-    setCurrentCertData({ persona });
+  const descargarCertificadoEspecifico = async (persona, membresia) => {
+    setCurrentCertData({ persona, membresia });
     setIsDownloadingCert(true);
-    toast.info("Generando certificado...");
+    toast.info(`Generando certificado ${membresia.tipo}...`);
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const element = document.getElementById("hidden-cert-dashboard");
+      const templateId = membresia.tipo === "educativa" ? "hidden-cert-edu" : "hidden-cert-integral";
+      const element = document.getElementById(templateId);
       if (!element) throw new Error("Template no encontrado");
 
       const canvas = await html2canvas(element, {
@@ -736,7 +706,7 @@ function DashboardContent() {
       pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
       pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
 
-      pdf.save(`Certificado_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
+      pdf.save(`Certificado_${membresia.tipo.toUpperCase()}_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
       toast.success("Certificado descargado");
     } catch (err) {
       console.error(err);
@@ -745,6 +715,15 @@ function DashboardContent() {
       setIsDownloadingCert(false);
       setCurrentCertData(null);
     }
+  };
+
+  const getPeriodoEducativo = (fechaExp) => {
+    if (!fechaExp) return "";
+    const date = new Date(fechaExp);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const letra = month <= 5 ? "A" : "B";
+    return `${year}${letra}`;
   };
 
   if (authLoading) {
@@ -1080,39 +1059,6 @@ function DashboardContent() {
                                   >
                                     <QrCode className="h-4 w-4" />
                                   </Button>
-                                  {doc.tipo === "afiliado" && (
-                                    <>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success hover:text-success hover:bg-success/10"
-                                        onClick={() => descargarCertificadoDesdeDashboard(doc)}
-                                        title="Descargar Certificado"
-                                      >
-                                        <FileText className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-info hover:text-info hover:bg-info/10"
-                                        onClick={() => descargarCarnetDesdeDashboard(doc)}
-                                        title="Descargar Carnet"
-                                      >
-                                        <IdCard className="h-4 w-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                  {esSuperAdmin && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-destructive hover:text-destructive"
-                                      title="Eliminar"
-                                      onClick={() => setCodigoAEliminar(doc.codigo)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1599,6 +1545,15 @@ function DashboardContent() {
                               {formatearFecha(m.fechaInicio)} — {formatearFecha(m.fechaExpiracion)}
                             </p>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-success hover:bg-success/10"
+                            onClick={() => descargarCertificadoEspecifico(infoDoc, m)}
+                            title="Descargar Certificado"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
                         </div>
                       );
                     })}
@@ -1898,126 +1853,139 @@ function DashboardContent() {
           </div>
         </DialogContent>
       </Dialog>
+
       {/* TEMPLATE OCULTO PARA CERTIFICADOS (Dashboard) */}
       <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
         {currentCertData && (
           <>
-            {/* Template de Certificado */}
+            {/* Template de Aval Educativo */}
             <div
-              id="hidden-cert-dashboard"
+              id="hidden-cert-edu"
               style={{
                 width: "800px",
                 padding: "80px",
                 background: "white",
                 fontFamily: "'Times New Roman', serif",
                 color: "#1a1a1a",
-                lineHeight: "1.8",
+                lineHeight: "1.6",
                 boxSizing: "border-box"
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "20px" }}>
-                <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
+                <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
                 <div style={{ textAlign: "right" }}>
-                  <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                  <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>Sistema Institucional de Afiliaciones</p>
+                  <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
                 </div>
               </div>
 
-              <div style={{ textAlign: "center", marginBottom: "50px" }}>
-                <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
+              <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
               </div>
 
-              <div style={{ fontSize: "18px", textAlign: "justify" }}>
-                <p>La Fundación Isla Cascajal certifica que el(la) ciudadano(a):</p>
-                <p style={{ fontSize: "22px", fontWeight: "900", textAlign: "center", margin: "30px 0", textTransform: "uppercase" }}>
+              <div style={{ fontSize: "16px", textAlign: "justify" }}>
+                <p>
+                  La presente organización de base <strong>Fundación Isla Cascajal “FICong”</strong>, identificada con NIT 900.248.351-0, con principal domicilio en el Distrito Especial de Santiago de Cali, República de Colombia, se permite presentar a:
+                </p>
+                
+                <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
                   {currentCertData.persona.nombre}
                 </p>
+
                 <p>
-                  identificado(a) con NUIP No. <strong>{currentCertData.persona.cedula}</strong>, se encuentra afiliado(a) oficialmente bajo el código institucional <strong>{currentCertData.persona.codigo}</strong>.
+                  con NUIP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa para acceder a nuestros convenios educativos.
                 </p>
+
                 <p>
-                  A la fecha de expedición de este documento, el afiliado cuenta con las siguientes membresías institucionales vigentes:
+                  Esta afiliación fue realizada en día <strong>{formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos por la Fundación Isla Cascajal.
                 </p>
-                <div style={{ margin: "20px 0", padding: "15px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                  {currentCertData.persona.membresias?.map((m, idx) => (
-                    <p key={idx} style={{ margin: "5px 0", fontSize: "16px" }}>
-                      • <strong>{m.tipo.toUpperCase()}</strong>: Vigente hasta el {formatearFecha(m.fechaExpiracion)}
-                    </p>
-                  ))}
-                </div>
+
+                <p>
+                  Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del afiliado, se procede a conceder el <strong>AVAL</strong> para que se le realicen los correspondientes descuentos para programas educativos para el período académico <strong>{getPeriodoEducativo(currentCertData.membresia.fechaExpiracion)}</strong>.
+                </p>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "100px" }}>
+              {currentCertData.persona.beneficiarios?.length > 0 && (
+                <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>BENEFICIARIOS:</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {currentCertData.persona.beneficiarios.map((b, i) => (
+                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
                 <div>
-                  <p style={{ margin: 0, fontWeight: "bold" }}>Fundación Isla Cascajal</p>
-                  <p style={{ margin: 0, fontSize: "14px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
-                  <div style={{ marginTop: "40px", width: "200px", borderBottom: "1px solid #000" }}></div>
-                  <p style={{ margin: 0, fontSize: "14px" }}>Coordinación Comercial</p>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
+                  <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
+                  <p style={{ margin: 0, fontSize: "12px" }}>Coordinación Comercial</p>
                 </div>
               </div>
             </div>
 
-            {/* Template de Carnet */}
-            <div 
-              id="hidden-carnet-dashboard"
-              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}
+            {/* Template de Afiliación Integral */}
+            <div
+              id="hidden-cert-integral"
+              style={{
+                width: "800px",
+                padding: "80px",
+                background: "white",
+                fontFamily: "'Times New Roman', serif",
+                color: "#1a1a1a",
+                lineHeight: "1.6",
+                boxSizing: "border-box"
+              }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '-40px',
-                  left: '-40px',
-                  width: '120%',
-                  height: '120%',
-                  transform: 'rotate(15deg)',
-                  background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
-                }} />
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
+                <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+                <div style={{ textAlign: "right" }}>
+                  <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
                 </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0 }}>ISLA CASCAJAL</h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>Fundación</p>
               </div>
 
-              <div style={{ marginTop: '40px', padding: '0 40px', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0 }}>
-                  {currentCertData.persona.nombre}
-                </h3>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                  NUIP {currentCertData.persona.cedula}
+              <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN INTEGRAL</h2>
+              </div>
+
+              <div style={{ fontSize: "16px", textAlign: "justify" }}>
+                <p>
+                  La presente organización de base <strong>Fundación Isla Cascajal “FICong”</strong>, identificada con NIT 900.248.351-0, con principal domicilio en el Distrito Especial de Santiago de Cali, República de Colombia, se permite presentar a:
                 </p>
 
-                <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'left' }}>
-                  <div>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>CÓDIGO</p>
-                    <p style={{ fontSize: '12px', fontBold: 900, color: COLORS.azul, margin: 0 }}>{currentCertData.persona.codigo}</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>RH</p>
-                    <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.rojo, margin: 0 }}>{currentCertData.persona.rh || "—"}</p>
-                  </div>
-                  <div style={{ gridColumn: 'span 2', marginTop: '10px' }}>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>MEMBRESÍAS</p>
-                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                      {currentCertData.persona.membresias?.map(m => (
-                        <span key={m.tipo} style={{ fontSize: '9px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px', background: COLORS.azul + '15', color: COLORS.azul }}>
-                          {m.tipo.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
+                  {currentCertData.persona.nombre}
+                </p>
+
+                <p>
+                  con NUIP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa desde el día <strong>{formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y le permite acceder a los descuentos especiales que otorgan nuestros convenios interinstitucionales.
+                </p>
+
+                <p>
+                  Esta afiliación tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos establecidos por la Fundación Isla Cascajal, así pues; después de corroborar que se asumirán los compromisos sociales y morales por parte del afiliado, se procede a reconocer su <strong>AFILIACIÓN ACTIVA</strong> para que se le realicen los correspondientes descuentos con fecha de vencimiento <strong>{formatearFecha(currentCertData.membresia.fechaExpiracion)}</strong>.
+                </p>
               </div>
 
-              <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10` }}>
-                  {/* El QR real se genera en el PDF, aquí podríamos poner un placeholder o dejarlo para el canvas */}
-                  <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
+              {currentCertData.persona.beneficiarios?.length > 0 && (
+                <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>BENEFICIARIOS:</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {currentCertData.persona.beneficiarios.map((b, i) => (
+                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
+                    ))}
                   </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
+                  <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
+                  <p style={{ margin: 0, fontSize: "12px" }}>Coordinación Comercial</p>
                 </div>
               </div>
             </div>
