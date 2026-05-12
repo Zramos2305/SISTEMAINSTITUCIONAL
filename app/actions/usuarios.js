@@ -20,18 +20,18 @@ export async function crearUsuarioInstitucional(data) {
       displayName: nombre,
     });
 
-    let nuevoPersonalId = null;
+    let nuevoEmpleadoId = null;
 
-    // 2. Crear el documento en la colección 'personal' (siempre, para todo el personal)
-    const personalRef = adminDb.collection("personal").doc();
-    nuevoPersonalId = personalRef.id;
+    // 2. Crear el documento en la colección 'empleados' (siempre, para todo el personal)
+    const empleadoRef = adminDb.collection("empleados").doc();
+    nuevoEmpleadoId = empleadoRef.id;
     
     const horarioDefault = {
       lunes: "presencial", martes: "presencial", miercoles: "presencial",
       jueves: "presencial", viernes: "presencial", sabado: "libre", domingo: "libre"
     };
 
-    await personalRef.set({
+    await empleadoRef.set({
       nombre: nombre || "",
       correo: correo || "",
       documento: documento || "",
@@ -61,7 +61,7 @@ export async function crearUsuarioInstitucional(data) {
       nombre: nombre,
       rol: rol,
       activo: estado === "activo",
-      empleadoId: nuevoPersonalId,
+      empleadoId: nuevoEmpleadoId,
       creadoPor: creadoPorUid,
       fechaCreacion: FieldValue.serverTimestamp(),
     });
@@ -93,18 +93,18 @@ export async function crearUsuarioInstitucional(data) {
           }
         ],
         esPersonalInstitucional: true,
-        personalId: nuevoPersonalId
+        personalId: nuevoEmpleadoId
       });
     }
 
-    return { success: true, uid: userRecord.uid, personalId: nuevoPersonalId };
+    return { success: true, uid: userRecord.uid, personalId: nuevoEmpleadoId };
   } catch (error) {
     console.error("Error en crearUsuarioInstitucional:", error);
     return { success: false, error: error.message };
   }
 }
 
-export async function eliminarUsuarioInstitucional(uid, personalId) {
+export async function eliminarUsuarioInstitucional(uid, empleadoId) {
   try {
     console.log("==> Eliminando usuario institucional:", uid);
 
@@ -118,13 +118,13 @@ export async function eliminarUsuarioInstitucional(uid, personalId) {
     // 2. Eliminar de 'usuarios'
     await adminDb.collection("usuarios").doc(uid).delete();
 
-    // 3. Eliminar de 'personal'
-    if (personalId) {
-      await adminDb.collection("personal").doc(personalId).delete();
+    // 3. Eliminar de 'empleados'
+    if (empleadoId) {
+      await adminDb.collection("empleados").doc(empleadoId).delete();
       
       // Eliminar afiliación institucional si existe
       const afiliadosRef = adminDb.collection("afiliados");
-      const q = afiliadosRef.where("personalId", "==", personalId);
+      const q = afiliadosRef.where("personalId", "==", empleadoId);
       const snapshot = await q.get();
       
       const batch = adminDb.batch();

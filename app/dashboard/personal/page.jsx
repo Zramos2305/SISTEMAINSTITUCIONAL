@@ -197,7 +197,7 @@ function PersonalContent() {
       
       const usuarioObj = usuarios.find(u => u.id === uId);
       if (usuarioObj?.empleadoId) {
-        await updateDoc(doc(db, "personal", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
+        await updateDoc(doc(db, "empleados", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
         
         // Sincronizar estado con afiliación institucional
         import("firebase/firestore").then(async ({ query, where }) => {

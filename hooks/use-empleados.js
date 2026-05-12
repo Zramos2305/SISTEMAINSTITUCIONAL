@@ -84,7 +84,7 @@ export function useEmpleados() {
     setIsLoading(true);
     setError(null);
     try {
-    const snap = await getDocs(collection(db, "personal"));
+      const snap = await getDocs(collection(db, "empleados"));
       const lista = snap.docs.map((d) => ({
         id: d.id,
         ...d.data(),
@@ -111,7 +111,7 @@ export function useEmpleados() {
    */
   const actualizarModalidad = async (empleadoId, nuevoHorario) => {
     const horarioNormalizado = normalizarHorario(nuevoHorario);
-    await updateDoc(doc(db, "personal", empleadoId), {
+    await updateDoc(doc(db, "empleados", empleadoId), {
       horarioModalidad: horarioNormalizado,
     });
     // Actualizar estado local para evitar re-fetch
