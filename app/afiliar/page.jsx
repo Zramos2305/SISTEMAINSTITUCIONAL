@@ -99,6 +99,7 @@ export default function AfiliarPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Generar QR en tiempo real cuando cambia el código
   useEffect(() => {
@@ -236,36 +237,38 @@ export default function AfiliarPage() {
       });
 
       toast.success("Afiliación guardada correctamente");
-
-      // Limpiar formulario o redirigir
-      setFormData({
-        codigo: generarCodigoAfiliado(),
-        nombre: "",
-        cedula: "",
-        rh: "",
-        fechaIngreso: new Date().toISOString().split("T")[0],
-        telefono: "",
-        correo: "",
-        direccion: "",
-        estado: "activo",
-        cargo: "Afiliado",
-        duracion: "1_ano",
-        foto: null,
-        oficina: "",
-        dependencia: "",
-        pais: "Colombia",
-        ciudad: "",
-        beneficiarios: [],
-        tipoAfiliacion: "educativa",
-      });
-      setFotoPreview(null);
-
+      setIsSuccess(true);
+      // No limpiamos el formulario inmediatamente para permitir descargas en la pantalla de éxito
     } catch (err) {
       console.error(err);
       toast.error("Error al guardar la afiliación");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      codigo: generarCodigoAfiliado(),
+      nombre: "",
+      cedula: "",
+      rh: "",
+      fechaIngreso: new Date().toISOString().split("T")[0],
+      telefono: "",
+      correo: "",
+      direccion: "",
+      estado: "activo",
+      cargo: "Afiliado",
+      foto: null,
+      oficina: "",
+      dependencia: "",
+      pais: "Colombia",
+      ciudad: "",
+      beneficiarios: [],
+      tipoAfiliacion: "educativa",
+    });
+    setFotoPreview(null);
+    setIsSuccess(false);
   };
 
   const descargarCarnet = async () => {
@@ -389,7 +392,8 @@ export default function AfiliarPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {!isSuccess ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
           {/* Formulario */}
           <Card className="shadow-lg">
@@ -405,7 +409,7 @@ export default function AfiliarPage() {
                 </Field>
                 <Field>
                   <FieldLabel>Estado</FieldLabel>
-                  <Select value={formData.estado} onValueChange={(v) => handleInputChange("estado", v)}>
+                  <Select value={formData.estado} onValueChange={(v) => handleInputChange("estado", v)} disabled={isSaving}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -426,6 +430,7 @@ export default function AfiliarPage() {
                     className="pl-10"
                     value={formData.nombre}
                     onChange={(e) => handleInputChange("nombre", e.target.value)}
+                    disabled={isSaving}
                   />
                 </div>
               </Field>
@@ -440,6 +445,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.cedula}
                       onChange={(e) => handleInputChange("cedula", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -452,6 +458,7 @@ export default function AfiliarPage() {
                       className="pl-10 uppercase"
                       value={formData.rh}
                       onChange={(e) => handleInputChange("rh", e.target.value.toUpperCase())}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -467,6 +474,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.fechaIngreso}
                       onChange={(e) => handleInputChange("fechaIngreso", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -479,6 +487,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.telefono}
                       onChange={(e) => handleInputChange("telefono", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -487,7 +496,7 @@ export default function AfiliarPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field>
                   <FieldLabel>País</FieldLabel>
-                  <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)}>
+                  <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)} disabled={isSaving}>
                     <SelectTrigger className="pl-10 relative">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <SelectValue placeholder="Seleccione país" />
@@ -506,6 +515,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.ciudad}
                       onChange={(e) => handleInputChange("ciudad", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -522,6 +532,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.correo}
                       onChange={(e) => handleInputChange("correo", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -534,6 +545,7 @@ export default function AfiliarPage() {
                       className="pl-10"
                       value={formData.direccion}
                       onChange={(e) => handleInputChange("direccion", e.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
                 </Field>
@@ -544,6 +556,7 @@ export default function AfiliarPage() {
                 <Select
                   value={formData.tipoAfiliacion}
                   onValueChange={(val) => handleInputChange("tipoAfiliacion", val)}
+                  disabled={isSaving}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione tipo" />
@@ -560,6 +573,7 @@ export default function AfiliarPage() {
                 <Select
                   value={formData.oficina}
                   onValueChange={(value) => handleInputChange("oficina", value)}
+                  disabled={isSaving}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione la oficina" />
@@ -636,7 +650,7 @@ export default function AfiliarPage() {
               <Field>
                 <FieldLabel className="flex justify-between items-center">
                   Beneficiarios (Opcional - Máx 5)
-                  <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]">
+                  <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]" disabled={isSaving}>
                     <Plus className="h-3 w-3 mr-1" /> Agregar
                   </Button>
                 </FieldLabel>
@@ -652,6 +666,7 @@ export default function AfiliarPage() {
                         size="icon"
                         className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
                         onClick={() => handleRemoveBeneficiario(idx)}
+                        disabled={isSaving}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -663,6 +678,7 @@ export default function AfiliarPage() {
                             onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
                             className="h-8 text-xs"
                             placeholder="Nombre"
+                            disabled={isSaving}
                           />
                         </div>
                         <div className="space-y-1">
@@ -672,6 +688,7 @@ export default function AfiliarPage() {
                             onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
                             className="h-8 text-xs font-mono"
                             placeholder="Documento"
+                            disabled={isSaving}
                           />
                         </div>
                       </div>
@@ -692,8 +709,9 @@ export default function AfiliarPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
                       onChange={handleFotoChange}
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="flex-1">
@@ -703,36 +721,16 @@ export default function AfiliarPage() {
                 </div>
               </Field>
 
-              <div className="pt-4 flex gap-3">
                 <Button
-                  className="flex-1 h-12 text-base font-bold shadow-md shadow-primary/20"
+                  className="w-full h-12 text-base font-bold shadow-md shadow-primary/20"
                   onClick={handleGuardar}
                   disabled={isSaving}
                 >
                   {isSaving ? <Spinner className="mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
                   GUARDAR AFILIACIÓN
                 </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 px-6 border-2"
-                  onClick={descargarCarnet}
-                  disabled={isDownloading}
-                  title="Descargar como Imagen"
-                >
-                  {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 flex-1 border-2 text-primary hover:bg-primary/5"
-                  onClick={descargarCertificado}
-                  disabled={isDownloadingCert}
-                >
-                  {isDownloadingCert ? <Spinner className="mr-2" /> : <FileTextIcon className="mr-2 h-5 w-5" />}
-                  CERTIFICADO PDF
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
           {/* Preview Carnet */}
           <div className="sticky top-24">
@@ -875,6 +873,128 @@ export default function AfiliarPage() {
           </div>
 
         </div>
+        ) : (
+          /* Pantalla de Éxito */
+          <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="h-12 w-12 text-success" />
+              </div>
+              <h2 className="text-3xl font-black text-foreground">Afiliación Registrada Correctamente</h2>
+              <p className="text-muted-foreground">El registro ha sido procesado y guardado de forma segura en la base de datos institucional.</p>
+            </div>
+
+            <Card className="border-2 border-success/20 shadow-xl overflow-hidden">
+              <div className="bg-success/5 border-b border-success/10 px-6 py-4 flex justify-between items-center">
+                <h3 className="font-bold text-success flex items-center gap-2">
+                  <IdCard className="h-4 w-4" /> Resumen de Afiliación
+                </h3>
+                <Badge className="bg-success text-success-foreground font-mono">{formData.codigo}</Badge>
+              </div>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Nombre Completo</p>
+                      <p className="text-lg font-bold">{formData.nombre}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Documento / NUIP</p>
+                      <p className="font-mono font-bold text-lg">{formData.cedula}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Tipo de Afiliación</p>
+                      <p className="font-bold capitalize">{formData.tipoAfiliacion}</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4 bg-muted/20">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Fecha de Registro</p>
+                      <p className="font-bold">
+                        {new Date(formData.fechaIngreso + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Fecha de Vencimiento</p>
+                      <p className="font-bold text-primary">
+                        {(() => {
+                          const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
+                          const year = fIngreso.getFullYear();
+                          const month = fIngreso.getMonth();
+                          let fExp;
+                          if (formData.tipoAfiliacion === "educativa") {
+                            if (month <= 4) fExp = new Date(year, 4, 30);
+                            else if (month <= 10) fExp = new Date(year, 10, 30);
+                            else fExp = new Date(year + 1, 4, 30);
+                          } else {
+                            fExp = new Date(fIngreso);
+                            fExp.setMonth(fExp.getMonth() + 6);
+                          }
+                          return fExp.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
+                        })()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Oficina / Dependencia</p>
+                      <p className="text-sm font-medium">{formData.oficina} — {formData.dependencia}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
+                onClick={descargarCarnet}
+                disabled={isDownloading}
+              >
+                {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
+                DESCARGAR CARNET
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
+                onClick={descargarCertificado}
+                disabled={isDownloadingCert}
+              >
+                {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
+                CERTIFICADO PDF
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="lg" 
+                className="h-14 font-bold gap-3"
+                asChild
+              >
+                <Link href={`/verificar?doc=${formData.codigo}`} target="_blank">
+                  <QrCode className="h-5 w-5" />
+                  VER AFILIADO PÚBLICO
+                </Link>
+              </Button>
+              <Button 
+                variant="default" 
+                size="lg" 
+                className="h-14 font-bold gap-3 shadow-lg shadow-primary/20"
+                onClick={handleReset}
+              >
+                <Plus className="h-5 w-5" />
+                NUEVA AFILIACIÓN
+              </Button>
+            </div>
+
+            <div className="pt-6 text-center">
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard" className="text-muted-foreground hover:text-primary">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Volver al Dashboard
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* CONTENEDOR DE EXPORTACIÓN AISLADO (INVISIBLE) - PURO HEX / SIN TAILWIND */}
         <div
