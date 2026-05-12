@@ -50,19 +50,35 @@ function VerificarContent() {
         let docData = null;
 
         if (docSnap.exists()) {
-          docData = { codigo: docSnap.id, ...docSnap.data() };
+          docData = { codigo: docSnap.id, ...docSnap.data(), tipo: "certificado" };
         } else {
-          // 2. Si no está en 'documentos', buscar en 'afiliados'
-          const afiliadoRef = doc(db, "afiliados", codigo);
-          const afiliadoSnap = await getDoc(afiliadoRef);
+          // 2. Si no está en 'documentos', buscar en 'afiliaciones' (Nuevo sistema)
+          const afilRef = doc(db, "afiliaciones", codigo);
+          const afilSnap = await getDoc(afilRef);
 
-          if (afiliadoSnap.exists()) {
-            docData = { codigo: afiliadoSnap.id, tipo: "afiliado", ...afiliadoSnap.data() };
+          if (afilSnap.exists()) {
+            const data = afilSnap.data();
+            docData = { 
+              codigo: afilSnap.id, 
+              tipo: "afiliado", // Usamos 'afiliado' para que la UI use los mismos campos
+              isMembresia: true,
+              nombre: data.nombreAfiliado,
+              cedula: data.documentoAfiliado,
+              ...data 
+            };
+          } else {
+            // 3. Buscar en 'afiliados' (Legacy / Perfil Personal)
+            const personaRef = doc(db, "afiliados", codigo);
+            const personaSnap = await getDoc(personaRef);
+
+            if (personaSnap.exists()) {
+              docData = { codigo: personaSnap.id, tipo: "afiliado", ...personaSnap.data() };
+            }
           }
         }
 
         if (docData) {
-          const isExpired = docData.tipo === "afiliado" && docData.fechaExpiracion && new Date() > new Date(docData.fechaExpiracion);
+          const isExpired = (docData.tipo === "afiliado" || docData.isMembresia) && docData.fechaExpiracion && new Date() > new Date(docData.fechaExpiracion);
           setDocumento({ ...docData, isExpired });
           
           if (docData.estado === "inactivo" || isExpired) {

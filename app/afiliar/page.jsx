@@ -60,7 +60,16 @@ const COLORS = {
 
 function generarCodigoAfiliado() {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigo = "FICONG-";
+  let codigo = "FIC-";
+  for (let i = 0; i < 8; i++) {
+    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  }
+  return codigo;
+}
+
+function generarCodigoAfiliacion() {
+  const caracteres = "0123456789";
+  let codigo = "AF-";
   for (let i = 0; i < 8; i++) {
     codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
@@ -180,68 +189,103 @@ export default function AfiliarPage() {
 
     setIsSaving(true);
     try {
-      // Verificar si ya existe el documento
+      // 1. Buscar si la persona ya existe como AFILIADO (Persona)
       const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
       const snap = await getDocs(q);
+      
+      let afiliadoId;
+      let isNewAffiliate = true;
+
       if (!snap.empty) {
-        toast.error("Este número de documento ya está registrado como afiliado");
-        setIsSaving(false);
-        return;
+        // La persona ya existe
+        afiliadoId = snap.docs[0].id;
+        isNewAffiliate = false;
+        
+        // Actualizar datos personales por si cambiaron
+        await setDoc(doc(db, "afiliados", afiliadoId), {
+          nombre: formData.nombre,
+          cedula: formData.cedula,
+          telefono: formData.telefono,
+          correo: formData.correo,
+          direccion: formData.direccion,
+          rh: formData.rh,
+          foto: formData.foto,
+          pais: formData.pais,
+          ciudad: formData.ciudad,
+          fechaUltimaActualizacion: new Date().toISOString()
+        }, { merge: true });
+      } else {
+        // Crear nueva persona (Afiliado)
+        afiliadoId = formData.codigo; // Usamos el código FIC- generado inicialmente
+        await setDoc(doc(db, "afiliados", afiliadoId), {
+          nombre: formData.nombre,
+          cedula: formData.cedula,
+          telefono: formData.telefono,
+          correo: formData.correo,
+          direccion: formData.direccion,
+          rh: formData.rh,
+          foto: formData.foto,
+          pais: formData.pais,
+          ciudad: formData.ciudad,
+          codigoInstitucional: afiliadoId,
+          fechaCreacion: new Date().toISOString(),
+          creadoPor: user.uid
+        });
       }
 
-      // Calcular fecha de expiración según nuevas reglas
+      // 2. Calcular vigencia para la NUEVA AFILIACIÓN
       const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
       const year = fIngreso.getFullYear();
-      const month = fIngreso.getMonth(); // 0-11
+      const month = fIngreso.getMonth();
       
       let fExpiracion;
       if (formData.tipoAfiliacion === "educativa") {
-        if (month <= 4) { // Enero (0) a Mayo (4)
-          fExpiracion = new Date(year, 4, 30, 23, 59, 59); // 30 de Mayo
-        } else if (month >= 5 && month <= 10) { // Junio (5) a Noviembre (10)
-          fExpiracion = new Date(year, 10, 30, 23, 59, 59); // 30 de Noviembre
-        } else { // Diciembre (11)
-          fExpiracion = new Date(year + 1, 4, 30, 23, 59, 59); // 30 de Mayo del siguiente año
-        }
-      } else { // integral
+        if (month <= 4) fExpiracion = new Date(year, 4, 30, 23, 59, 59);
+        else if (month <= 10) fExpiracion = new Date(year, 10, 30, 23, 59, 59);
+        else fExpiracion = new Date(year + 1, 4, 30, 23, 59, 59);
+      } else {
         fExpiracion = new Date(fIngreso);
         fExpiracion.setMonth(fExpiracion.getMonth() + 6);
       }
 
       const isoExpiracion = fExpiracion.toISOString();
+      const afiliacionId = generarCodigoAfiliacion();
 
-      await setDoc(doc(db, "afiliados", formData.codigo), {
-        ...formData,
+      // 3. Crear el registro en la colección 'afiliaciones'
+      const nuevaAfiliacion = {
+        afiliadoId: afiliadoId,
+        nombreAfiliado: formData.nombre,
+        documentoAfiliado: formData.cedula,
+        tipoAfiliacion: formData.tipoAfiliacion,
+        fechaInicio: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
         fechaExpiracion: isoExpiracion,
-        fechaInicioPeriodo: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
-        fecha: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
-        periodos: [
-          {
-            inicio: new Date(formData.fechaIngreso + "T12:00:00").toISOString(),
-            fin: isoExpiracion,
-            duracion: formData.tipoAfiliacion,
-            tipo: "registro",
-            fecha: new Date().toISOString()
-          }
-        ],
-        creadoPor: user.uid,
+        estado: "activo",
+        oficina: formData.oficina,
+        dependencia: formData.dependencia,
+        beneficiarios: formData.beneficiarios,
         fechaCreacion: new Date().toISOString(),
-      });
+        creadoPor: user.uid,
+        codigoAfiliacion: afiliacionId
+      };
+
+      await setDoc(doc(db, "afiliaciones", afiliacionId), nuevaAfiliacion);
+
+      // Guardamos el ID de la afiliación para la pantalla de éxito/descargas
+      setFormData(prev => ({ ...prev, codigoAfiliacion: afiliacionId }));
 
       await registrarAuditoria({
         user,
         userData,
         accion: "Nueva Afiliación",
-        documentoId: formData.codigo,
-        detalles: `Se afilió a ${formData.nombre} con el código ${formData.codigo}`
+        documentoId: afiliacionId,
+        detalles: `Se registró afiliación ${formData.tipoAfiliacion} para ${formData.nombre} (${afiliadoId})`
       });
 
-      toast.success("Afiliación guardada correctamente");
+      toast.success(isNewAffiliate ? "Afiliado y membresía creados" : "Nueva membresía añadida al afiliado");
       setIsSuccess(true);
-      // No limpiamos el formulario inmediatamente para permitir descargas en la pantalla de éxito
     } catch (err) {
       console.error(err);
-      toast.error("Error al guardar la afiliación");
+      toast.error("Error al procesar el registro");
     } finally {
       setIsSaving(false);
     }
@@ -970,9 +1014,9 @@ export default function AfiliarPage() {
                 className="h-14 font-bold gap-3"
                 asChild
               >
-                <Link href={`/verificar?doc=${formData.codigo}`} target="_blank">
+                <Link href={`/verificar?doc=${formData.codigoAfiliacion}`} target="_blank">
                   <QrCode className="h-5 w-5" />
-                  VER AFILIADO PÚBLICO
+                  VER AFILIACIÓN PÚBLICA
                 </Link>
               </Button>
               <Button 
@@ -1089,8 +1133,8 @@ export default function AfiliarPage() {
 
               <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
                 <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Código</p>
-                  <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigo}</p>
+                  <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cód. Registro</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0 }}>{formData.codigoAfiliacion}</p>
                 </div>
                 <div style={{ textAlign: 'left' }}>
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>RH</p>
@@ -1196,7 +1240,7 @@ export default function AfiliarPage() {
               </p>
 
               <p style={{ marginBottom: "25px" }}>
-                La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional <strong>{formData.codigo}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
+                La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional de afiliado <strong>{formData.codigo}</strong> y con el código de registro de membresía <strong>{formData.codigoAfiliacion}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
               </p>
 
               <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "80%", backgroundColor: "#f9f9f9" }}>
