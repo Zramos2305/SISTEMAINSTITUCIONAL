@@ -160,13 +160,13 @@ function VerificarContent() {
                 <Badge 
                   className={`text-base px-6 py-1.5 uppercase font-black ${
                     estado === 'valid' 
-                      ? (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success') 
-                      : 'bg-amber-500 hover:bg-amber-600'
+                      ? (documento.esPersonalInstitucional ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success')) 
+                      : 'bg-destructive hover:bg-destructive text-white'
                   }`}
                 >
                   {estado === 'valid' 
-                    ? (documento.tipo === 'afiliado' ? 'Afiliado Verificado' : 'Documento Válido') 
-                    : (documento.isExpired ? 'Vigencia Expirada' : 'Registro Inactivo')}
+                    ? (documento.esPersonalInstitucional ? 'Personal Institucional' : (documento.tipo === 'afiliado' ? 'Afiliado Verificado' : 'Documento Válido')) 
+                    : (documento.esPersonalInstitucional && documento.estado === 'inactivo' ? 'PERSONAL INACTIVO' : (documento.isExpired ? 'Vigencia Expirada' : 'Registro Inactivo'))}
                 </Badge>
               </div>
 

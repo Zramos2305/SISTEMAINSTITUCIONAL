@@ -5,7 +5,12 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export async function crearUsuarioInstitucional(data) {
   try {
-    const { correo, password, nombre, rol, cargo, creadoPorUid } = data;
+    const { 
+      correo, password, nombre, rol, cargo, creadoPorUid,
+      foto, documento, telefono, direccion, rh, tipoPersonal, 
+      fechaIngreso, estado, modalidadLaboral, diasTeletrabajo, 
+      afiliarAutomaticamente, codigoInstitucional
+    } = data;
 
     // 1. Crear usuario en Firebase Auth
     console.log("==> Creando usuario institucional:", correo, "Rol:", rol);
@@ -15,55 +20,91 @@ export async function crearUsuarioInstitucional(data) {
       displayName: nombre,
     });
 
-    let nuevoEmpleadoId = null;
+    let nuevoPersonalId = null;
 
-    // 2. Si es empleado, crear el documento en la colección 'empleados'
-    if (rol === "empleado") {
-      const empleadoRef = adminDb.collection("empleados").doc();
-      nuevoEmpleadoId = empleadoRef.id;
-      
-      const horarioDefault = {
-        lunes: "presencial",
-        martes: "presencial",
-        miercoles: "presencial",
-        jueves: "presencial",
-        viernes: "presencial",
-        sabado: "libre",
-        domingo: "libre"
-      };
+    // 2. Crear el documento en la colección 'personal' (siempre, para todo el personal)
+    const personalRef = adminDb.collection("personal").doc();
+    nuevoPersonalId = personalRef.id;
+    
+    const horarioDefault = {
+      lunes: "presencial", martes: "presencial", miercoles: "presencial",
+      jueves: "presencial", viernes: "presencial", sabado: "libre", domingo: "libre"
+    };
 
-      await empleadoRef.set({
-        nombre: nombre,
-        cargo: cargo || "Empleado General",
-        uidAuth: userRecord.uid,
-        correoLogin: correo,
-        rolSistema: rol,
-        fechaCreacion: FieldValue.serverTimestamp(),
-        horarioModalidad: horarioDefault
-      });
-    }
+    await personalRef.set({
+      nombre: nombre || "",
+      correo: correo || "",
+      documento: documento || "",
+      telefono: telefono || "",
+      direccion: direccion || "",
+      rh: rh || "",
+      cargo: cargo || "General",
+      tipoPersonal: tipoPersonal || "Empleado",
+      fechaIngreso: fechaIngreso || new Date().toISOString(),
+      estado: estado || "activo",
+      rolSistema: rol || "empleado",
+      modalidadLaboral: modalidadLaboral || "Presencial",
+      diasTeletrabajo: diasTeletrabajo || "",
+      codigoInstitucional: codigoInstitucional || "",
+      foto: foto || null,
+      uidAuth: userRecord.uid,
+      fechaCreacion: FieldValue.serverTimestamp(),
+      creadoPor: creadoPorUid,
+      horarioModalidad: horarioDefault
+    });
 
-    // 3. Crear documento en colección 'usuarios'
+    // 3. Crear documento en colección 'usuarios' para el acceso al sistema
     const usuarioRef = adminDb.collection("usuarios").doc(userRecord.uid);
     await usuarioRef.set({
       uid: userRecord.uid,
       correo: correo,
       nombre: nombre,
       rol: rol,
-      activo: true,
-      empleadoId: nuevoEmpleadoId, // Será null si es admin/superadmin
+      activo: estado === "activo",
+      empleadoId: nuevoPersonalId,
       creadoPor: creadoPorUid,
       fechaCreacion: FieldValue.serverTimestamp(),
     });
 
-    return { success: true, uid: userRecord.uid };
+    // 4. Afiliación Automática
+    if (afiliarAutomaticamente) {
+      const afiliadoRef = adminDb.collection("afiliados").doc();
+      await afiliadoRef.set({
+        afiliadoId: `FIC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        nombre: nombre,
+        cedula: documento,
+        telefono: telefono,
+        correo: correo,
+        direccion: direccion,
+        rh: rh,
+        estado: "activo",
+        foto: foto || null,
+        codigo: codigoInstitucional,
+        fechaCreacion: FieldValue.serverTimestamp(),
+        creadoPor: creadoPorUid,
+        beneficiarios: [],
+        membresias: [
+          {
+            tipo: "institucional",
+            codigo: codigoInstitucional,
+            fechaInicio: new Date().toISOString(),
+            fechaExpiracion: "indefinida",
+            estado: "activo"
+          }
+        ],
+        esPersonalInstitucional: true,
+        personalId: nuevoPersonalId
+      });
+    }
+
+    return { success: true, uid: userRecord.uid, personalId: nuevoPersonalId };
   } catch (error) {
     console.error("Error en crearUsuarioInstitucional:", error);
     return { success: false, error: error.message };
   }
 }
 
-export async function eliminarUsuarioInstitucional(uid, empleadoId) {
+export async function eliminarUsuarioInstitucional(uid, personalId) {
   try {
     console.log("==> Eliminando usuario institucional:", uid);
 
@@ -71,15 +112,26 @@ export async function eliminarUsuarioInstitucional(uid, empleadoId) {
     try {
       await adminAuth.deleteUser(uid);
     } catch (authError) {
-      console.warn("Aviso: No se pudo borrar de Auth (tal vez ya no existe):", authError.message);
+      console.warn("Aviso: No se pudo borrar de Auth:", authError.message);
     }
 
-    // 2. Eliminar de la colección 'usuarios'
+    // 2. Eliminar de 'usuarios'
     await adminDb.collection("usuarios").doc(uid).delete();
 
-    // 3. Eliminar de la colección 'empleados' si aplica
-    if (empleadoId) {
-      await adminDb.collection("empleados").doc(empleadoId).delete();
+    // 3. Eliminar de 'personal'
+    if (personalId) {
+      await adminDb.collection("personal").doc(personalId).delete();
+      
+      // Eliminar afiliación institucional si existe
+      const afiliadosRef = adminDb.collection("afiliados");
+      const q = afiliadosRef.where("personalId", "==", personalId);
+      const snapshot = await q.get();
+      
+      const batch = adminDb.batch();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
     }
 
     return { success: true };

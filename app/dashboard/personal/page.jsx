@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { db } from "@/lib/firebase";
@@ -8,7 +8,7 @@ import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario } from "@/hooks/use-empleados";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -33,68 +33,74 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
-  Users,
-  ShieldCheck,
-  UserPlus,
-  RefreshCcw,
-  LogOut,
-  ArrowLeft,
-  Mail,
-  Lock,
-  User,
-  Briefcase,
-  CalendarDays,
-  Monitor,
-  Home,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Search
+  Users, UserPlus, RefreshCcw, LogOut, ArrowLeft, Mail, Lock, User, Briefcase, CalendarDays,
+  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { crearUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
 import { registrarAuditoria } from "@/lib/auditoria";
 
-const DIA_LABELS = {
-  lunes: "Lun",
-  martes: "Mar",
-  miercoles: "Mié",
-  jueves: "Jue",
-  viernes: "Vie",
-  sabado: "Sáb",
-  domingo: "Dom",
+// Librerías para PDF y QR
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import QRCode from "qrcode";
+
+const COLORS = {
+  azul: "#05318a",
+  verde: "#0e6235",
+  amarillo: "#f3de4d",
+  rojo: "#ce181b"
 };
 
-const MODALIDAD_CONFIG = {
-  presencial: { icon: Briefcase, label: "Presencial", color: "text-foreground" },
-  teletrabajo: { icon: Monitor, label: "Teletrabajo", color: "text-primary border-primary/50" },
-  libre: { icon: Home, label: "Día Libre", color: "text-muted-foreground bg-muted/30" },
-};
+const TIPOS_PERSONAL = [
+  "Empleado", "Practicante", "Contratista", "Administrativo", "Coordinador", "Directivo", "Otro"
+];
 
 function PersonalContent() {
   const { user, userData, logout } = useAuth();
   const esSuperAdmin = userData?.rol === "superadmin";
+  const esRRHH = userData?.rol === "recursos_humanos";
   
   const [usuarios, setUsuarios] = useState([]);
-  const { empleados, isLoading: cargandoEmpleados, recargar: recargarEmpleados, actualizarModalidad } = useEmpleados();
+  const { empleados: personalList, isLoading: cargandoPersonal, recargar: recargarPersonal, actualizarModalidad } = useEmpleados();
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
   
-  // Modal Crear Personal
-  const [openCrear, setOpenCrear] = useState(false);
-  const [creando, setCreando] = useState(false);
+  // Vistas: 'table', 'create', 'success'
+  const [view, setView] = useState("table");
+  
+  // Estados para Creación
   const [formData, setFormData] = useState({
-    cargo: ""
+    nombre: "",
+    documento: "",
+    correo: "",
+    telefono: "",
+    direccion: "",
+    rh: "",
+    cargo: "",
+    tipoPersonal: "Empleado",
+    fechaIngreso: new Date().toISOString().split("T")[0],
+    estado: "activo",
+    rol: "empleado",
+    password: "",
+    modalidadLaboral: "Presencial",
+    diasTeletrabajo: "",
+    afiliarAutomaticamente: false,
+    foto: null
   });
+  const [fotoPreview, setFotoPreview] = useState(null);
+  const [creando, setCreando] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [personalReciente, setPersonalReciente] = useState(null);
 
-  // Modal Horario
+  // Estados Table
+  const [searchQuery, setSearchQuery] = useState("");
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
   const [horarioEdit, setHorarioEdit] = useState({});
   const [guardandoHorario, setGuardandoHorario] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const cargarDatos = async () => {
     setCargandoUsuarios(true);
@@ -102,9 +108,7 @@ function PersonalContent() {
       const usersSnap = await getDocs(collection(db, "usuarios"));
       const usersList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       setUsuarios(usersList);
-      
-      // Aseguramos que los logs de auditoría estén frescos si es necesario
-      await recargarEmpleados();
+      await recargarPersonal();
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar los datos");
@@ -115,13 +119,28 @@ function PersonalContent() {
 
   useEffect(() => {
     cargarDatos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("La foto es muy pesada (máx 2MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFotoPreview(reader.result);
+        setFormData(prev => ({ ...prev, foto: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCrearUsuario = async (e) => {
     e.preventDefault();
-    if (!formData.correo || !formData.password || !formData.nombre || !formData.rol) {
-      toast.error("Por favor completa todos los campos obligatorios");
+    if (!formData.correo || !formData.password || !formData.nombre || !formData.rol || !formData.documento) {
+      toast.error("Faltan campos obligatorios");
       return;
     }
     
@@ -130,15 +149,13 @@ function PersonalContent() {
       return;
     }
 
-    if (formData.rol === "empleado" && !formData.cargo) {
-      toast.error("Debe especificar el cargo del empleado");
-      return;
-    }
-
     setCreando(true);
     try {
+      const codigoG = "FIC-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+      
       const payload = {
         ...formData,
+        codigoInstitucional: codigoG,
         creadoPorUid: user.uid
       };
 
@@ -149,12 +166,18 @@ function PersonalContent() {
           user,
           userData,
           accion: "Crear Personal",
-          documentoId: result.uid || formData.correo,
-          detalles: `Se creó un nuevo usuario con rol ${formData.rol}: ${formData.nombre} (${formData.correo}).`
+          documentoId: result.personalId || formData.correo,
+          detalles: `Se registró personal ${formData.nombre} (${formData.tipoPersonal}).`
         });
-        toast.success("Personal creado exitosamente");
-        setOpenCrear(false);
-        setFormData({ nombre: "", correo: "", password: "", rol: "empleado", cargo: "" });
+        
+        setPersonalReciente({
+          ...payload,
+          id: result.personalId,
+          uid: result.uid
+        });
+        
+        toast.success("Personal registrado correctamente");
+        setView("success");
         cargarDatos();
       } else {
         toast.error(result.error || "Error al crear el usuario");
@@ -167,65 +190,120 @@ function PersonalContent() {
     }
   };
 
-  const handleEliminar = async (usuario) => {
-    if (!confirm(`¿Estás seguro de eliminar a ${usuario.nombre}? Esta acción borrará su acceso y su perfil de personal permanentemente.`)) return;
-    
+  const handleToggleEstado = async (uId, currentStatus) => {
     try {
-      const result = await eliminarUsuarioInstitucional(usuario.id, usuario.empleadoId);
-      if (result.success) {
-        await registrarAuditoria({
-          user,
-          userData,
-          accion: "Eliminar Personal",
-          documentoId: usuario.id,
-          detalles: `Se eliminó permanentemente al usuario ${usuario.nombre} (${usuario.correo}) y su perfil de empleado.`
+      const nuevoActivo = !currentStatus;
+      await updateDoc(doc(db, "usuarios", uId), { activo: nuevoActivo });
+      
+      const usuarioObj = usuarios.find(u => u.id === uId);
+      if (usuarioObj?.empleadoId) {
+        await updateDoc(doc(db, "personal", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
+        
+        // Sincronizar estado con afiliación institucional
+        import("firebase/firestore").then(async ({ query, where }) => {
+          const q = query(collection(db, "afiliados"), where("personalId", "==", usuarioObj.empleadoId));
+          const snap = await getDocs(q);
+          snap.docs.forEach(async (d) => {
+            await updateDoc(doc(db, "afiliados", d.id), { estado: nuevoActivo ? "activo" : "inactivo" });
+          });
         });
-        toast.success("Personal eliminado correctamente");
-        cargarDatos();
-      } else {
-        toast.error(result.error || "Error al eliminar");
       }
+
+      toast.success(nuevoActivo ? "Acceso y beneficios reactivados" : "Acceso y beneficios bloqueados");
+      cargarDatos();
     } catch (error) {
       console.error(error);
-      toast.error("Error al eliminar");
+      toast.error("Error al cambiar estado");
     }
   };
 
-  const abrirModalHorario = (empleado) => {
-    setEmpleadoSeleccionado(empleado);
-    setHorarioEdit({ ...empleado.horarioModalidad });
-  };
+  // ==========================================
+  // GENERACIÓN DE DOCUMENTOS (SILENCIOSA)
+  // ==========================================
 
-  const handleUpdateDia = (dia, fields) => {
-    setHorarioEdit((prev) => ({
-      ...prev,
-      [dia]: { ...prev[dia], ...fields }
-    }));
-  };
-
-  const handleGuardarHorario = async () => {
-    if (!empleadoSeleccionado) return;
-    setGuardandoHorario(true);
+  const generarCarnetPersonal = async (persona) => {
+    toast.info("Generando carnet...");
     try {
-      await actualizarModalidad(empleadoSeleccionado.id, horarioEdit);
-      await registrarAuditoria({
-        user,
-        userData,
-        accion: "Actualizar Horario",
-        documentoId: empleadoSeleccionado.id,
-        detalles: `Se actualizó la programación semanal de modalidad laboral para ${empleadoSeleccionado.nombre}.`
+      // Usamos el render oculto al final del archivo
+      setPersonalReciente(persona); // asegurar que esté en el estado
+      await new Promise(resolve => setTimeout(resolve, 500)); // esperar a que renderice
+      
+      const element = document.getElementById("hidden-carnet-personal");
+      if (!element) throw new Error("Template no encontrado");
+
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        borderRadius: 32
       });
-      toast.success("Horario guardado");
-      setEmpleadoSeleccionado(null);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al guardar horario");
-    } finally {
-      setGuardandoHorario(false);
+
+      const imgData = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `Carnet_${persona.tipoPersonal}_${persona.nombre.replace(/\s+/g, "_")}.png`;
+      link.href = imgData;
+      link.click();
+      toast.success("Carnet descargado");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar carnet");
     }
   };
 
-  const cargando = cargandoUsuarios || cargandoEmpleados;
+  const generarCertificadoPersonal = async (persona) => {
+    toast.info("Generando certificado...");
+    try {
+      setPersonalReciente(persona);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const element = document.getElementById("hidden-cert-personal");
+      if (!element) throw new Error("Template no encontrado");
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      // Generar QR
+      const VERIFICACION_BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/verificar?codigo=` : 'https://ficong.com/verificar?codigo=';
+      const qrDataUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigoInstitucional}`);
+      const qrSize = 35;
+      const marginX = pdfWidth - qrSize - 20;
+      const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
+      pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
+
+      pdf.save(`Certificado_${persona.tipoPersonal}_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
+      toast.success("Certificado descargado");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar PDF");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nombre: "", documento: "", correo: "", telefono: "", direccion: "", rh: "", cargo: "",
+      tipoPersonal: "Empleado", fechaIngreso: new Date().toISOString().split("T")[0],
+      estado: "activo", rol: "empleado", password: "", modalidadLaboral: "Presencial",
+      diasTeletrabajo: "", afiliarAutomaticamente: false, foto: null
+    });
+    setFotoPreview(null);
+    setPersonalReciente(null);
+    setView("create");
+  };
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const query = searchQuery.toLowerCase();
@@ -236,9 +314,8 @@ function PersonalContent() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
@@ -248,10 +325,8 @@ function PersonalContent() {
             </Button>
             <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-full" />
             <div>
-              <h1 className="font-semibold text-foreground text-sm leading-tight">
-                Gestión de Personal
-              </h1>
-              <p className="text-xs text-muted-foreground">Administración Integrada</p>
+              <h1 className="font-semibold text-foreground text-sm leading-tight">Módulo de Personal</h1>
+              <p className="text-xs text-muted-foreground">Institucional</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -259,391 +334,484 @@ function PersonalContent() {
               <RefreshCcw className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Salir
+              <LogOut className="h-4 w-4 mr-2" /> Salir
             </Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Users className="h-7 w-7 text-primary" />
-              Directorio de Personal
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Administra accesos, roles, cargos y la programación laboral de la fundación.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre o correo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
-              />
-              {searchQuery && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                >
-                  x
-                </Button>
-              )}
-            </div>
-            
-            <Button onClick={() => setOpenCrear(true)} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
-              <UserPlus className="h-4 w-4" />
-              Ingresar Personal
-            </Button>
-          </div>
-        </div>
         
-
-        {cargando ? (
-          <div className="flex justify-center py-12">
-            <Spinner className="h-8 w-8 text-primary" />
-          </div>
-        ) : (
-          <Card>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Personal</TableHead>
-                    <TableHead>Rol / Cargo</TableHead>
-                    <TableHead>Modalidad Laboral</TableHead>
-                    <TableHead>Estado Acceso</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usuariosFiltrados.map((u) => {
-                    const empleado = u.empleadoId ? empleados.find(e => e.id === u.empleadoId) : null;
-                    const resumenHorario = empleado ? calcularResumenHorario(empleado.horarioModalidad) : null;
-                    
-                    return (
-                      <TableRow key={u.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{u.nombre}</span>
-                            <span className="text-xs text-muted-foreground">{u.correo}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1 items-start">
-                            <Badge variant="outline" className={
-                              u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                              u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
-                              'bg-muted'
-                            }>
-                              {u.rol}
-                            </Badge>
-                            {empleado && (
-                              <span className="text-xs text-muted-foreground truncate max-w-[150px]" title={empleado.cargo}>
-                                {empleado.cargo}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {empleado && resumenHorario ? (
-                            <div className="flex gap-1.5 flex-wrap">
-                              {resumenHorario.presencial > 0 && (
-                                <span className="inline-flex items-center text-xs font-medium text-foreground bg-secondary px-1.5 py-0.5 rounded">
-                                  {resumenHorario.presencial}d pres.
-                                </span>
-                              )}
-                              {resumenHorario.teletrabajo > 0 && (
-                                <span className="inline-flex items-center text-xs font-medium text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded">
-                                  <Monitor className="w-3 h-3 mr-1" /> {resumenHorario.teletrabajo}d TT
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">No aplica</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={u.activo !== false ? "default" : "secondary"}
-                            className={u.activo !== false ? "bg-emerald-500 hover:bg-emerald-600 text-white border-none" : ""}
-                          >
-                            {u.activo !== false ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {empleado && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => abrirModalHorario(empleado)}
-                                className="h-8 gap-1.5"
-                              >
-                                <CalendarDays className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Horario</span>
-                              </Button>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleEliminar(u)}
-                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              disabled={u.id === user.uid}
-                            >
-                              Eliminar
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {usuariosFiltrados.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                        <div className="flex flex-col items-center gap-2">
-                          <Search className="h-8 w-8 opacity-20" />
-                          <p>No se encontraron resultados para &quot;{searchQuery}&quot;</p>
-                          {searchQuery && (
-                            <Button variant="link" onClick={() => setSearchQuery("")} className="text-primary p-0 h-auto text-xs">
-                              Limpiar búsqueda
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+        {/* ================================================== */}
+        {/* VISTA: TABLA DASHBOARD PERSONAL */}
+        {/* ================================================== */}
+        {view === "table" && (
+          <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Briefcase className="h-7 w-7 text-primary" />
+                  Directorio de Personal
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Administra accesos, roles, cargos e información institucional de los colaboradores.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre o correo..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
+                  />
+                </div>
+                <Button onClick={() => setView("create")} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
+                  <UserPlus className="h-4 w-4" /> Nuevo Personal
+                </Button>
+              </div>
             </div>
-          </Card>
+
+            {cargandoUsuarios || cargandoPersonal ? (
+              <div className="flex justify-center py-12"><Spinner className="h-8 w-8 text-primary" /></div>
+            ) : (
+              <Card>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Colaborador</TableHead>
+                        <TableHead>Rol / Cargo</TableHead>
+                        <TableHead>Modalidad / Estado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {usuariosFiltrados.map((u) => {
+                        const personal = u.empleadoId ? personalList.find(p => p.id === u.empleadoId) : null;
+                        
+                        return (
+                          <TableRow key={u.id} className={u.activo === false ? "opacity-60 bg-muted/20" : ""}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {personal?.foto ? (
+                                  <img src={personal.foto} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <User className="h-5 w-5 text-primary" />
+                                  </div>
+                                )}
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-sm">{u.nombre}</span>
+                                  <span className="text-xs text-muted-foreground">{u.correo}</span>
+                                  <span className="text-[10px] text-muted-foreground">ID: {personal?.documento || "—"}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1 items-start">
+                                <Badge variant="outline" className={
+                                  u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                  u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
+                                  'bg-muted'
+                                }>
+                                  {u.rol}
+                                </Badge>
+                                {personal && (
+                                  <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-1" title={personal.cargo}>
+                                    <Briefcase className="h-3 w-3" /> {personal.cargo} ({personal.tipoPersonal})
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                               <div className="flex flex-col gap-2 items-start">
+                                {u.activo !== false ? (
+                                  <Badge className="bg-success text-white border-none text-[10px] uppercase">Activo</Badge>
+                                ) : (
+                                  <Badge variant="destructive" className="text-[10px] uppercase">Bloqueado</Badge>
+                                )}
+                                {personal && (
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                    {personal.modalidadLaboral === "Teletrabajo" ? <Monitor className="w-3 h-3" /> : <Building className="w-3 h-3"/>}
+                                    {personal.modalidadLaboral}
+                                  </div>
+                                )}
+                               </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {personal && (
+                                  <>
+                                    <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
+                                      <QrCode className="h-4 w-4 text-info" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => generarCertificadoPersonal(personal)} title="Descargar Certificado">
+                                      <FileText className="h-4 w-4 text-success" />
+                                    </Button>
+                                  </>
+                                )}
+                                {u.activo !== false ? (
+                                  <Button variant="ghost" size="icon" onClick={() => handleToggleEstado(u.id, u.activo)} title="Bloquear Acceso" className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-600">
+                                    <PowerOff className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button variant="ghost" size="icon" onClick={() => handleToggleEstado(u.id, u.activo)} title="Reactivar Acceso" className="text-success hover:bg-success/10 hover:text-success">
+                                    <Power className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {usuariosFiltrados.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+                            No se encontraron registros.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            )}
+          </div>
         )}
+
+        {/* ================================================== */}
+        {/* VISTA: CREAR PERSONAL */}
+        {/* ================================================== */}
+        {view === "create" && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center gap-4 border-b pb-4">
+              <Button variant="ghost" size="icon" onClick={() => setView("table")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Registrar Nuevo Personal</h2>
+                <p className="text-sm text-muted-foreground">Llene los datos administrativos para habilitar un nuevo trabajador.</p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-6">
+                <form onSubmit={handleCrearUsuario} className="space-y-8">
+                  {/* FOTO Y DATOS BÁSICOS */}
+                  <div className="flex flex-col md:flex-row gap-8">
+                    <div className="flex flex-col items-center gap-3 shrink-0">
+                      <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed bg-muted flex items-center justify-center group cursor-pointer hover:border-primary transition-colors">
+                        {fotoPreview ? (
+                          <img src={fotoPreview} alt="Foto" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserPlus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                        )}
+                        <input type="file" accept="image/*" onChange={handleFotoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium">Foto oficial (opcional)</p>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Nombre Completo *</label>
+                        <Input required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} placeholder="Ej. Juan Pérez" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NUIP) *</label>
+                        <Input required value={formData.documento} onChange={e => setFormData({...formData, documento: e.target.value})} placeholder="1234567890" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Teléfono</label>
+                        <Input value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="300 000 0000" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Dirección</label>
+                        <Input value={formData.direccion} onChange={e => setFormData({...formData, direccion: e.target.value})} placeholder="Ej. Calle 1 # 2-3" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">RH</label>
+                        <Select value={formData.rh} onValueChange={v => setFormData({...formData, rh: v})}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="O+">O+</SelectItem><SelectItem value="O-">O-</SelectItem>
+                            <SelectItem value="A+">A+</SelectItem><SelectItem value="A-">A-</SelectItem>
+                            <SelectItem value="B+">B+</SelectItem><SelectItem value="B-">B-</SelectItem>
+                            <SelectItem value="AB+">AB+</SelectItem><SelectItem value="AB-">AB-</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
+                        <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({...formData, fechaIngreso: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* INFORMACIÓN INSTITUCIONAL */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Building className="w-4 h-4"/> Cargo y Funciones</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Personal *</label>
+                          <Select value={formData.tipoPersonal} onValueChange={v => setFormData({...formData, tipoPersonal: v})}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {TIPOS_PERSONAL.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Cargo Oficial *</label>
+                          <Input required value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} placeholder="Ej. Coordinador de Proyectos" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Modalidad Laboral</label>
+                          <Select value={formData.modalidadLaboral} onValueChange={v => setFormData({...formData, modalidadLaboral: v})}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Presencial">Presencial</SelectItem>
+                              <SelectItem value="Teletrabajo">Teletrabajo</SelectItem>
+                              <SelectItem value="Híbrido">Híbrido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.modalidadLaboral !== "Presencial" && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Días de Teletrabajo permitidos</label>
+                            <Input value={formData.diasTeletrabajo} onChange={e => setFormData({...formData, diasTeletrabajo: e.target.value})} placeholder="Ej. Martes y Jueves" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ACCESOS AL SISTEMA */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Lock className="w-4 h-4"/> Acceso al Sistema</h3>
+                      <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-dashed">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Correo de Ingreso *</label>
+                          <Input required type="email" value={formData.correo} onChange={e => setFormData({...formData, correo: e.target.value})} placeholder="usuario@ficong.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Contraseña Inicial *</label>
+                          <div className="relative">
+                            <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Min. 6 caracteres" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Rol de Permisos *</label>
+                          <Select value={formData.rol} onValueChange={v => setFormData({...formData, rol: v})} disabled={!esSuperAdmin}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="empleado">Solo Reporte de Asistencia</SelectItem>
+                              {esSuperAdmin && <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>}
+                              {esSuperAdmin && <SelectItem value="superadmin">Administrador Total</SelectItem>}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <div className="flex items-start space-x-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
+                      <Checkbox 
+                        id="afiliarAuto" 
+                        checked={formData.afiliarAutomaticamente} 
+                        onCheckedChange={(c) => setFormData({...formData, afiliarAutomaticamente: c})}
+                      />
+                      <div className="space-y-1 leading-none">
+                        <label htmlFor="afiliarAuto" className="text-sm font-bold text-primary cursor-pointer">
+                          Afiliar automáticamente a la fundación
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Si activas esto, el trabajador también obtendrá beneficios institucionales. La afiliación se marcará como indefinida mientras el empleado siga activo en la institución.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-6 border-t">
+                    <Button type="button" variant="outline" onClick={() => setView("table")} disabled={creando}>Cancelar</Button>
+                    <Button type="submit" className="min-w-[150px]" disabled={creando}>
+                      {creando ? <Spinner className="w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2"/>}
+                      Crear Personal
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ================================================== */}
+        {/* VISTA: CONFIRMACIÓN (SUCCESS) */}
+        {/* ================================================== */}
+        {view === "success" && personalReciente && (
+          <div className="max-w-2xl mx-auto py-12">
+            <Card className="text-center border-success/20 shadow-lg shadow-success/5 overflow-hidden">
+              <div className="bg-success/10 py-8 flex flex-col items-center">
+                <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-black text-success uppercase">Personal Registrado Exitosamente</h2>
+                <p className="text-muted-foreground">Se han generado los accesos y credenciales.</p>
+              </div>
+              
+              <CardContent className="p-8">
+                <div className="bg-muted/30 border rounded-xl p-6 text-left grid grid-cols-2 gap-y-4 gap-x-8 mb-8">
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Nombre</p><p className="font-medium text-sm">{personalReciente.nombre}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Documento</p><p className="font-medium text-sm">{personalReciente.documento}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Cargo</p><p className="font-medium text-sm text-primary">{personalReciente.cargo} ({personalReciente.tipoPersonal})</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Código Institucional</p><p className="font-medium text-sm">{personalReciente.codigoInstitucional}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Estado</p><Badge className="bg-success text-white">ACTIVO</Badge></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Afiliación</p><p className="font-medium text-sm">{personalReciente.afiliarAutomaticamente ? "✅ Activa (Indefinida)" : "❌ No requerida"}</p></div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button onClick={() => generarCarnetPersonal(personalReciente)} className="h-12 w-full gap-2 text-base font-semibold shadow-md border border-black" style={{ backgroundColor: COLORS.azul }}>
+                    <QrCode className="h-5 w-5" /> Descargar Carnet
+                  </Button>
+                  <Button onClick={() => generarCertificadoPersonal(personalReciente)} variant="outline" className="h-12 w-full gap-2 text-base font-semibold shadow-sm border-2" style={{ borderColor: COLORS.verde, color: COLORS.verde }}>
+                    <FileText className="h-5 w-5" /> Descargar Certificado
+                  </Button>
+                  <Button onClick={() => setView("table")} variant="ghost" className="h-12 w-full gap-2 col-span-1 sm:col-span-2 mt-4 text-muted-foreground">
+                    <ArrowLeft className="h-4 w-4" /> Volver al Directorio
+                  </Button>
+                  <Button onClick={resetForm} variant="ghost" className="h-12 w-full gap-2 col-span-1 sm:col-span-2 text-muted-foreground">
+                    <UserPlus className="h-4 w-4" /> Ingresar Otro
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
       </main>
 
-      {/* Modal Crear Personal */}
-      <Dialog open={openCrear} onOpenChange={setOpenCrear}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Ingresar Personal</DialogTitle>
-            <DialogDescription>
-              Crea una cuenta de acceso y un perfil administrativo de una vez.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCrearUsuario} className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nombre completo</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  required
-                  placeholder="Ej. Juan Pérez" 
-                  value={formData.nombre}
-                  onChange={e => setFormData({...formData, nombre: e.target.value})}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Correo de acceso</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  required
-                  type="email"
-                  placeholder="correo@ejemplo.com" 
-                  value={formData.correo}
-                  onChange={e => setFormData({...formData, correo: e.target.value})}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Rol del Sistema</label>
-                <Select 
-                  value={formData.rol} 
-                  onValueChange={v => setFormData({...formData, rol: v})}
-                  disabled={!esSuperAdmin}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="empleado">Empleado</SelectItem>
-                    {esSuperAdmin && <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>}
-                    {esSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                  </SelectContent>
-                </Select>
+      {/* ================================================== */}
+      {/* TEMPLATES OCULTOS PARA GENERACIÓN SILENCIOSA */}
+      {/* ================================================== */}
+      <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
+        {personalReciente && (
+          <>
+            {/* Template de Carnet de Personal */}
+            <div 
+              id="hidden-carnet-personal"
+              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute', top: '-40px', left: '-40px', width: '120%', height: '120%',
+                  transform: 'rotate(15deg)', background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
+                }} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Contraseña inicial</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    required
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min. 6 chars" 
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    className="pl-9 pr-9"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  {personalReciente.foto ? (
+                    <img src={personalReciente.foto} alt="Foto" style={{ width: '80px', height: '80px', borderRadius: '9999px', objectFit: 'cover' }} />
+                  ) : (
+                    <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '9999px' }} />
+                  )}
+                </div>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>ISLA CASCAJAL</h2>
+                <p style={{ color: '#f3de4d', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Fundación</p>
+              </div>
+
+              <div style={{ marginTop: '30px', padding: '0 40px', textAlign: 'center' }}>
+                <div style={{ display: 'inline-block', backgroundColor: COLORS.rojo, color: 'white', padding: '4px 12px', borderRadius: '9999px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                  {personalReciente.tipoPersonal}
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0 }}>
+                  {personalReciente.nombre}
+                </h3>
+                <p style={{ fontWeight: 'bold', fontSize: '12px', color: COLORS.azul, marginTop: '4px', textTransform: 'uppercase' }}>
+                  {personalReciente.cargo}
+                </p>
+
+                <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'left', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
+                  <div>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>DOCUMENTO</p>
+                    <p style={{ fontSize: '12px', fontBold: 900, color: '#1e293b', margin: 0 }}>{personalReciente.documento}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>RH</p>
+                    <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.rojo, margin: 0 }}>{personalReciente.rh || "—"}</p>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>CÓDIGO INSTITUCIONAL</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>{personalReciente.codigoInstitucional}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10` }}>
+                  <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {/* El QR real lo inyectaremos en el canvas si quisiéramos, pero por ahora como placeholder para html2canvas. En PDF es más seguro. Para carnet PNG generamos el QR en DOM. */}
+                    <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {formData.rol === "empleado" && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <label className="text-sm font-medium text-primary flex items-center gap-1.5">
-                  <Briefcase className="h-4 w-4" /> Cargo Administrativo
-                </label>
-                <Input 
-                  required={formData.rol === "empleado"}
-                  placeholder="Ej. Asistente Administrativo" 
-                  value={formData.cargo}
-                  onChange={e => setFormData({...formData, cargo: e.target.value})}
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Al crear este usuario, se generará automáticamente su perfil de empleado listo para registrar asistencia y programar su modalidad laboral.
+            {/* Template de Certificado Laboral / Personal */}
+            <div
+              id="hidden-cert-personal"
+              style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
+                <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+                <div style={{ textAlign: "right" }}>
+                  <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+                </div>
+              </div>
+
+              <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE VINCULACIÓN INSTITUCIONAL</h2>
+              </div>
+
+              <div style={{ fontSize: "16px", textAlign: "justify" }}>
+                <p>La Fundación Isla Cascajal certifica que:</p>
+                <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
+                  {personalReciente.nombre}
+                </p>
+                <p>
+                  identificado(a) con documento número <strong>{personalReciente.documento}</strong>, se encuentra vinculado(a) a nuestra institución bajo el código de registro oficial <strong>{personalReciente.codigoInstitucional}</strong>.
+                </p>
+                <p>
+                  Actualmente ejerce funciones en calidad de <strong>{personalReciente.tipoPersonal}</strong> ocupando el cargo de <strong>{personalReciente.cargo}</strong>, con fecha de ingreso registrada el <strong>{personalReciente.fechaIngreso}</strong>.
+                </p>
+                {personalReciente.afiliarAutomaticamente && (
+                  <p>
+                    Asimismo, consta que cuenta con afiliación activa a los convenios y beneficios institucionales otorgados por la Fundación Isla Cascajal de manera indefinida mientras mantenga su vínculo con la institución.
+                  </p>
+                )}
+                <p style={{ marginTop: "30px" }}>
+                  El presente documento se expide a solicitud de la parte interesada el día {new Date().toLocaleDateString("es-CO")}.
                 </p>
               </div>
-            )}
 
-            <div className="pt-4 flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setOpenCrear(false)} disabled={creando}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={creando}>
-                {creando && <Spinner className="mr-2 h-4 w-4" />}
-                Ingresar Personal
-              </Button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "80px" }}>
+                <div>
+                  <div style={{ width: "200px", borderBottom: "1px solid #000", marginBottom: "10px" }}></div>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Departamento de Recursos Humanos</p>
+                  <p style={{ margin: 0, fontSize: "12px" }}>Fundación Isla Cascajal</p>
+                </div>
+              </div>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Horario */}
-      <Dialog open={!!empleadoSeleccionado} onOpenChange={(open) => !open && setEmpleadoSeleccionado(null)}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              Modalidad Laboral
-            </DialogTitle>
-            <DialogDescription>
-              Programación semanal para <strong className="text-foreground">{empleadoSeleccionado?.nombre}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="space-y-4">
-              {DIAS_SEMANA.map((dia) => {
-                const diaData = horarioEdit[dia] || { modalidad: "libre", entrada: "08:00", salida: "17:00" };
-                const cfg = MODALIDAD_CONFIG[diaData.modalidad];
-                
-                return (
-                  <div key={dia} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
-                    <div className="w-20">
-                      <span className="text-xs font-bold text-muted-foreground uppercase">
-                        {dia}
-                      </span>
-                    </div>
-
-                    <div className="w-40">
-                      <Select 
-                        value={diaData.modalidad} 
-                        onValueChange={(v) => handleUpdateDia(dia, { modalidad: v })}
-                      >
-                        <SelectTrigger className={`h-9 border-2 ${cfg.color}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MODALIDADES.map((m) => {
-                            const mc = MODALIDAD_CONFIG[m];
-                            return (
-                              <SelectItem key={m} value={m} className="text-xs py-2">
-                                <div className="flex items-center gap-2">
-                                  <mc.icon className="h-3.5 w-3.5" />
-                                  <span>{mc.label}</span>
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {diaData.modalidad !== "libre" ? (
-                      <div className="flex items-center gap-2 flex-1 animate-in fade-in slide-in-from-right-2">
-                        <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-[10px] text-muted-foreground uppercase font-semibold pl-1">Entrada</label>
-                          <Input 
-                            type="time" 
-                            value={diaData.entrada} 
-                            onChange={(e) => handleUpdateDia(dia, { entrada: e.target.value })}
-                            className="h-9 px-2 text-xs"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-[10px] text-muted-foreground uppercase font-semibold pl-1">Salida</label>
-                          <Input 
-                            type="time" 
-                            value={diaData.salida} 
-                            onChange={(e) => handleUpdateDia(dia, { salida: e.target.value })}
-                            className="h-9 px-2 text-xs"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center">
-                        <span className="text-[10px] text-muted-foreground italic uppercase">Sin jornada laboral</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="bg-muted/30 p-3 rounded-lg text-xs flex justify-center gap-4 text-muted-foreground border">
-              <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5 text-foreground"/> Presencial</span>
-              <span className="flex items-center gap-1"><Monitor className="h-3.5 w-3.5 text-primary"/> Teletrabajo</span>
-              <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5"/> Libre</span>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEmpleadoSeleccionado(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleGuardarHorario} disabled={guardandoHorario}>
-              {guardandoHorario ? <Spinner className="h-4 w-4 mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-              Guardar Programación
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+          </>
+        )}
+      </div>
     </div>
   );
 }
