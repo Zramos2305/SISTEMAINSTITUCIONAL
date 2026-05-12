@@ -64,7 +64,16 @@ service cloud.firestore {
 
     match /afiliados/{id} {
       allow read: if true;
-      allow create, update, delete: if isSuperAdmin();
+      allow create, update: if isRRHHOrSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* ================= AFILIACIONES ================= */
+
+    match /afiliaciones/{id} {
+      allow read: if true;
+      allow create, update: if isRRHHOrSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     /* ================= DOCUMENTOS ================= */
