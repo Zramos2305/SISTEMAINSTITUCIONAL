@@ -18,6 +18,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -1153,9 +1154,9 @@ export default function AfiliarPage() {
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
                   <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                 </div>
-                <div style={{ marginTop: '12px', width: '200%', gridColumn: 'span 2' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                <div style={{ marginTop: '12px', width: '100%' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías Activas</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px', justifyContent: 'center' }}>
                     {formData.membresias?.map(m => (
                       <span key={m.tipo} style={{ fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '4px', background: COLORS.azul + '20', color: COLORS.azul, border: `1px solid ${COLORS.azul}40` }}>
                         {m.tipo.toUpperCase()}
@@ -1236,27 +1237,19 @@ export default function AfiliarPage() {
                 La presente afiliación fue realizada en fecha <strong>{new Date(formData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional de afiliado <strong>{formData.codigo}</strong> y con el código de registro de membresía <strong>{formData.codigoAfiliacion}</strong>, y le permite acceder a los programas, actividades, beneficios y procesos desarrollados por la Fundación Isla Cascajal, conforme a los lineamientos internos y vigencia establecida.
               </p>
 
-              <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "80%", backgroundColor: "#f9f9f9" }}>
-                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Tipo de afiliación:</strong> {formData.tipoAfiliacion === "educativa" ? "AFILIACIÓN EDUCATIVA" : "AFILIACIÓN INTEGRAL"}</p>
-                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Estado actual:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
-                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Vigencia hasta:</strong> <strong>{
-                  (() => {
-                    const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
-                    const year = fIngreso.getFullYear();
-                    const month = fIngreso.getMonth();
-                    let fExp;
-                    if (formData.tipoAfiliacion === "educativa") {
-                      if (month <= 4) fExp = new Date(year, 4, 30);
-                      else if (month <= 10) fExp = new Date(year, 10, 30);
-                      else fExp = new Date(year + 1, 4, 30);
-                    } else {
-                      fExp = new Date(fIngreso);
-                      fExp.setMonth(fExp.getMonth() + 6);
-                    }
-                    return fExp.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
-                  })()
-                }</strong></p>
-                <p style={{ margin: "8px 0", fontSize: "16px" }}><strong>Cargo / relación institucional:</strong> {formData.cargo || "Afiliado"}</p>
+              <div style={{ margin: "40px auto", padding: "25px", border: "1px solid #ddd", borderRadius: "12px", width: "90%", backgroundColor: "#f9f9f9" }}>
+                <p style={{ fontSize: "16px", fontWeight: "bold", color: COLORS.azul, marginBottom: "15px", borderBottom: "1px solid #eee", paddingBottom: "5px" }}>MEMBRESÍAS VIGENTES:</p>
+                {formData.membresias?.map((m, idx) => (
+                  <div key={idx} style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: idx === formData.membresias.length - 1 ? "none" : "1px dashed #ddd" }}>
+                    <p style={{ margin: "2px 0", fontSize: "16px" }}>• <strong>{m.tipo.toUpperCase()}</strong></p>
+                    <p style={{ margin: "2px 0", fontSize: "14px", color: "#666" }}>Vigente hasta el {new Date(m.fechaExpiracion).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</p>
+                    <p style={{ margin: "2px 0", fontSize: "12px", color: "#999", fontStyle: "italic" }}>Cód. Registro: {m.codigo}</p>
+                  </div>
+                ))}
+                <div style={{ marginTop: "15px", paddingTop: "10px", borderTop: "1px solid #eee" }}>
+                  <p style={{ margin: "2px 0", fontSize: "16px" }}><strong>Cargo / Relación:</strong> {formData.cargo || "Afiliado"}</p>
+                  <p style={{ margin: "2px 0", fontSize: "16px" }}><strong>Estado:</strong> <span style={{ color: COLORS.verde, fontWeight: "bold" }}>ACTIVO</span></p>
+                </div>
               </div>
 
               {formData.beneficiarios?.length > 0 && (
