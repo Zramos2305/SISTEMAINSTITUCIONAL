@@ -1000,7 +1000,7 @@ function DashboardContent() {
                                           : "bg-info/10 text-info border-info/20"
                                   }
                                 >
-                                  {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "Persona"}
+                                  {doc.tipo === "certificado" ? "Certificado" : doc.tipo === "documento" ? "Documento" : "AFILIADO"}
                                 </Badge>
                               </TableCell>
                               <TableCell className="hidden lg:table-cell">
@@ -1058,7 +1058,7 @@ function DashboardContent() {
                               </TableCell>
 
                               <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
-                                {formatearFecha(doc.fecha || doc.fechaIngreso)}
+                                 {formatearFecha(doc.tipo === 'afiliado' ? (doc.fechaCreacion || doc.fechaIngreso) : (doc.fecha || doc.fechaIngreso))}
                               </TableCell>
 
                               <TableCell className="text-right">
@@ -1590,6 +1590,26 @@ function DashboardContent() {
               )}
 
 
+
+              {/* Datos de Registro y Origen */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">País de Registro</p>
+                    <p className="font-medium text-sm">{infoDoc.pais || "Colombia"}</p>
+                  </div>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                  <CalendarIcon className="h-5 w-5 text-success shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Emisión</p>
+                    <p className="font-medium text-sm">
+                      {formatearFecha(infoDoc.tipo === 'afiliado' ? (infoDoc.fechaCreacion || infoDoc.fechaIngreso) : (infoDoc.fecha || infoDoc.fechaIngreso))}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* NUIP y Datos de Afiliado */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

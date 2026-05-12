@@ -239,6 +239,20 @@ function VerificarContent() {
                   </div>
                 )}
 
+                {/* PAÍS Y FECHA DE EMISIÓN PARA TODOS */}
+                <div className="bg-muted/30 p-4 rounded-xl border border-muted-foreground/10 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">País</p>
+                    <p className="text-sm font-bold">{documento.pais || "Colombia"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Fecha de Emisión</p>
+                    <p className="text-sm font-bold">
+                      {formatearFecha(documento.tipo === 'afiliado' ? (documento.fechaCreacion || documento.fechaIngreso) : (documento.fecha || documento.fechaIngreso))}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Info Certificado */}
                 {documento.tipo === "certificado" && (
                   <div className="bg-muted/30 p-4 rounded-xl border border-muted-foreground/10 space-y-3">
@@ -256,7 +270,7 @@ function VerificarContent() {
                     )}
                     <div className="pt-2 border-t border-muted-foreground/10">
                       <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Emitido por</p>
-                      <p className="text-xs font-bold text-primary uppercase">{documento.oficina} — {documento.dependencia}</p>
+                      <p className="text-xs font-bold text-primary uppercase">{documento.oficina || "Sede Principal"} — {documento.dependencia || "Administración"}</p>
                     </div>
                   </div>
                 )}
