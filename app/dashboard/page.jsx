@@ -1059,6 +1059,17 @@ function DashboardContent() {
                                   >
                                     <QrCode className="h-4 w-4" />
                                   </Button>
+                                  {esSuperAdmin && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive"
+                                      title="Eliminar"
+                                      onClick={() => setCodigoAEliminar(doc.codigo)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
