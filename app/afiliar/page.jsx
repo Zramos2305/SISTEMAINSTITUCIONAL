@@ -60,7 +60,7 @@ const COLORS = {
 
 function generarCodigoAfiliado() {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let codigo = "FIC-";
+  let codigo = "FICONG-";
   for (let i = 0; i < 8; i++) {
     codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
   }
