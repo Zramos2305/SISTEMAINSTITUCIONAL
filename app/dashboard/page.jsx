@@ -598,24 +598,38 @@ function DashboardContent() {
     setUpdatingStatus(reactivarDoc.codigo);
     try {
       const ahora = new Date();
-      const nuevaExpiracion = new Date(ahora);
-      if (duracionReactivacion === "6_meses") {
-        nuevaExpiracion.setMonth(nuevaExpiracion.getMonth() + 6);
+      let nuevaExpiracion;
+      const tipo = duracionReactivacion === "1_ano" ? "educativa" : "integral";
+
+      if (tipo === "educativa") {
+        const year = ahora.getFullYear();
+        const month = ahora.getMonth(); // 0-11
+        if (month <= 4) { // Enero-Mayo
+          nuevaExpiracion = new Date(year, 4, 30, 23, 59, 59);
+        } else if (month <= 10) { // Junio-Noviembre
+          nuevaExpiracion = new Date(year, 10, 30, 23, 59, 59);
+        } else { // Diciembre
+          nuevaExpiracion = new Date(year + 1, 4, 30, 23, 59, 59);
+        }
       } else {
-        nuevaExpiracion.setFullYear(nuevaExpiracion.getFullYear() + 1);
+        nuevaExpiracion = new Date(ahora);
+        nuevaExpiracion.setMonth(nuevaExpiracion.getMonth() + 6);
       }
+
       // Construir el periodo anterior para agregar al historial
       const periodoAnterior = {
         inicio: reactivarDoc.fechaInicioPeriodo || reactivarDoc.fecha,
         fin: reactivarDoc.fechaExpiracion,
-        duracion: reactivarDoc.duracion,
+        duracion: reactivarDoc.tipoAfiliacion || reactivarDoc.duracion,
         tipo: (reactivarDoc.periodos?.length ?? 0) === 0 ? "registro" : "renovacion",
       };
       const periodosAnteriores = Array.isArray(reactivarDoc.periodos)
         ? [...reactivarDoc.periodos, periodoAnterior]
         : [periodoAnterior];
+
       await actualizarEstado(reactivarDoc.codigo, "activo", {
-        duracion: duracionReactivacion,
+        tipoAfiliacion: tipo,
+        duracion: duracionReactivacion, // Mantener por compatibilidad
         fechaExpiracion: nuevaExpiracion.toISOString(),
         fechaInicioPeriodo: ahora.toISOString(),
         desactivadoManualmente: null,
@@ -895,7 +909,12 @@ function DashboardContent() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="hidden lg:table-cell">
-                                {doc.tipo === "certificado" ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") : doc.tipo === "documento" ? doc.descripcion || "General" : "Miembro"}
+                                {doc.tipo === "certificado" 
+                                  ? (doc.evento ? `${doc.evento} ${doc.descripcion ? `(${doc.descripcion})` : ''}` : doc.descripcion || "Evento") 
+                                  : doc.tipo === "documento" 
+                                    ? doc.descripcion || "General" 
+                                    : (doc.tipoAfiliacion ? (doc.tipoAfiliacion === "educativa" ? "Educativa" : "Integral") : "Miembro")
+                                }
                               </TableCell>
 
                               {/* ESTADO — toggle con confirmación para desactivar */}
@@ -1392,8 +1411,8 @@ function DashboardContent() {
                   : "border-muted hover:border-primary/40"
                   }`}
               >
-                <p className="text-2xl font-bold">6</p>
-                <p className="text-sm font-medium">Meses</p>
+                <p className="text-xl font-bold uppercase">Integral</p>
+                <p className="text-[10px] font-medium opacity-70">6 MESES</p>
               </button>
               <button
                 onClick={() => setDuracionReactivacion("1_ano")}
@@ -1402,8 +1421,8 @@ function DashboardContent() {
                   : "border-muted hover:border-primary/40"
                   }`}
               >
-                <p className="text-2xl font-bold">1</p>
-                <p className="text-sm font-medium">Año</p>
+                <p className="text-xl font-bold uppercase">Educativa</p>
+                <p className="text-[10px] font-medium opacity-70">CORTES FIJOS</p>
               </button>
             </div>
             <div className="flex gap-3 pt-2">
@@ -1448,9 +1467,9 @@ function DashboardContent() {
                       <p className="font-medium text-sm">{formatearFecha(infoDoc.fechaInicioPeriodo || infoDoc.fecha)}</p>
                     </div>
                     <div className="bg-background p-3 rounded-lg border space-y-1">
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Duración</p>
-                      <p className="font-medium text-sm">
-                        {infoDoc.duracion === "1_mes" ? "1 Mes" : infoDoc.duracion === "6_meses" ? "6 Meses" : infoDoc.duracion === "1_ano" ? "1 Año" : "No especificada"}
+                      <p className="text-xs text-muted-foreground uppercase font-semibold">Tipo de Afiliación</p>
+                      <p className="font-medium text-sm capitalize">
+                        {infoDoc.tipoAfiliacion || (infoDoc.duracion === "1_ano" ? "Educativa (Antiguo)" : infoDoc.duracion === "6_meses" ? "Integral (Antiguo)" : "No especificada")}
                       </p>
                     </div>
                   </div>
@@ -1598,7 +1617,7 @@ function DashboardContent() {
                               {periodo.tipo === "registro" ? "Registro Inicial" : `Renovación`}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              — {periodo.duracion === "1_mes" ? "1 Mes" : periodo.duracion === "6_meses" ? "6 Meses" : "1 Año"}
+                              — {periodo.duracion === "educativa" ? "Educativa" : periodo.duracion === "integral" ? "Integral" : (periodo.duracion === "1_ano" ? "Educativa (Antiguo)" : periodo.duracion === "6_meses" ? "Integral (Antiguo)" : "No especificada")}
                             </span>
                           </div>
                           <span className="text-muted-foreground text-xs">{expandido ? "▲" : "▼"}</span>
