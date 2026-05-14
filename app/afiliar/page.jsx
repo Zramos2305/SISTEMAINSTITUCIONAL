@@ -109,7 +109,7 @@ export default function AfiliarPage() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isDownloadingCert, setIsDownloadingCert] = useState(null); // null, 'educativa', or 'integral'
   const [fotoPreview, setFotoPreview] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [tipoCertificadoActual, setTipoCertificadoActual] = useState(null); // 'educativa' o 'integral'
@@ -372,7 +372,7 @@ export default function AfiliarPage() {
   const descargarCertificado = async (tipoMembresia = null) => {
     if (!certificadoRef.current) return;
     setTipoCertificadoActual(tipoMembresia);
-    setIsDownloadingCert(true);
+    setIsDownloadingCert(tipoMembresia);
 
     try {
       // Esperar un momento para que el DOM se actualice con el nuevo tipoCertificadoActual
@@ -440,7 +440,7 @@ export default function AfiliarPage() {
       console.error("Error certificado:", err);
       toast.error("Error al generar el certificado");
     } finally {
-      setIsDownloadingCert(false);
+      setIsDownloadingCert(null);
     }
   };
 
@@ -1027,9 +1027,9 @@ export default function AfiliarPage() {
                   size="lg" 
                   className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
                   onClick={() => descargarCertificado('educativa')}
-                  disabled={isDownloadingCert}
+                  disabled={!!isDownloadingCert}
                 >
-                  {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
+                  {isDownloadingCert === 'educativa' ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
                   CERTIFICADO EDUCATIVO
                 </Button>
               )}
@@ -1039,9 +1039,9 @@ export default function AfiliarPage() {
                   size="lg" 
                   className="h-14 border-2 font-bold gap-3 hover:bg-success hover:text-success-foreground transition-all"
                   onClick={() => descargarCertificado('integral')}
-                  disabled={isDownloadingCert}
+                  disabled={!!isDownloadingCert}
                 >
-                  {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
+                  {isDownloadingCert === 'integral' ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
                   CERTIFICADO INTEGRAL
                 </Button>
               )}

@@ -331,7 +331,7 @@ function DashboardContent() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [reactivarDoc, setReactivarDoc] = useState(null);
   const [duracionReactivacion, setDuracionReactivacion] = useState("6_meses");
-  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isDownloadingCert, setIsDownloadingCert] = useState(null); // null o el código de la membresía
   const exportRef = useMemo(() => ({ current: null }), []);
   const certificadoRef = useMemo(() => ({ current: null }), []);
   const [currentCertData, setCurrentCertData] = useState(null);
@@ -672,11 +672,11 @@ function DashboardContent() {
 
   const descargarCertificadoEspecifico = async (persona, membresia) => {
     setCurrentCertData({ persona, membresia });
-    setIsDownloadingCert(true);
+    setIsDownloadingCert(membresia.codigo);
     toast.info(`Generando certificado ${membresia.tipo}...`);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       const templateId = membresia.tipo === "educativa" ? "hidden-cert-edu" : "hidden-cert-integral";
       const element = document.getElementById(templateId);
@@ -712,8 +712,7 @@ function DashboardContent() {
       console.error(err);
       toast.error("Error al generar PDF");
     } finally {
-      setIsDownloadingCert(false);
-      setCurrentCertData(null);
+      setIsDownloadingCert(null);
     }
   };
 
@@ -1556,14 +1555,19 @@ function DashboardContent() {
                               {formatearFecha(m.fechaInicio)} — {formatearFecha(m.fechaExpiracion)}
                             </p>
                           </div>
-                          <Button
+                           <Button
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 text-success hover:bg-success/10"
                             onClick={() => descargarCertificadoEspecifico(infoDoc, m)}
+                            disabled={!!isDownloadingCert}
                             title="Descargar Certificado"
                           >
-                            <FileText className="h-4 w-4" />
+                            {isDownloadingCert === m.codigo ? (
+                              <Spinner className="h-3 w-3" />
+                            ) : (
+                              <FileText className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       );
