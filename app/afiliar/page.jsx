@@ -1217,6 +1217,10 @@ export default function AfiliarPage() {
               </div>
             </div>
 
+            {/* Franjas de color decorativas */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
+              <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+              <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
               <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
               <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
             </div>
