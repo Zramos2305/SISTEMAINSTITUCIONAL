@@ -616,8 +616,6 @@ function PersonalContent() {
                             </SelectContent>
                           </Select>
                         </div>
-                          </div>
-                        )}
                       </div>
 
                       {/* HORARIO SEMANAL */}
