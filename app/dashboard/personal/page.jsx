@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
-import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario } from "@/hooks/use-empleados";
+import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario, HORARIO_DEFAULT } from "@/hooks/use-empleados";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -792,9 +792,6 @@ function PersonalContent() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
-
           </div>
         )}
 
