@@ -5,10 +5,10 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export async function crearUsuarioInstitucional(data) {
   try {
-    const { 
+    const {
       correo, password, nombre, rol, cargo, creadoPorUid,
-      foto, documento, telefono, direccion, rh, tipoPersonal, 
-      fechaIngreso, estado, modalidadLaboral, diasTeletrabajo, 
+      foto, documento, telefono, direccion, rh, tipoPersonal,
+      fechaIngreso, estado, modalidadLaboral, diasTeletrabajo,
       afiliarAutomaticamente, codigoInstitucional
     } = data;
 
@@ -25,7 +25,7 @@ export async function crearUsuarioInstitucional(data) {
     // 2. Crear el documento en la colección 'empleados' (siempre, para todo el personal)
     const empleadoRef = adminDb.collection("empleados").doc();
     nuevoEmpleadoId = empleadoRef.id;
-    
+
     const horarioDefault = {
       lunes: "presencial", martes: "presencial", miercoles: "presencial",
       jueves: "presencial", viernes: "presencial", sabado: "libre", domingo: "libre"
@@ -121,12 +121,12 @@ export async function eliminarUsuarioInstitucional(uid, empleadoId) {
     // 3. Eliminar de 'empleados'
     if (empleadoId) {
       await adminDb.collection("empleados").doc(empleadoId).delete();
-      
+
       // Eliminar afiliación institucional si existe
       const afiliadosRef = adminDb.collection("afiliados");
       const q = afiliadosRef.where("personalId", "==", empleadoId);
       const snapshot = await q.get();
-      
+
       const batch = adminDb.batch();
       snapshot.docs.forEach((doc) => {
         batch.delete(doc.ref);

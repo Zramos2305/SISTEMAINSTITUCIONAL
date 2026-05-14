@@ -89,12 +89,14 @@ function PersonalContent() {
     modalidadLaboral: "Presencial",
     diasTeletrabajo: "",
     afiliarAutomaticamente: false,
-    foto: null
+    foto: null,
+    horarioModalidad: HORARIO_DEFAULT
   });
   const [fotoPreview, setFotoPreview] = useState(null);
   const [creando, setCreando] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [personalReciente, setPersonalReciente] = useState(null);
+  const [qrPersonal, setQrPersonal] = useState(null);
 
   // Estados Table
   const [searchQuery, setSearchQuery] = useState("");
@@ -253,19 +255,21 @@ function PersonalContent() {
   const generarCarnetPersonal = async (persona) => {
     toast.info("Generando carnet...");
     try {
-      // Usamos el render oculto al final del archivo
-      setPersonalReciente(persona); // asegurar que esté en el estado
-      await new Promise(resolve => setTimeout(resolve, 500)); // esperar a que renderice
+      const VERIFICACION_BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/verificar?doc=` : 'https://ficong.com/verificar?doc=';
+      const qrUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigoInstitucional}`);
+      setQrPersonal(qrUrl);
+      setPersonalReciente(persona); 
+      
+      await new Promise(resolve => setTimeout(resolve, 600)); 
       
       const element = document.getElementById("hidden-carnet-personal");
       if (!element) throw new Error("Template no encontrado");
 
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 4,
         useCORS: true,
         logging: false,
-        backgroundColor: "#ffffff",
-        borderRadius: 32
+        backgroundColor: "#ffffff"
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -327,7 +331,8 @@ function PersonalContent() {
       nombre: "", documento: "", correo: "", telefono: "", direccion: "", rh: "", cargo: "",
       tipoPersonal: "Empleado", fechaIngreso: new Date().toISOString().split("T")[0],
       estado: "activo", rol: "empleado", password: "", modalidadLaboral: "Presencial",
-      diasTeletrabajo: "", afiliarAutomaticamente: false, foto: null
+      diasTeletrabajo: "", afiliarAutomaticamente: false, foto: null,
+      horarioModalidad: HORARIO_DEFAULT
     });
     setFotoPreview(null);
     setPersonalReciente(null);
@@ -474,6 +479,9 @@ function PersonalContent() {
                               <div className="flex items-center justify-end gap-1">
                                 {personal && (
                                   <>
+                                     <Button variant="ghost" size="icon" onClick={() => { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); }} title="Gestionar Horario">
+                                      <CalendarDays className="h-4 w-4 text-primary" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
                                       <QrCode className="h-4 w-4 text-info" />
                                     </Button>
@@ -608,12 +616,76 @@ function PersonalContent() {
                             </SelectContent>
                           </Select>
                         </div>
-                        {formData.modalidadLaboral !== "Presencial" && (
-                          <div className="space-y-2">
-                            <label className="text-xs font-semibold uppercase text-muted-foreground">Días de Teletrabajo permitidos</label>
-                            <Input value={formData.diasTeletrabajo} onChange={e => setFormData({...formData, diasTeletrabajo: e.target.value})} placeholder="Ej. Martes y Jueves" />
                           </div>
                         )}
+                      </div>
+
+                      {/* HORARIO SEMANAL */}
+                      <div className="space-y-4 md:col-span-2 mt-4 bg-muted/20 p-4 rounded-xl border border-dashed">
+                        <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4"/> Horario y Modalidad Semanal
+                        </h3>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Configure la jornada y modalidad por cada día</p>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {DIAS_SEMANA.map((dia) => (
+                            <div key={dia} className="bg-card p-3 rounded-lg border shadow-sm space-y-3">
+                              <p className="text-xs font-black uppercase text-primary border-b pb-1">{dia}</p>
+                              <Select 
+                                value={formData.horarioModalidad[dia].modalidad} 
+                                onValueChange={(v) => setFormData({
+                                  ...formData, 
+                                  horarioModalidad: {
+                                    ...formData.horarioModalidad,
+                                    [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
+                                  }
+                                })}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="presencial">Presencial</SelectItem>
+                                  <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                                  <SelectItem value="libre">No Laboral</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              {formData.horarioModalidad[dia].modalidad !== "libre" && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <label className="text-[9px] font-bold text-muted-foreground uppercase">Entrada</label>
+                                    <Input 
+                                      type="time" 
+                                      className="h-7 text-[10px] px-1"
+                                      value={formData.horarioModalidad[dia].entrada}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
+                                        }
+                                      })}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[9px] font-bold text-muted-foreground uppercase">Salida</label>
+                                    <Input 
+                                      type="time" 
+                                      className="h-7 text-[10px] px-1"
+                                      value={formData.horarioModalidad[dia].salida}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
+                                        }
+                                      })}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -723,6 +795,107 @@ function PersonalContent() {
           </div>
         )}
 
+          </div>
+        )}
+
+        {/* DIALOGO: EDITAR HORARIO */}
+        <Dialog open={!!empleadoSeleccionado} onOpenChange={(open) => !open && setEmpleadoSeleccionado(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                Gestionar Horario Institucional
+              </DialogTitle>
+              <DialogDescription>
+                Configure la jornada semanal para <strong>{empleadoSeleccionado?.nombre}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+              {DIAS_SEMANA.map((dia) => (
+                <div key={dia} className="bg-muted/30 p-4 rounded-xl border border-dashed space-y-4">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <p className="text-xs font-black uppercase text-primary">{dia}</p>
+                    <Badge variant="outline" className="text-[9px] uppercase">
+                      {horarioEdit[dia]?.modalidad}
+                    </Badge>
+                  </div>
+                  
+                  <Select 
+                    value={horarioEdit[dia]?.modalidad} 
+                    onValueChange={(v) => setHorarioEdit({
+                      ...horarioEdit, 
+                      [dia]: { ...horarioEdit[dia], modalidad: v }
+                    })}
+                  >
+                    <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="presencial">Presencial</SelectItem>
+                      <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                      <SelectItem value="libre">No Laboral / Libre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {horarioEdit[dia]?.modalidad !== "libre" && (
+                    <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Entrada</label>
+                        <Input 
+                          type="time" 
+                          value={horarioEdit[dia]?.entrada}
+                          onChange={(e) => setHorarioEdit({
+                            ...horarioEdit,
+                            [dia]: { ...horarioEdit[dia], entrada: e.target.value }
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Salida</label>
+                        <Input 
+                          type="time" 
+                          value={horarioEdit[dia]?.salida}
+                          onChange={(e) => setHorarioEdit({
+                            ...horarioEdit,
+                            [dia]: { ...horarioEdit[dia], salida: e.target.value }
+                          })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setEmpleadoSeleccionado(null)}>Cancelar</Button>
+              <Button 
+                onClick={async () => {
+                  setGuardandoHorario(true);
+                  try {
+                    await actualizarModalidad(empleadoSeleccionado.id, horarioEdit);
+                    await registrarAuditoria({
+                      user, userData,
+                      accion: "Actualizar Horario",
+                      documentoId: empleadoSeleccionado.id,
+                      detalles: `Se actualizó horario semanal de ${empleadoSeleccionado.nombre}`
+                    });
+                    toast.success("Horario actualizado correctamente");
+                    setEmpleadoSeleccionado(null);
+                    cargarDatos();
+                  } catch (e) {
+                    toast.error("Error al guardar el horario");
+                  } finally {
+                    setGuardandoHorario(false);
+                  }
+                }}
+                disabled={guardandoHorario}
+              >
+                {guardandoHorario ? <Spinner className="w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Guardar Horario
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
 
       {/* ================================================== */}
@@ -783,10 +956,13 @@ function PersonalContent() {
               </div>
 
               <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10` }}>
-                  <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {/* El QR real lo inyectaremos en el canvas si quisiéramos, pero por ahora como placeholder para html2canvas. En PDF es más seguro. Para carnet PNG generamos el QR en DOM. */}
-                    <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
+                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10`, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                  <div style={{ width: '90px', height: '90px', background: '#fff', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {qrPersonal ? (
+                      <img src={qrPersonal} alt="QR" style={{ width: '100%', height: '100%' }} />
+                    ) : (
+                      <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
+                    )}
                   </div>
                 </div>
               </div>

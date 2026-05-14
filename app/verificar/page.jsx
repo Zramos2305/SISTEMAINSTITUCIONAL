@@ -61,7 +61,7 @@ function VerificarContent() {
         if (docData) {
           const now = new Date();
           let isExpired = false;
-          
+
           if (docData.tipo === "afiliado") {
             const hasActiveMembership = docData.membresias?.some(m => now <= new Date(m.fechaExpiracion));
             isExpired = !hasActiveMembership;
@@ -70,7 +70,7 @@ function VerificarContent() {
           }
 
           setDocumento({ ...docData, isExpired });
-          
+
           if (docData.estado === "inactivo" || isExpired) {
             setEstado("inactive");
           } else {
@@ -157,15 +157,14 @@ function VerificarContent() {
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${estado === 'valid' ? 'bg-success/10' : 'bg-amber-500/10'}`}>
                   {estado === 'valid' ? <CheckCircle2 className="h-10 w-10 text-success" /> : <AlertCircle className="h-10 w-10 text-amber-500" />}
                 </div>
-                <Badge 
-                  className={`text-base px-6 py-1.5 uppercase font-black ${
-                    estado === 'valid' 
-                      ? (documento.esPersonalInstitucional ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success')) 
+                <Badge
+                  className={`text-base px-6 py-1.5 uppercase font-black ${estado === 'valid'
+                      ? (documento.esPersonalInstitucional ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success'))
                       : 'bg-destructive hover:bg-destructive text-white'
-                  }`}
+                    }`}
                 >
-                  {estado === 'valid' 
-                    ? (documento.esPersonalInstitucional ? 'Personal Institucional' : (documento.tipo === 'afiliado' ? 'Afiliado Verificado' : 'Documento Válido')) 
+                  {estado === 'valid'
+                    ? (documento.esPersonalInstitucional ? 'Personal Institucional' : (documento.tipo === 'afiliado' ? 'Afiliado Verificado' : 'Documento Válido'))
                     : (documento.esPersonalInstitucional && documento.estado === 'inactivo' ? 'PERSONAL INACTIVO' : (documento.isExpired ? 'Vigencia Expirada' : 'Registro Inactivo'))}
                 </Badge>
               </div>
@@ -278,8 +277,8 @@ function VerificarContent() {
 
               <div className={`p-4 rounded-xl border text-center ${estado === 'valid' ? 'bg-success/5 border-success/20' : 'bg-destructive/5 border-destructive/20'}`}>
                 <p className={`text-xs font-bold ${estado === 'valid' ? 'text-success' : 'text-destructive'}`}>
-                  {estado === 'valid' 
-                    ? "CERTIFICACIÓN DE AUTENTICIDAD EMITIDA POR EL SISTEMA" 
+                  {estado === 'valid'
+                    ? "CERTIFICACIÓN DE AUTENTICIDAD EMITIDA POR EL SISTEMA"
                     : "ESTE REGISTRO NO ES VÁLIDO PARA TRÁMITES OFICIALES"}
                 </p>
               </div>
