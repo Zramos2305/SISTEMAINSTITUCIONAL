@@ -1481,14 +1481,8 @@ function DashboardContent() {
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setDuracionReactivacion("6_meses")}
-                className={`p-4 rounded-xl border-2 text-center transition-all ${duracionReactivacion === "6_meses"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-muted hover:border-primary/40"
-                  }`}
-              >
                 <p className="text-xl font-bold uppercase">Integral</p>
-                <p className="text-[10px] font-medium opacity-70">6 MESES</p>
+                <p className="text-[10px] font-medium opacity-70">1 AÑO (PREDETERMINADO)</p>
               </button>
               <button
                 onClick={() => setDuracionReactivacion("1_ano")}
@@ -1904,7 +1898,7 @@ function DashboardContent() {
                 </p>
 
                 <p>
-                  con NUIP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa para acceder a nuestros convenios educativos.
+                  con NIUP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa para acceder a nuestros convenios educativos.
                 </p>
 
                 <p>
@@ -1972,7 +1966,7 @@ function DashboardContent() {
                 </p>
 
                 <p>
-                  con NUIP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa desde el día <strong>{formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y le permite acceder a los descuentos especiales que otorgan nuestros convenios interinstitucionales.
+                  con NIUP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa desde el día <strong>{formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y le permite acceder a los descuentos especiales que otorgan nuestros convenios interinstitucionales.
                 </p>
 
                 <p>

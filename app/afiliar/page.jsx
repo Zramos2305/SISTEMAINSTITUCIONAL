@@ -103,7 +103,6 @@ export default function AfiliarPage() {
     seleccionMembresias: {
       educativa: true,
       integral: false,
-      duracionIntegral: "6_meses"
     }
   });
 
@@ -113,6 +112,7 @@ export default function AfiliarPage() {
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [tipoCertificadoActual, setTipoCertificadoActual] = useState(null); // 'educativa' o 'integral'
 
   // Generar QR en tiempo real cuando cambia el código
   useEffect(() => {
@@ -253,7 +253,7 @@ export default function AfiliarPage() {
 
       if (formData.seleccionMembresias.integral) {
         const fExpInt = new Date(fIngreso);
-        const meses = formData.seleccionMembresias.duracionIntegral === "6_meses" ? 6 : 12;
+        const meses = 12; // Ahora predeterminado a 1 año
         fExpInt.setMonth(fExpInt.getMonth() + meses);
 
         nuevasMembresias.push({
@@ -282,7 +282,7 @@ export default function AfiliarPage() {
         ciudad: formData.ciudad,
         oficina: formData.oficina,
         dependencia: formData.dependencia,
-        beneficiarios: formData.beneficiarios,
+        beneficiarios: formData.seleccionMembresias.integral ? formData.beneficiarios : [],
         estado: "activo",
         membresias: nuevasMembresias,
         fechaUltimaActualizacion: new Date().toISOString()
@@ -369,11 +369,15 @@ export default function AfiliarPage() {
     }
   };
 
-  const descargarCertificado = async () => {
+  const descargarCertificado = async (tipoMembresia = null) => {
     if (!certificadoRef.current) return;
+    setTipoCertificadoActual(tipoMembresia);
     setIsDownloadingCert(true);
 
     try {
+      // Esperar un momento para que el DOM se actualice con el nuevo tipoCertificadoActual
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(certificadoRef.current, {
         scale: 3,
         useCORS: true,
@@ -429,9 +433,9 @@ export default function AfiliarPage() {
         pdf.text("VERIFICACIÓN DIGITAL", marginX + (qrSize / 2), marginY + qrSize + 6, { align: "center" });
       }
 
-      pdf.save(`Certificado_Afiliacion_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
+      pdf.save(`Certificado_${tipoMembresia === 'educativa' ? 'Educativa' : 'Integral'}_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
 
-      toast.success("Certificado generado correctamente");
+      toast.success(`Certificado ${tipoMembresia === 'educativa' ? 'Educativo' : 'Integral'} generado correctamente`);
     } catch (err) {
       console.error("Error certificado:", err);
       toast.error("Error al generar el certificado");
@@ -648,27 +652,6 @@ export default function AfiliarPage() {
                     <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
                   </div>
                 </div>
-
-                {formData.seleccionMembresias.integral && (
-                  <div className="pt-2 animate-in slide-in-from-top-1 duration-200">
-                    <FieldLabel>Duración de Afiliación Integral</FieldLabel>
-                    <Select
-                      value={formData.seleccionMembresias.duracionIntegral}
-                      onValueChange={(v) => setFormData(p => ({
-                        ...p,
-                        seleccionMembresias: { ...p.seleccionMembresias, duracionIntegral: v }
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6_meses">6 Meses</SelectItem>
-                        <SelectItem value="1_ano">1 Año</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </div>
 
               <Field>
@@ -750,55 +733,57 @@ export default function AfiliarPage() {
                 </Select>
               </Field>
 
-              <Field>
-                <FieldLabel className="flex justify-between items-center">
-                  Beneficiarios (Opcional - Máx 5)
-                  <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]" disabled={isSaving}>
-                    <Plus className="h-3 w-3 mr-1" /> Agregar
-                  </Button>
-                </FieldLabel>
-                <div className="space-y-3">
-                  {formData.beneficiarios?.length === 0 && (
-                    <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
-                  )}
-                  {formData.beneficiarios?.map((ben, idx) => (
-                    <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleRemoveBeneficiario(idx)}
-                        disabled={isSaving}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
-                          <Input
-                            value={ben.nombre}
-                            onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
-                            className="h-8 text-xs"
-                            placeholder="Nombre"
-                            disabled={isSaving}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
-                          <Input
-                            value={ben.nuip}
-                            onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
-                            className="h-8 text-xs font-mono"
-                            placeholder="Documento"
-                            disabled={isSaving}
-                          />
+              {formData.seleccionMembresias.integral && (
+                <Field>
+                  <FieldLabel className="flex justify-between items-center">
+                    Beneficiarios (Membresía Integral - Máx 5)
+                    <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]" disabled={isSaving}>
+                      <Plus className="h-3 w-3 mr-1" /> Agregar
+                    </Button>
+                  </FieldLabel>
+                  <div className="space-y-3">
+                    {formData.beneficiarios?.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
+                    )}
+                    {formData.beneficiarios?.map((ben, idx) => (
+                      <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemoveBeneficiario(idx)}
+                          disabled={isSaving}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
+                            <Input
+                              value={ben.nombre}
+                              onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
+                              className="h-8 text-xs"
+                              placeholder="Nombre"
+                              disabled={isSaving}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
+                            <Input
+                              value={ben.nuip}
+                              onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
+                              className="h-8 text-xs font-mono"
+                              placeholder="Documento"
+                              disabled={isSaving}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Field>
+                    ))}
+                  </div>
+                </Field>
+              )}
 
               <Field>
                 <FieldLabel>Foto del Afiliado</FieldLabel>
@@ -904,7 +889,7 @@ export default function AfiliarPage() {
                   {formData.nombre || "NOMBRE COMPLETO"}
                 </h3>
                 <p className="font-bold text-xs mt-1" style={{ color: "#64748b", margin: 0 }}>
-                  C.C. {formData.cedula || "XXXXXXXX"}
+                  NIUP {formData.cedula || "XXXXXXXX"}
                 </p>
 
                 <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
@@ -926,12 +911,12 @@ export default function AfiliarPage() {
                   </div>
                   <div className="text-left col-span-2">
                     <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Membresías Activas</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1 mt-1 justify-center">
                       {formData.seleccionMembresias.educativa && (
-                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
                       )}
                       {formData.seleccionMembresias.integral && (
-                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
                       )}
                     </div>
                   </div>
@@ -991,7 +976,7 @@ export default function AfiliarPage() {
                       <p className="text-lg font-bold">{formData.nombre}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Documento / NUIP</p>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Documento / NIUP</p>
                       <p className="font-mono font-bold text-lg">{formData.cedula}</p>
                     </div>
                     <div className="space-y-1">
@@ -1036,16 +1021,30 @@ export default function AfiliarPage() {
                 {isDownloading ? <Spinner /> : <Download className="h-5 w-5" />}
                 DESCARGAR CARNET
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
-                onClick={descargarCertificado}
-                disabled={isDownloadingCert}
-              >
-                {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
-                CERTIFICADO PDF
-              </Button>
+              {formData.seleccionMembresias.educativa && (
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
+                  onClick={() => descargarCertificado('educativa')}
+                  disabled={isDownloadingCert}
+                >
+                  {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
+                  CERTIFICADO EDUCATIVO
+                </Button>
+              )}
+              {formData.seleccionMembresias.integral && (
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="h-14 border-2 font-bold gap-3 hover:bg-success hover:text-success-foreground transition-all"
+                  onClick={() => descargarCertificado('integral')}
+                  disabled={isDownloadingCert}
+                >
+                  {isDownloadingCert ? <Spinner /> : <FileTextIcon className="h-5 w-5" />}
+                  CERTIFICADO INTEGRAL
+                </Button>
+              )}
               <Button 
                 variant="secondary" 
                 size="lg" 
@@ -1165,8 +1164,8 @@ export default function AfiliarPage() {
               <h3 style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, textTransform: 'uppercase', color: '#1e293b', margin: 0, width: '100%' }}>
                 {formData.nombre || "NOMBRE COMPLETO"}
               </h3>
-              <p style={{ fontWeight: 'bold', fontSize: '12px', marginTop: '4px', color: '#64748b', margin: 0 }}>
-                C.C. {formData.cedula || "XXXXXXXX"}
+              <p style={{ fontWeight: 'bold', fontSize: '11px', marginTop: '2px', color: '#64748b', margin: 0 }}>
+                NIUP {formData.cedula || "XXXXXXXX"}
               </p>
 
               <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
@@ -1186,14 +1185,15 @@ export default function AfiliarPage() {
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
                   <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                 </div>
-                <div style={{ marginTop: '12px', width: '100%' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías Activas</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px', justifyContent: 'center' }}>
-                    {formData.membresias?.map(m => (
-                      <span key={m.tipo} style={{ fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '4px', background: COLORS.azul + '20', color: COLORS.azul, border: `1px solid ${COLORS.azul}40` }}>
-                        {m.tipo.toUpperCase()}
-                      </span>
-                    ))}
+                <div style={{ marginTop: '8px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías Activas</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '3px', justifyContent: 'center' }}>
+                    {formData.seleccionMembresias.educativa && (
+                      <span style={{ fontSize: '8px', fontWeight: 900, padding: '1px 5px', borderRadius: '3px', background: 'rgba(5, 49, 138, 0.1)', color: '#05318a', border: '1px solid rgba(5, 49, 138, 0.2)' }}>EDUCATIVA</span>
+                    )}
+                    {formData.seleccionMembresias.integral && (
+                      <span style={{ fontSize: '8px', fontWeight: 900, padding: '1px 5px', borderRadius: '3px', background: 'rgba(14, 98, 53, 0.1)', color: '#0e6235', border: '1px solid rgba(14, 98, 53, 0.2)' }}>INTEGRAL</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1248,7 +1248,9 @@ export default function AfiliarPage() {
 
             {/* Título */}
             <div style={{ textAlign: "center", marginBottom: "50px" }}>
-              <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN</h2>
+              <h2 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline", margin: 0, textTransform: 'uppercase' }}>
+                CERTIFICADO DE AFILIACIÓN {tipoCertificadoActual === 'educativa' ? 'EDUCATIVA' : 'INTEGRAL'}
+              </h2>
             </div>
 
             {/* Contenido */}
@@ -1284,9 +1286,9 @@ export default function AfiliarPage() {
                 </div>
               </div>
 
-              {formData.beneficiarios?.length > 0 && (
+              {tipoCertificadoActual === 'integral' && formData.beneficiarios?.length > 0 && (
                 <div style={{ margin: "25px 0", padding: "20px", border: "1px solid #eee", borderRadius: "12px", backgroundColor: "#fff" }}>
-                  <p style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", color: COLORS.azul, borderBottom: "1px solid #eee", paddingBottom: "5px" }}>Beneficiarios Autorizados:</p>
+                  <p style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "12px", color: COLORS.azul, borderBottom: "1px solid #eee", paddingBottom: "5px" }}>Beneficiarios Autorizados (Membresía Integral):</p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                     {formData.beneficiarios.map((b, i) => (
                       <div key={i} style={{ fontSize: "14px", color: "#444" }}>

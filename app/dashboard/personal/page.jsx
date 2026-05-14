@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
 import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario } from "@/hooks/use-empleados";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,13 +230,12 @@ function PersonalContent() {
         await updateDoc(doc(db, "empleados", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
         
         // Sincronizar estado con afiliación institucional
-        import("firebase/firestore").then(async ({ query, where }) => {
-          const q = query(collection(db, "afiliados"), where("personalId", "==", usuarioObj.empleadoId));
-          const snap = await getDocs(q);
-          snap.docs.forEach(async (d) => {
-            await updateDoc(doc(db, "afiliados", d.id), { estado: nuevoActivo ? "activo" : "inactivo" });
-          });
+        const q = query(collection(db, "afiliados"), where("personalId", "==", usuarioObj.empleadoId));
+        const snap = await getDocs(q);
+        const promesas = snap.docs.map(async (d) => {
+          await updateDoc(doc(db, "afiliados", d.id), { estado: nuevoActivo ? "activo" : "inactivo" });
         });
+        await Promise.all(promesas);
       }
 
       toast.success(nuevoActivo ? "Acceso y beneficios reactivados" : "Acceso y beneficios bloqueados");
@@ -550,7 +549,7 @@ function PersonalContent() {
                         <Input required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} placeholder="Ej. Juan Pérez" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NUIP) *</label>
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NIUP) *</label>
                         <Input required value={formData.documento} onChange={e => setFormData({...formData, documento: e.target.value})} placeholder="1234567890" />
                       </div>
                       <div className="space-y-2">
@@ -698,7 +697,7 @@ function PersonalContent() {
               <CardContent className="p-8">
                 <div className="bg-muted/30 border rounded-xl p-6 text-left grid grid-cols-2 gap-y-4 gap-x-8 mb-8">
                   <div><p className="text-xs text-muted-foreground uppercase font-bold">Nombre</p><p className="font-medium text-sm">{personalReciente.nombre}</p></div>
-                  <div><p className="text-xs text-muted-foreground uppercase font-bold">Documento</p><p className="font-medium text-sm">{personalReciente.documento}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-bold">NIUP</p><p className="font-medium text-sm">{personalReciente.documento}</p></div>
                   <div><p className="text-xs text-muted-foreground uppercase font-bold">Cargo</p><p className="font-medium text-sm text-primary">{personalReciente.cargo} ({personalReciente.tipoPersonal})</p></div>
                   <div><p className="text-xs text-muted-foreground uppercase font-bold">Código Institucional</p><p className="font-medium text-sm">{personalReciente.codigoInstitucional}</p></div>
                   <div><p className="text-xs text-muted-foreground uppercase font-bold">Estado</p><Badge className="bg-success text-white">ACTIVO</Badge></div>
@@ -769,8 +768,8 @@ function PersonalContent() {
 
                 <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'left', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
                   <div>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>DOCUMENTO</p>
-                    <p style={{ fontSize: '12px', fontBold: 900, color: '#1e293b', margin: 0 }}>{personalReciente.documento}</p>
+                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>NIUP</p>
+                    <p style={{ fontSize: '12px', fontWeight: 900, color: '#1e293b', margin: 0 }}>{personalReciente.documento}</p>
                   </div>
                   <div>
                     <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>RH</p>
