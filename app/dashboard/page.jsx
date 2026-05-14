@@ -1920,17 +1920,6 @@ function DashboardContent() {
                 </p>
               </div>
 
-              {currentCertData.persona.beneficiarios?.length > 0 && (
-                <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
-                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>BENEFICIARIOS:</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    {currentCertData.persona.beneficiarios.map((b, i) => (
-                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
