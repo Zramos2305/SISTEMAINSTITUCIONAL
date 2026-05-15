@@ -269,7 +269,7 @@ function VerificarContent() {
                     )}
                     <div className="pt-2 border-t border-muted-foreground/10">
                       <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Emitido por</p>
-                      <p className="text-xs font-bold text-primary uppercase">{documento.oficina || "Sede Principal"} — {documento.dependencia || "Administración"}</p>
+                      <p className="text-xs font-bold text-primary uppercase">{documento.oficina || "Sede Principal"}</p>
                     </div>
                   </div>
                 )}
