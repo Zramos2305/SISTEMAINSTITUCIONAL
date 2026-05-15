@@ -558,7 +558,11 @@ function PersonalContent() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NIUP) *</label>
-                        <Input required value={formData.documento} onChange={e => setFormData({...formData, documento: e.target.value})} placeholder="1234567890" />
+                        <Input required value={formData.documento} onChange={e => {
+                          const numbersOnly = e.target.value.replace(/\D/g, "");
+                          const finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                          setFormData({...formData, documento: finalValue});
+                        }} placeholder="1.234.567.890" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Teléfono</label>

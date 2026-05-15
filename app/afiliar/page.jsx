@@ -138,7 +138,13 @@ export default function AfiliarPage() {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
-      const newData = { ...prev, [field]: value };
+      let finalValue = value;
+      if (field === "cedula") {
+        const numbersOnly = value.replace(/\D/g, "");
+        finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      }
+      
+      const newData = { ...prev, [field]: finalValue };
       if (field === "oficina") {
         newData.dependencia = "";
       }
@@ -159,7 +165,12 @@ export default function AfiliarPage() {
 
   const handleBeneficiarioChange = (index, field, value) => {
     const newBeneficiarios = [...formData.beneficiarios];
-    newBeneficiarios[index][field] = value;
+    let finalValue = value;
+    if (field === "nuip") {
+      const numbersOnly = value.replace(/\D/g, "");
+      finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    newBeneficiarios[index][field] = finalValue;
     setFormData(prev => ({ ...prev, beneficiarios: newBeneficiarios }));
   };
 
