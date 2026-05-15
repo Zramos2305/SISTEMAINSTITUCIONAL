@@ -234,7 +234,7 @@ export default function AfiliarPage() {
       const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
       const year = fIngreso.getFullYear();
       const month = fIngreso.getMonth();
-      
+
       const nuevasMembresias = [];
 
       if (formData.seleccionMembresias.educativa) {
@@ -269,7 +269,7 @@ export default function AfiliarPage() {
       // Buscar si ya existe
       const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
       const snap = await getDocs(q);
-      
+
       let finalId = formData.codigo;
       let dataToSave = {
         nombre: formData.nombre,
@@ -475,344 +475,344 @@ export default function AfiliarPage() {
         {!isSuccess ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
-          {/* Formulario */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Datos del Afiliado</CardTitle>
-              <CardDescription>Complete la información para generar el carnet institucional.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel>Código Institucional</FieldLabel>
-                  <Input value={formData.codigo} readOnly className="bg-muted font-mono font-bold text-primary" />
-                </Field>
-                <Field>
-                  <FieldLabel>Estado</FieldLabel>
-                  <Select value={formData.estado} onValueChange={(v) => handleInputChange("estado", v)} disabled={isSaving}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="activo">Activo</SelectItem>
-                      <SelectItem value="inactivo">Inactivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
+            {/* Formulario */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Datos del Afiliado</CardTitle>
+                <CardDescription>Complete la información para generar el carnet institucional.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>Código Institucional</FieldLabel>
+                    <Input value={formData.codigo} readOnly className="bg-muted font-mono font-bold text-primary" />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Estado</FieldLabel>
+                    <Select value={formData.estado} onValueChange={(v) => handleInputChange("estado", v)} disabled={isSaving}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activo">Activo</SelectItem>
+                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
 
-              <Field>
-                <FieldLabel>Nombre Completo</FieldLabel>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Escriba el nombre completo"
-                    className="pl-10"
-                    value={formData.nombre}
-                    onChange={(e) => handleInputChange("nombre", e.target.value)}
+                <Field>
+                  <FieldLabel>Nombre Completo</FieldLabel>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Escriba el nombre completo"
+                      className="pl-10"
+                      value={formData.nombre}
+                      onChange={(e) => handleInputChange("nombre", e.target.value)}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </Field>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>Cédula / Documento</FieldLabel>
+                    <div className="relative">
+                      <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Número de identidad"
+                        className="pl-10"
+                        value={formData.cedula}
+                        onChange={(e) => handleInputChange("cedula", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Grupo Sanguíneo RH</FieldLabel>
+                    <div className="relative">
+                      <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                      <Input
+                        placeholder="Ej: O+"
+                        className="pl-10 uppercase"
+                        value={formData.rh}
+                        onChange={(e) => handleInputChange("rh", e.target.value.toUpperCase())}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>Fecha de Afiliación</FieldLabel>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="date"
+                        className="pl-10"
+                        value={formData.fechaIngreso}
+                        onChange={(e) => handleInputChange("fechaIngreso", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Teléfono</FieldLabel>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Número de celular"
+                        className="pl-10"
+                        value={formData.telefono}
+                        onChange={(e) => handleInputChange("telefono", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>País</FieldLabel>
+                    <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)} disabled={isSaving}>
+                      <SelectTrigger className="pl-10 relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Seleccione país" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAISES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Ciudad</FieldLabel>
+                    <div className="relative">
+                      <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Escriba la ciudad"
+                        className="pl-10"
+                        value={formData.ciudad}
+                        onChange={(e) => handleInputChange("ciudad", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>Correo Electrónico</FieldLabel>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="correo@ejemplo.com"
+                        className="pl-10"
+                        value={formData.correo}
+                        onChange={(e) => handleInputChange("correo", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Dirección</FieldLabel>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Dirección de residencia"
+                        className="pl-10"
+                        value={formData.direccion}
+                        onChange={(e) => handleInputChange("direccion", e.target.value)}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+                  <p className="text-xs font-bold uppercase text-muted-foreground">Seleccione las Membresías</p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edu"
+                        checked={formData.seleccionMembresias.educativa}
+                        onCheckedChange={(v) => setFormData(p => ({
+                          ...p,
+                          seleccionMembresias: { ...p.seleccionMembresias, educativa: !!v }
+                        }))}
+                      />
+                      <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educativa</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="int"
+                        checked={formData.seleccionMembresias.integral}
+                        onCheckedChange={(v) => setFormData(p => ({
+                          ...p,
+                          seleccionMembresias: { ...p.seleccionMembresias, integral: !!v }
+                        }))}
+                      />
+                      <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
+                    </div>
+                  </div>
+                </div>
+
+                <Field>
+                  <FieldLabel>Oficina que emite</FieldLabel>
+                  <Select
+                    value={formData.oficina}
+                    onValueChange={(value) => handleInputChange("oficina", value)}
                     disabled={isSaving}
-                  />
-                </div>
-              </Field>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel>Cédula / Documento</FieldLabel>
-                  <div className="relative">
-                    <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Número de identidad"
-                      className="pl-10"
-                      value={formData.cedula}
-                      onChange={(e) => handleInputChange("cedula", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-                <Field>
-                  <FieldLabel>Grupo Sanguíneo RH</FieldLabel>
-                  <div className="relative">
-                    <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
-                    <Input
-                      placeholder="Ej: O+"
-                      className="pl-10 uppercase"
-                      value={formData.rh}
-                      onChange={(e) => handleInputChange("rh", e.target.value.toUpperCase())}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel>Fecha de Afiliación</FieldLabel>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="date"
-                      className="pl-10"
-                      value={formData.fechaIngreso}
-                      onChange={(e) => handleInputChange("fechaIngreso", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-                <Field>
-                  <FieldLabel>Teléfono</FieldLabel>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Número de celular"
-                      className="pl-10"
-                      value={formData.telefono}
-                      onChange={(e) => handleInputChange("telefono", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel>País</FieldLabel>
-                  <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)} disabled={isSaving}>
-                    <SelectTrigger className="pl-10 relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Seleccione país" />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione la oficina" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAISES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                      <SelectItem value="Sede Principal">Sede Principal</SelectItem>
+                      <SelectItem value="Subdirección Regional Pacífico Norte">Subdirección Regional Pacífico Norte</SelectItem>
+                      <SelectItem value="Subdirección Regional Pacífico Sur">Subdirección Regional Pacífico Sur</SelectItem>
+                      <SelectItem value="Subdirección Regional Eje Cafetero">Subdirección Regional Eje Cafetero</SelectItem>
+                      <SelectItem value="Subdirección Regional Sur Central">Subdirección Regional Sur Central</SelectItem>
+                      <SelectItem value="Subdirección Regional Nor Caribe">Subdirección Regional Nor Caribe</SelectItem>
+                      <SelectItem value="Subdirección Regional Sur Caribe">Subdirección Regional Sur Caribe</SelectItem>
+                      <SelectItem value="Subdirección Regional Nor Oriente">Subdirección Regional Nor Oriente</SelectItem>
+                      <SelectItem value="Subdirección Regional Sur Oriente">Subdirección Regional Sur Oriente</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
+
                 <Field>
-                  <FieldLabel>Ciudad</FieldLabel>
-                  <div className="relative">
-                    <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Escriba la ciudad"
-                      className="pl-10"
-                      value={formData.ciudad}
-                      onChange={(e) => handleInputChange("ciudad", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
+                  <FieldLabel>Dependencia que emite</FieldLabel>
+                  <Select
+                    value={formData.dependencia}
+                    onValueChange={(value) => handleInputChange("dependencia", value)}
+                    disabled={!formData.oficina}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione la dependencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.oficina === "Sede Principal" ? (
+                        <>
+                          <SelectItem value="Representante Legal">Representante Legal</SelectItem>
+                          <SelectItem value="Dirección ejecutiva">Dirección Ejecutiva</SelectItem>
+                          <SelectItem value="Dirección administrativa">Dirección Administrativa</SelectItem>
+                          <SelectItem value="Revisaría fiscal">Revisaría Fiscal</SelectItem>
+                          <SelectItem value="Secretaría general">Secretaría General</SelectItem>
+                          <SelectItem value="Subdireccion de áreas">Subdireccion de Áreas</SelectItem>
+                          <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de Turismo, las Artes, las Culturas y los Saberes</SelectItem>
+                          <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de Extensión y Cosmovision Etnoeducativa</SelectItem>
+                          <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
+                          <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de Bienestar Social, Inclusión y Equidad</SelectItem>
+                          <SelectItem value="Coordinación jurídica">Coordinación Jurídica</SelectItem>
+                          <SelectItem value="Coordinación comercial">Coordinación Comercial</SelectItem>
+                          <SelectItem value="Coordinación de plantación y calidad">Coordinación de Planeación y Calidad</SelectItem>
+                          <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
+                          <SelectItem value="Coordinación de operaciones financieras">Coordinación de Operaciones Financieras</SelectItem>
+                          <SelectItem value="Coordinación del talento humano">Coordinación del Talento Humano</SelectItem>
+                          <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
+                          <SelectItem value="Área de operaciones logísticas">Área de Operaciones Logísticas</SelectItem>
+                          <SelectItem value="Área de tesorería">Área de Tesorería</SelectItem>
+                          <SelectItem value="Área de contabilidad">Área de Contabilidad</SelectItem>
+                          <SelectItem value="Área de práctica y pasantías">Área de Prácticas y Pasantías</SelectItem>
+                        </>
+                      ) : formData.oficina ? (
+                        <>
+                          <SelectItem value="Dirección Regional">Dirección Regional</SelectItem>
+                          <SelectItem value="Coordinación Jurídica">Coordinación Jurídica</SelectItem>
+                          <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
+                          <SelectItem value="Coordinación de Planeación y Calidad">Coordinación de Planeación y Calidad</SelectItem>
+                          <SelectItem value="Coordinación de Proyectos e Internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
+                          <SelectItem value="Coordinación de Operaciones Financieras">Coordinación de Operaciones Financieras</SelectItem>
+                          <SelectItem value="Coordinación del Talento Humano">Coordinación del Talento Humano</SelectItem>
+                          <SelectItem value="Coordinación de Comunicaciones y Canales Digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
+                          <SelectItem value="Área de Operaciones Logísticas">Área de Operaciones Logísticas</SelectItem>
+                          <SelectItem value="Área de Tesorería">Área de Tesorería</SelectItem>
+                          <SelectItem value="Área de Contabilidad">Área de Contabilidad</SelectItem>
+                          <SelectItem value="Área de Práctica y Pasantías">Área de Práctica y Pasantías</SelectItem>
+                        </>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
                 </Field>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel>Correo Electrónico</FieldLabel>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="correo@ejemplo.com"
-                      className="pl-10"
-                      value={formData.correo}
-                      onChange={(e) => handleInputChange("correo", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-                <Field>
-                  <FieldLabel>Dirección</FieldLabel>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Dirección de residencia"
-                      className="pl-10"
-                      value={formData.direccion}
-                      onChange={(e) => handleInputChange("direccion", e.target.value)}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </Field>
-              </div>
-
-              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
-                <p className="text-xs font-bold uppercase text-muted-foreground">Seleccione las Membresías</p>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="edu"
-                      checked={formData.seleccionMembresias.educativa}
-                      onCheckedChange={(v) => setFormData(p => ({
-                        ...p,
-                        seleccionMembresias: { ...p.seleccionMembresias, educativa: !!v }
-                      }))}
-                    />
-                    <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educativa</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="int"
-                      checked={formData.seleccionMembresias.integral}
-                      onCheckedChange={(v) => setFormData(p => ({
-                        ...p,
-                        seleccionMembresias: { ...p.seleccionMembresias, integral: !!v }
-                      }))}
-                    />
-                    <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
-                  </div>
-                </div>
-              </div>
-
-              <Field>
-                <FieldLabel>Oficina que emite</FieldLabel>
-                <Select
-                  value={formData.oficina}
-                  onValueChange={(value) => handleInputChange("oficina", value)}
-                  disabled={isSaving}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione la oficina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sede Principal">Sede Principal</SelectItem>
-                    <SelectItem value="Subdirección Regional Pacífico Norte">Subdirección Regional Pacífico Norte</SelectItem>
-                    <SelectItem value="Subdirección Regional Pacífico Sur">Subdirección Regional Pacífico Sur</SelectItem>
-                    <SelectItem value="Subdirección Regional Eje Cafetero">Subdirección Regional Eje Cafetero</SelectItem>
-                    <SelectItem value="Subdirección Regional Sur Central">Subdirección Regional Sur Central</SelectItem>
-                    <SelectItem value="Subdirección Regional Nor Caribe">Subdirección Regional Nor Caribe</SelectItem>
-                    <SelectItem value="Subdirección Regional Sur Caribe">Subdirección Regional Sur Caribe</SelectItem>
-                    <SelectItem value="Subdirección Regional Nor Oriente">Subdirección Regional Nor Oriente</SelectItem>
-                    <SelectItem value="Subdirección Regional Sur Oriente">Subdirección Regional Sur Oriente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel>Dependencia que emite</FieldLabel>
-                <Select
-                  value={formData.dependencia}
-                  onValueChange={(value) => handleInputChange("dependencia", value)}
-                  disabled={!formData.oficina}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione la dependencia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.oficina === "Sede Principal" ? (
-                      <>
-                        <SelectItem value="Representante Legal">Representante Legal</SelectItem>
-                        <SelectItem value="Dirección ejecutiva">Dirección Ejecutiva</SelectItem>
-                        <SelectItem value="Dirección administrativa">Dirección Administrativa</SelectItem>
-                        <SelectItem value="Revisaría fiscal">Revisaría Fiscal</SelectItem>
-                        <SelectItem value="Secretaría general">Secretaría General</SelectItem>
-                        <SelectItem value="Subdireccion de áreas">Subdireccion de Áreas</SelectItem>
-                        <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de Turismo, las Artes, las Culturas y los Saberes</SelectItem>
-                        <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de Extensión y Cosmovision Etnoeducativa</SelectItem>
-                        <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
-                        <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de Bienestar Social, Inclusión y Equidad</SelectItem>
-                        <SelectItem value="Coordinación jurídica">Coordinación Jurídica</SelectItem>
-                        <SelectItem value="Coordinación comercial">Coordinación Comercial</SelectItem>
-                        <SelectItem value="Coordinación de plantación y calidad">Coordinación de Planeación y Calidad</SelectItem>
-                        <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
-                        <SelectItem value="Coordinación de operaciones financieras">Coordinación de Operaciones Financieras</SelectItem>
-                        <SelectItem value="Coordinación del talento humano">Coordinación del Talento Humano</SelectItem>
-                        <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
-                        <SelectItem value="Área de operaciones logísticas">Área de Operaciones Logísticas</SelectItem>
-                        <SelectItem value="Área de tesorería">Área de Tesorería</SelectItem>
-                        <SelectItem value="Área de contabilidad">Área de Contabilidad</SelectItem>
-                        <SelectItem value="Área de práctica y pasantías">Área de Prácticas y Pasantías</SelectItem>
-                      </>
-                    ) : formData.oficina ? (
-                      <>
-                        <SelectItem value="Dirección Regional">Dirección Regional</SelectItem>
-                        <SelectItem value="Coordinación Jurídica">Coordinación Jurídica</SelectItem>
-                        <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
-                        <SelectItem value="Coordinación de Planeación y Calidad">Coordinación de Planeación y Calidad</SelectItem>
-                        <SelectItem value="Coordinación de Proyectos e Internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
-                        <SelectItem value="Coordinación de Operaciones Financieras">Coordinación de Operaciones Financieras</SelectItem>
-                        <SelectItem value="Coordinación del Talento Humano">Coordinación del Talento Humano</SelectItem>
-                        <SelectItem value="Coordinación de Comunicaciones y Canales Digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
-                        <SelectItem value="Área de Operaciones Logísticas">Área de Operaciones Logísticas</SelectItem>
-                        <SelectItem value="Área de Tesorería">Área de Tesorería</SelectItem>
-                        <SelectItem value="Área de Contabilidad">Área de Contabilidad</SelectItem>
-                        <SelectItem value="Área de Práctica y Pasantías">Área de Práctica y Pasantías</SelectItem>
-                      </>
-                    ) : null}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {formData.seleccionMembresias.integral && (
-                <Field>
-                  <FieldLabel className="flex justify-between items-center">
-                    Beneficiarios (Membresía Integral - Máx 5)
-                    <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]" disabled={isSaving}>
-                      <Plus className="h-3 w-3 mr-1" /> Agregar
-                    </Button>
-                  </FieldLabel>
-                  <div className="space-y-3">
-                    {formData.beneficiarios?.length === 0 && (
-                      <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
-                    )}
-                    {formData.beneficiarios?.map((ben, idx) => (
-                      <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleRemoveBeneficiario(idx)}
-                          disabled={isSaving}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
-                            <Input
-                              value={ben.nombre}
-                              onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
-                              className="h-8 text-xs"
-                              placeholder="Nombre"
-                              disabled={isSaving}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
-                            <Input
-                              value={ben.nuip}
-                              onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
-                              className="h-8 text-xs font-mono"
-                              placeholder="Documento"
-                              disabled={isSaving}
-                            />
+                {formData.seleccionMembresias.integral && (
+                  <Field>
+                    <FieldLabel className="flex justify-between items-center">
+                      Beneficiarios (Membresía Integral - Máx 5)
+                      <Button type="button" variant="outline" size="xs" onClick={handleAddBeneficiario} className="h-7 text-[10px]" disabled={isSaving}>
+                        <Plus className="h-3 w-3 mr-1" /> Agregar
+                      </Button>
+                    </FieldLabel>
+                    <div className="space-y-3">
+                      {formData.beneficiarios?.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay beneficiarios agregados</p>
+                      )}
+                      {formData.beneficiarios?.map((ben, idx) => (
+                        <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveBeneficiario(idx)}
+                            disabled={isSaving}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
+                              <Input
+                                value={ben.nombre}
+                                onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Nombre"
+                                disabled={isSaving}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">NUIP</label>
+                              <Input
+                                value={ben.nuip}
+                                onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
+                                className="h-8 text-xs font-mono"
+                                placeholder="Documento"
+                                disabled={isSaving}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </Field>
+                )}
+
+                <Field>
+                  <FieldLabel>Foto del Afiliado</FieldLabel>
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-primary/20 flex items-center justify-center group cursor-pointer hover:border-primary/50 transition-all">
+                      {fotoPreview ? (
+                        <Image src={fotoPreview} alt="Preview" fill className="object-cover" />
+                      ) : (
+                        <Camera className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                        onChange={handleFotoChange}
+                        disabled={isSaving}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Click en el recuadro para subir foto.</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 italic">Preferiblemente fondo blanco y buena iluminación.</p>
+                    </div>
                   </div>
                 </Field>
-              )}
-
-              <Field>
-                <FieldLabel>Foto del Afiliado</FieldLabel>
-                <div className="flex items-center gap-4">
-                  <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-primary/20 flex items-center justify-center group cursor-pointer hover:border-primary/50 transition-all">
-                    {fotoPreview ? (
-                      <Image src={fotoPreview} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <Camera className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                      onChange={handleFotoChange}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Click en el recuadro para subir foto.</p>
-                    <p className="text-[10px] text-muted-foreground mt-1 italic">Preferiblemente fondo blanco y buena iluminación.</p>
-                  </div>
-                </div>
-              </Field>
 
                 <Button
                   className="w-full h-12 text-base font-bold shadow-md shadow-primary/20"
@@ -825,136 +825,136 @@ export default function AfiliarPage() {
               </CardContent>
             </Card>
 
-          {/* Preview Carnet */}
-          <div className="sticky top-24">
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-              <QrCode className="h-4 w-4" /> Vista Previa del Carnet
-            </h3>
+            {/* Preview Carnet */}
+            <div className="sticky top-24">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                <QrCode className="h-4 w-4" /> Vista Previa del Carnet
+              </h3>
 
-            <div
-              id="carnet-a-imprimir"
-              ref={carnetRef}
-              className="relative w-[380px] h-[580px] rounded-[2rem] overflow-hidden mx-auto"
-              style={{
-                fontFamily: 'sans-serif',
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-              }}
-            >
-              {/* Decoración Superior */}
-              <div className="absolute top-0 left-0 w-full h-[180px] overflow-hidden">
-                <div
-                  className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
-                  style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
-                />
-                <div
-                  className="absolute top-0 right-0 w-1/3 h-full"
-                  style={{ backgroundColor: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
-                />
-              </div>
-
-              <div className="relative z-10 pt-8 px-8 flex flex-col items-center">
-                <div className="bg-white p-2 rounded-full shadow-lg mb-3" style={{ backgroundColor: '#ffffff' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", borderRadius: "9999px" }} />
+              <div
+                id="carnet-a-imprimir"
+                ref={carnetRef}
+                className="relative w-[380px] h-[580px] rounded-[2rem] overflow-hidden mx-auto"
+                style={{
+                  fontFamily: 'sans-serif',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                }}
+              >
+                {/* Decoración Superior */}
+                <div className="absolute top-0 left-0 w-full h-[180px] overflow-hidden">
+                  <div
+                    className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
+                    style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
+                  />
+                  <div
+                    className="absolute top-0 right-0 w-1/3 h-full"
+                    style={{ backgroundColor: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
+                  />
                 </div>
-                <h2 className="font-black text-2xl tracking-tighter leading-none" style={{ color: '#ffffff' }}>ISLA CASCAJAL</h2>
-                <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>Fundación</p>
-              </div>
 
-              {/* Foto de Perfil */}
-              <div className="relative z-10 flex flex-col items-center mt-6">
-                <div
-                  className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden"
-                  style={{ backgroundColor: "#f1f5f9", borderColor: '#ffffff' }}
-                >
-                  {fotoPreview ? (
-                    <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                      </svg>
+                <div className="relative z-10 pt-8 px-8 flex flex-col items-center">
+                  <div className="bg-white p-2 rounded-full shadow-lg mb-3" style={{ backgroundColor: '#ffffff' }}>
+                    <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", borderRadius: "9999px" }} />
+                  </div>
+                  <h2 className="font-black text-2xl tracking-tighter leading-none" style={{ color: '#ffffff' }}>ISLA CASCAJAL</h2>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>Fundación</p>
+                </div>
+
+                {/* Foto de Perfil */}
+                <div className="relative z-10 flex flex-col items-center mt-6">
+                  <div
+                    className="relative w-40 h-40 rounded-3xl border-[6px] border-white shadow-2xl overflow-hidden"
+                    style={{ backgroundColor: "#f1f5f9", borderColor: '#ffffff' }}
+                  >
+                    {fotoPreview ? (
+                      <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }}>
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Badge AFILIADO */}
+                  <div
+                    className="mt-[-20px] relative z-20 px-8 py-1.5 rounded-full border-2 border-white"
+                    style={{ backgroundColor: COLORS.rojo, borderColor: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  >
+                    <span className="text-white font-black text-sm uppercase tracking-widest" style={{ color: '#ffffff' }}>AFILIADO</span>
+                  </div>
+                </div>
+
+                {/* Información Personal */}
+                <div className="mt-4 px-10 flex flex-col items-center text-center">
+                  <h3 className="text-xl font-black leading-tight uppercase" style={{ color: "#1e293b", margin: 0 }}>
+                    {formData.nombre || "NOMBRE COMPLETO"}
+                  </h3>
+                  <p className="font-bold text-xs mt-1" style={{ color: "#64748b", margin: 0 }}>
+                    NIUP {formData.cedula || "XXXXXXXX"}
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Código</p>
+                      <p className="text-sm font-black font-mono tracking-tighter" style={{ color: "#334155", margin: 0 }}>{formData.codigo}</p>
                     </div>
-                  )}
-                </div>
-
-                {/* Badge AFILIADO */}
-                <div
-                  className="mt-[-20px] relative z-20 px-8 py-1.5 rounded-full border-2 border-white"
-                  style={{ backgroundColor: COLORS.rojo, borderColor: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                >
-                  <span className="text-white font-black text-sm uppercase tracking-widest" style={{ color: '#ffffff' }}>AFILIADO</span>
-                </div>
-              </div>
-
-              {/* Información Personal */}
-              <div className="mt-4 px-10 flex flex-col items-center text-center">
-                <h3 className="text-xl font-black leading-tight uppercase" style={{ color: "#1e293b", margin: 0 }}>
-                  {formData.nombre || "NOMBRE COMPLETO"}
-                </h3>
-                <p className="font-bold text-xs mt-1" style={{ color: "#64748b", margin: 0 }}>
-                  NIUP {formData.cedula || "XXXXXXXX"}
-                </p>
-
-                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 w-full">
-                  <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Código</p>
-                    <p className="text-sm font-black font-mono tracking-tighter" style={{ color: "#334155", margin: 0 }}>{formData.codigo}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>RH</p>
-                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.rh || "—"}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>País</p>
-                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.pais || "—"}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Cargo</p>
-                    <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
-                  </div>
-                  <div className="text-left col-span-2">
-                    <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Membresías Activas</p>
-                    <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                      {formData.seleccionMembresias.educativa && (
-                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
-                      )}
-                      {formData.seleccionMembresias.integral && (
-                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
-                      )}
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>RH</p>
+                      <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.rh || "—"}</p>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>País</p>
+                      <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.pais || "—"}</p>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Cargo</p>
+                      <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
+                    </div>
+                    <div className="text-left col-span-2">
+                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Membresías Activas</p>
+                      <div className="flex flex-wrap gap-1 mt-1 justify-center">
+                        {formData.seleccionMembresias.educativa && (
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
+                        )}
+                        {formData.seleccionMembresias.integral && (
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black" style={{ color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
+                <div className="absolute bottom-0 left-0 w-full pt-4 pb-6 pl-10 pr-6 flex items-end justify-between">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-black" style={{ color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
+                  </div>
+
+                  <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul, backgroundColor: '#ffffff' }}>
+                    {qrDataUrl && (
+                      <img src={qrDataUrl} alt="QR" style={{ width: "70px", height: "70px" }} />
+                    )}
+                  </div>
                 </div>
 
-                <div className="bg-white p-1 rounded-lg border-2" style={{ borderColor: COLORS.azul, backgroundColor: '#ffffff' }}>
-                  {qrDataUrl && (
-                    <img src={qrDataUrl} alt="QR" style={{ width: "70px", height: "70px" }} />
-                  )}
+                {/* Franjas de color decorativas */}
+                <div className="absolute bottom-0 left-0 w-full h-1.5 flex">
+                  <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+                  <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                  <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                  <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
                 </div>
               </div>
 
-              {/* Franjas de color decorativas */}
-              <div className="absolute bottom-0 left-0 w-full h-1.5 flex">
-                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
-                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
-              </div>
+              <p className="text-center text-xs text-muted-foreground mt-4 italic">
+                * El carnet se genera automáticamente mientras completas el formulario.
+              </p>
             </div>
 
-            <p className="text-center text-xs text-muted-foreground mt-4 italic">
-              * El carnet se genera automáticamente mientras completas el formulario.
-            </p>
           </div>
-
-        </div>
         ) : (
           /* Pantalla de Éxito */
           <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
@@ -1016,9 +1016,9 @@ export default function AfiliarPage() {
             </Card>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <Button
+                variant="outline"
+                size="lg"
                 className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
                 onClick={descargarCarnet}
                 disabled={isDownloading}
@@ -1027,9 +1027,9 @@ export default function AfiliarPage() {
                 DESCARGAR CARNET
               </Button>
               {formData.seleccionMembresias.educativa && (
-                <Button 
-                  variant="outline" 
-                  size="lg" 
+                <Button
+                  variant="outline"
+                  size="lg"
                   className="h-14 border-2 font-bold gap-3 hover:bg-primary hover:text-primary-foreground transition-all"
                   onClick={() => descargarCertificado('educativa')}
                   disabled={!!isDownloadingCert}
@@ -1039,9 +1039,9 @@ export default function AfiliarPage() {
                 </Button>
               )}
               {formData.seleccionMembresias.integral && (
-                <Button 
-                  variant="outline" 
-                  size="lg" 
+                <Button
+                  variant="outline"
+                  size="lg"
                   className="h-14 border-2 font-bold gap-3 hover:bg-success hover:text-success-foreground transition-all"
                   onClick={() => descargarCertificado('integral')}
                   disabled={!!isDownloadingCert}
@@ -1050,9 +1050,9 @@ export default function AfiliarPage() {
                   CERTIFICADO INTEGRAL
                 </Button>
               )}
-              <Button 
-                variant="secondary" 
-                size="lg" 
+              <Button
+                variant="secondary"
+                size="lg"
                 className="h-14 font-bold gap-3"
                 asChild
               >
@@ -1061,9 +1061,9 @@ export default function AfiliarPage() {
                   VER AFILIACIÓN PÚBLICA
                 </Link>
               </Button>
-              <Button 
-                variant="default" 
-                size="lg" 
+              <Button
+                variant="default"
+                size="lg"
                 className="h-14 font-bold gap-3 shadow-lg shadow-primary/20"
                 onClick={handleReset}
               >
@@ -1260,7 +1260,7 @@ export default function AfiliarPage() {
                   <p>
                     La presente organización de base <strong>Fundación Isla Cascajal “FICong”</strong>, identificada con NIT 900.248.351-0, con principal domicilio en el Distrito Especial de Santiago de Cali, República de Colombia, se permite presentar a:
                   </p>
-                  
+
                   <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
                     {currentCertData.persona.nombre}
                   </p>
@@ -1290,7 +1290,8 @@ export default function AfiliarPage() {
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
                     <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
                     <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Coordinación Comercial</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Firma electrónica</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Verificable con el código QR</p>
                   </div>
                 </div>
               </div>
