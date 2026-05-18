@@ -37,7 +37,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Users, UserPlus, RefreshCcw, LogOut, ArrowLeft, Mail, Lock, User, Briefcase, CalendarDays,
-  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power
+  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -89,6 +89,8 @@ function PersonalContent() {
     modalidadLaboral: "Presencial",
     diasTeletrabajo: "",
     afiliarAutomaticamente: false,
+    beneficiarios: [],
+    mascotas: [],
     foto: null,
     horarioModalidad: HORARIO_DEFAULT
   });
@@ -169,6 +171,22 @@ function PersonalContent() {
     }
   };
 
+  const handleBeneficiarioChange = (index, field, value) => {
+    const newBeneficiarios = [...(formData.beneficiarios || [])];
+    if (field === "nuip") {
+      const numbersOnly = value.replace(/\D/g, "");
+      value = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    newBeneficiarios[index][field] = value;
+    setFormData(prev => ({ ...prev, beneficiarios: newBeneficiarios }));
+  };
+
+  const handleMascotaChange = (index, field, value) => {
+    const newMascotas = [...(formData.mascotas || [])];
+    newMascotas[index][field] = value;
+    setFormData(prev => ({ ...prev, mascotas: newMascotas }));
+  };
+
   const handleCrearUsuario = async (e) => {
     e.preventDefault();
     if (!formData.correo || !formData.password || !formData.nombre || !formData.rol || !formData.documento) {
@@ -185,8 +203,13 @@ function PersonalContent() {
     try {
       const codigoG = "FIC-" + Math.random().toString(36).substr(2, 6).toUpperCase();
       
+      const beneficiariosValidos = formData.afiliarAutomaticamente ? (formData.beneficiarios || []).filter(b => b.nombre.trim() !== "") : [];
+      const mascotasValidas = formData.afiliarAutomaticamente ? (formData.mascotas || []).filter(m => m.nombre.trim() !== "") : [];
+
       const payload = {
         ...formData,
+        beneficiarios: beneficiariosValidos,
+        mascotas: mascotasValidas,
         codigoInstitucional: codigoG,
         creadoPorUid: user.uid
       };
@@ -331,7 +354,7 @@ function PersonalContent() {
       nombre: "", documento: "", correo: "", telefono: "", direccion: "", rh: "", cargo: "",
       tipoPersonal: "Empleado", fechaIngreso: new Date().toISOString().split("T")[0],
       estado: "activo", rol: "empleado", password: "", modalidadLaboral: "Presencial",
-      diasTeletrabajo: "", afiliarAutomaticamente: false, foto: null,
+      diasTeletrabajo: "", afiliarAutomaticamente: false, beneficiarios: [], mascotas: [], foto: null,
       horarioModalidad: HORARIO_DEFAULT
     });
     setFotoPreview(null);
@@ -728,15 +751,101 @@ function PersonalContent() {
                       <Checkbox 
                         id="afiliarAuto" 
                         checked={formData.afiliarAutomaticamente} 
-                        onCheckedChange={(c) => setFormData({...formData, afiliarAutomaticamente: c})}
+                        onCheckedChange={(c) => {
+                          const isAuto = !!c;
+                          setFormData(prev => ({
+                            ...prev, 
+                            afiliarAutomaticamente: isAuto,
+                            beneficiarios: isAuto && prev.beneficiarios.length === 0 ? Array(5).fill({ nombre: "", nuip: "" }) : prev.beneficiarios,
+                            mascotas: isAuto && prev.mascotas.length === 0 ? Array(2).fill({ nombre: "", tipo: "", raza: "" }) : prev.mascotas
+                          }));
+                        }}
                       />
-                      <div className="space-y-1 leading-none">
+                      <div className="space-y-1 leading-none w-full">
                         <label htmlFor="afiliarAuto" className="text-sm font-bold text-primary cursor-pointer">
                           Afiliar automáticamente a la fundación
                         </label>
                         <p className="text-xs text-muted-foreground">
                           Si activas esto, el trabajador también obtendrá beneficios institucionales. La afiliación se marcará como indefinida mientras el empleado siga activo en la institución.
                         </p>
+
+                        {formData.afiliarAutomaticamente && (
+                          <div className="mt-4 space-y-6 bg-background/50 p-4 rounded-xl border border-primary/10">
+                            {/* Beneficiarios */}
+                            <div className="space-y-3">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
+                                <Users className="h-4 w-4" /> 
+                                Beneficiarios
+                              </p>
+                              {formData.beneficiarios?.map((ben, idx) => (
+                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-card p-3 rounded-lg border shadow-sm">
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</label>
+                                    <Input
+                                      value={ben.nombre}
+                                      onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
+                                      className="h-8 text-xs"
+                                      placeholder={`Beneficiario ${idx + 1}`}
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Documento (NUIP)</label>
+                                    <Input
+                                      value={ben.nuip}
+                                      onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
+                                      className="h-8 text-xs"
+                                      placeholder="Opcional"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Mascotas */}
+                            <div className="space-y-3">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
+                                <PawPrint className="h-4 w-4" /> 
+                                Mascotas (Plan Integra)
+                              </p>
+                              {formData.mascotas?.map((mascota, idx) => (
+                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-card p-3 rounded-lg border shadow-sm">
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
+                                    <Input
+                                      value={mascota.nombre}
+                                      onChange={(e) => handleMascotaChange(idx, "nombre", e.target.value)}
+                                      className="h-8 text-xs"
+                                      placeholder={`Mascota ${idx + 1}`}
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Animal</label>
+                                    <Input
+                                      value={mascota.tipo}
+                                      onChange={(e) => handleMascotaChange(idx, "tipo", e.target.value)}
+                                      className="h-8 text-xs"
+                                      placeholder="Ej: Perro, Gato"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Raza (Opcional)</label>
+                                    <Input
+                                      value={mascota.raza}
+                                      onChange={(e) => handleMascotaChange(idx, "raza", e.target.value)}
+                                      className="h-8 text-xs"
+                                      placeholder="Raza"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

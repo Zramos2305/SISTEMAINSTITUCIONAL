@@ -9,7 +9,8 @@ export async function crearUsuarioInstitucional(data) {
       correo, password, nombre, rol, cargo, creadoPorUid,
       foto, documento, telefono, direccion, rh, tipoPersonal,
       fechaIngreso, estado, modalidadLaboral, diasTeletrabajo,
-      afiliarAutomaticamente, codigoInstitucional
+      afiliarAutomaticamente, codigoInstitucional,
+      beneficiarios, mascotas
     } = data;
 
     // 1. Crear usuario en Firebase Auth
@@ -82,7 +83,8 @@ export async function crearUsuarioInstitucional(data) {
         codigo: codigoInstitucional,
         fechaCreacion: FieldValue.serverTimestamp(),
         creadoPor: creadoPorUid,
-        beneficiarios: [],
+        beneficiarios: beneficiarios || [],
+        mascotas: mascotas || [],
         membresias: [
           {
             tipo: "institucional",
