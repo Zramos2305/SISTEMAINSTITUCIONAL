@@ -20,6 +20,7 @@ import {
   QrCode,
   Globe,
   Users,
+  PawPrint,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -232,6 +233,22 @@ function VerificarContent() {
                       {documento.beneficiarios.map((ben, idx) => (
                         <p key={idx} className="text-xs font-medium pl-5 relative before:content-['•'] before:absolute before:left-0 before:text-primary">
                           {ben.nombre}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mascotas */}
+                {documento.tipo === "afiliado" && documento.mascotas?.length > 0 && (
+                  <div className="bg-muted/30 p-4 rounded-xl border border-muted-foreground/10 space-y-2">
+                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center gap-2">
+                      <PawPrint className="h-3 w-3" /> Mascotas (Plan Integra Dog-Cat)
+                    </p>
+                    <div className="grid grid-cols-1 gap-1">
+                      {documento.mascotas.map((mascota, idx) => (
+                        <p key={idx} className="text-xs font-medium pl-5 relative before:content-['•'] before:absolute before:left-0 before:text-primary">
+                          {mascota.nombre} <span className="text-[10px] text-muted-foreground font-normal">({mascota.tipo}{mascota.raza ? ` - ${mascota.raza}` : ''})</span>
                         </p>
                       ))}
                     </div>

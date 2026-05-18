@@ -101,7 +101,8 @@ import {
   Phone,
   Mail,
   Globe,
-  Map
+  Map,
+  PawPrint
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -1689,6 +1690,24 @@ function DashboardContent() {
                 </div>
               )}
 
+              {/* Mascotas */}
+              {infoDoc.tipo === "afiliado" && Array.isArray(infoDoc.mascotas) && infoDoc.mascotas.length > 0 && (
+                <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Mascotas (Plan Integra Dog-Cat)</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {infoDoc.mascotas.map((mascota, i) => (
+                      <div key={i} className="flex justify-between items-center p-2 bg-background rounded border border-dashed">
+                        <div className="flex items-center gap-2">
+                          <PawPrint className="h-3 w-3 text-primary" />
+                          <span className="text-xs font-semibold uppercase">{mascota.nombre}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">({mascota.tipo}{mascota.raza ? ` - ${mascota.raza}` : ''})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Emisión (Oficina y Dependencia) */}
               {(infoDoc.oficina || infoDoc.dependencia) && (
                 <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
@@ -1979,6 +1998,19 @@ function DashboardContent() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     {currentCertData.persona.beneficiarios.map((b, i) => (
                       <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {currentCertData.persona.mascotas?.length > 0 && (
+                <div style={{ marginTop: "15px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>MASCOTAS (PLAN INTEGRA DOG-CAT):</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {currentCertData.persona.mascotas.map((m, i) => (
+                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>
+                        • {m.nombre} ({m.tipo}{m.raza ? ` - ${m.raza}` : ''})
+                      </p>
                     ))}
                   </div>
                 </div>

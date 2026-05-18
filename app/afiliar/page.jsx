@@ -100,6 +100,7 @@ export default function AfiliarPage() {
     pais: "Colombia",
     ciudad: "",
     beneficiarios: [],
+    mascotas: [],
     seleccionMembresias: {
       educativa: true,
       integral: false,
@@ -178,6 +179,30 @@ export default function AfiliarPage() {
     setFormData(prev => ({
       ...prev,
       beneficiarios: prev.beneficiarios.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddMascota = () => {
+    if (formData.mascotas?.length >= 2) {
+      toast.error("Máximo 2 mascotas permitidas");
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      mascotas: [...(prev.mascotas || []), { nombre: "", tipo: "", raza: "" }]
+    }));
+  };
+
+  const handleMascotaChange = (index, field, value) => {
+    const newMascotas = [...(formData.mascotas || [])];
+    newMascotas[index][field] = value;
+    setFormData(prev => ({ ...prev, mascotas: newMascotas }));
+  };
+
+  const handleRemoveMascota = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      mascotas: (prev.mascotas || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -295,6 +320,7 @@ export default function AfiliarPage() {
         oficina: formData.oficina,
         dependencia: formData.dependencia,
         beneficiarios: formData.seleccionMembresias.integral ? formData.beneficiarios : [],
+        mascotas: formData.seleccionMembresias.integral ? (formData.mascotas || []) : [],
         estado: "activo",
         membresias: nuevasMembresias,
         fechaUltimaActualizacion: new Date().toISOString()
@@ -348,6 +374,7 @@ export default function AfiliarPage() {
       pais: "Colombia",
       ciudad: "",
       beneficiarios: [],
+      mascotas: [],
       tipoAfiliacion: "educativa",
     });
     setFotoPreview(null);
@@ -791,6 +818,68 @@ export default function AfiliarPage() {
                                 onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
                                 className="h-8 text-xs font-mono"
                                 placeholder="Documento"
+                                disabled={isSaving}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Field>
+                )}
+
+                {formData.seleccionMembresias.integral && (
+                  <Field>
+                    <FieldLabel className="flex justify-between items-center">
+                      Mascotas (Membresía Integral - Máx 2)
+                      <Button type="button" variant="outline" size="xs" onClick={handleAddMascota} className="h-7 text-[10px]" disabled={isSaving}>
+                        <Plus className="h-3 w-3 mr-1" /> Agregar
+                      </Button>
+                    </FieldLabel>
+                    <div className="space-y-3">
+                      {(!formData.mascotas || formData.mascotas.length === 0) && (
+                        <p className="text-xs text-muted-foreground italic bg-muted/50 p-2 rounded-lg text-center">No hay mascotas agregadas</p>
+                      )}
+                      {formData.mascotas?.map((mascota, idx) => (
+                        <div key={idx} className="bg-muted/30 p-3 rounded-lg border space-y-2 relative">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 absolute top-1 right-1 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveMascota(idx)}
+                            disabled={isSaving}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
+                              <Input
+                                value={mascota.nombre}
+                                onChange={(e) => handleMascotaChange(idx, "nombre", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Nombre mascota"
+                                disabled={isSaving}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Animal</label>
+                              <Input
+                                value={mascota.tipo}
+                                onChange={(e) => handleMascotaChange(idx, "tipo", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Ej: Perro, Gato"
+                                disabled={isSaving}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground">Raza (Opcional)</label>
+                              <Input
+                                value={mascota.raza}
+                                onChange={(e) => handleMascotaChange(idx, "raza", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Raza"
                                 disabled={isSaving}
                               />
                             </div>
@@ -1356,6 +1445,19 @@ export default function AfiliarPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       {currentCertData.persona.beneficiarios.map((b, i) => (
                         <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentCertData.persona.mascotas?.length > 0 && (
+                  <div style={{ marginTop: "15px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
+                    <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>MASCOTAS (PLAN INTEGRA DOG-CAT):</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      {currentCertData.persona.mascotas.map((m, i) => (
+                        <p key={i} style={{ fontSize: "11px", margin: 0 }}>
+                          • {m.nombre} ({m.tipo}{m.raza ? ` - ${m.raza}` : ''})
+                        </p>
                       ))}
                     </div>
                   </div>
