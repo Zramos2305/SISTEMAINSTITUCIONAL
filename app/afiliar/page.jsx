@@ -319,8 +319,8 @@ export default function AfiliarPage() {
         ciudad: formData.ciudad,
         oficina: formData.oficina,
         dependencia: formData.dependencia,
-        beneficiarios: formData.seleccionMembresias.integral ? formData.beneficiarios : [],
-        mascotas: formData.seleccionMembresias.integral ? (formData.mascotas || []) : [],
+        beneficiarios: formData.seleccionMembresias.integral ? formData.beneficiarios.filter(b => b.nombre.trim() !== "") : [],
+        mascotas: formData.seleccionMembresias.integral ? (formData.mascotas || []).filter(m => m.nombre.trim() !== "") : [],
         estado: "activo",
         membresias: nuevasMembresias,
         fechaUltimaActualizacion: new Date().toISOString()
@@ -570,14 +570,17 @@ export default function AfiliarPage() {
                   <Field>
                     <FieldLabel>Grupo Sanguíneo RH</FieldLabel>
                     <div className="relative">
-                      <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
-                      <Input
-                        placeholder="Ej: O+"
-                        className="pl-10 uppercase"
-                        value={formData.rh}
-                        onChange={(e) => handleInputChange("rh", e.target.value.toUpperCase())}
-                        disabled={isSaving}
-                      />
+                      <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive z-10" />
+                      <Select value={formData.rh} onValueChange={(v) => handleInputChange("rh", v)} disabled={isSaving}>
+                        <SelectTrigger className="pl-10">
+                          <SelectValue placeholder="Seleccione RH" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"].map(rh => (
+                            <SelectItem key={rh} value={rh}>{rh}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </Field>
                 </div>
@@ -687,10 +690,19 @@ export default function AfiliarPage() {
                       <Checkbox
                         id="int"
                         checked={formData.seleccionMembresias.integral}
-                        onCheckedChange={(v) => setFormData(p => ({
-                          ...p,
-                          seleccionMembresias: { ...p.seleccionMembresias, integral: !!v }
-                        }))}
+                        onCheckedChange={(v) => {
+                          const isIntegral = !!v;
+                          setFormData(p => ({
+                            ...p,
+                            seleccionMembresias: { ...p.seleccionMembresias, integral: isIntegral },
+                            beneficiarios: isIntegral && p.beneficiarios.length === 0
+                              ? Array(5).fill({ nombre: "", nuip: "" })
+                              : p.beneficiarios,
+                            mascotas: isIntegral && (!p.mascotas || p.mascotas.length === 0)
+                              ? Array(2).fill({ nombre: "", tipo: "", raza: "" })
+                              : p.mascotas,
+                          }));
+                        }}
                       />
                       <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
                     </div>
