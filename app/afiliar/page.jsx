@@ -144,7 +144,7 @@ export default function AfiliarPage() {
         const numbersOnly = value.replace(/\D/g, "");
         finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
       }
-      
+
       const newData = { ...prev, [field]: finalValue };
       if (field === "oficina") {
         newData.dependencia = "";
@@ -1452,7 +1452,7 @@ export default function AfiliarPage() {
 
                 {currentCertData.persona.mascotas?.length > 0 && (
                   <div style={{ marginTop: "15px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
-                    <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>MASCOTAS (PLAN INTEGRA DOG-CAT):</p>
+                    <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>MASCOTAS (PLAN INTEGRA):</p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       {currentCertData.persona.mascotas.map((m, i) => (
                         <p key={i} style={{ fontSize: "11px", margin: 0 }}>
@@ -1468,7 +1468,8 @@ export default function AfiliarPage() {
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
                     <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
                     <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Coordinación Comercial</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Firma electrónica</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Verificable con el código QR</p>
                   </div>
                 </div>
               </div>

@@ -160,8 +160,8 @@ function VerificarContent() {
                 </div>
                 <Badge
                   className={`text-base px-6 py-1.5 uppercase font-black ${estado === 'valid'
-                      ? (documento.esPersonalInstitucional ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success'))
-                      : 'bg-destructive hover:bg-destructive text-white'
+                    ? (documento.esPersonalInstitucional ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : (documento.tipo === 'afiliado' ? 'bg-info hover:bg-info' : 'bg-success hover:bg-success'))
+                    : 'bg-destructive hover:bg-destructive text-white'
                     }`}
                 >
                   {estado === 'valid'
@@ -243,7 +243,7 @@ function VerificarContent() {
                 {documento.tipo === "afiliado" && documento.mascotas?.length > 0 && (
                   <div className="bg-muted/30 p-4 rounded-xl border border-muted-foreground/10 space-y-2">
                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center gap-2">
-                      <PawPrint className="h-3 w-3" /> Mascotas (Plan Integra Dog-Cat)
+                      <PawPrint className="h-3 w-3" /> Mascotas (Plan Integra)
                     </p>
                     <div className="grid grid-cols-1 gap-1">
                       {documento.mascotas.map((mascota, idx) => (
