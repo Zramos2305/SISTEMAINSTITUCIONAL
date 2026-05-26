@@ -375,11 +375,15 @@ export default function AfiliarPage() {
       ciudad: "",
       beneficiarios: [],
       mascotas: [],
-      tipoAfiliacion: "educativa",
+      seleccionMembresias: {
+        educativa: true,
+        integral: false,
+      }
     });
     setFotoPreview(null);
     setIsSuccess(false);
   };
+
 
   const descargarCarnet = async () => {
     if (!exportRef.current) return;
@@ -744,45 +748,8 @@ export default function AfiliarPage() {
                       <SelectValue placeholder="Seleccione la dependencia" />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.oficina === "Sede Principal" ? (
-                        <>
-                          <SelectItem value="Representante Legal">Representante Legal</SelectItem>
-                          <SelectItem value="Dirección ejecutiva">Dirección Ejecutiva</SelectItem>
-                          <SelectItem value="Dirección administrativa">Dirección Administrativa</SelectItem>
-                          <SelectItem value="Revisaría fiscal">Revisaría Fiscal</SelectItem>
-                          <SelectItem value="Secretaría general">Secretaría General</SelectItem>
-                          <SelectItem value="Subdireccion de áreas">Subdireccion de Áreas</SelectItem>
-                          <SelectItem value="Subdireccion de turismo, las artes,las culturas y los saberes">Subdireccion de Turismo, las Artes, las Culturas y los Saberes</SelectItem>
-                          <SelectItem value="Subdireccion de extensión y cosmovision etnoeducativa">Subdireccion de Extensión y Cosmovision Etnoeducativa</SelectItem>
-                          <SelectItem value="Subdireccion de recreación, deporte,salud y ambiente saludable">Subdireccion de Recreación, Deporte, Salud y Ambiente Saludable</SelectItem>
-                          <SelectItem value="Subdireccion de bienestar social, inclusión y equidad">Subdireccion de Bienestar Social, Inclusión y Equidad</SelectItem>
-                          <SelectItem value="Coordinación jurídica">Coordinación Jurídica</SelectItem>
-                          <SelectItem value="Coordinación comercial">Coordinación Comercial</SelectItem>
-                          <SelectItem value="Coordinación de plantación y calidad">Coordinación de Planeación y Calidad</SelectItem>
-                          <SelectItem value="Coordinación de proyectos e internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
-                          <SelectItem value="Coordinación de operaciones financieras">Coordinación de Operaciones Financieras</SelectItem>
-                          <SelectItem value="Coordinación del talento humano">Coordinación del Talento Humano</SelectItem>
-                          <SelectItem value="Coordinación de comunicaciones y canales digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
-                          <SelectItem value="Área de operaciones logísticas">Área de Operaciones Logísticas</SelectItem>
-                          <SelectItem value="Área de tesorería">Área de Tesorería</SelectItem>
-                          <SelectItem value="Área de contabilidad">Área de Contabilidad</SelectItem>
-                          <SelectItem value="Área de práctica y pasantías">Área de Prácticas y Pasantías</SelectItem>
-                        </>
-                      ) : formData.oficina ? (
-                        <>
-                          <SelectItem value="Dirección Regional">Dirección Regional</SelectItem>
-                          <SelectItem value="Coordinación Jurídica">Coordinación Jurídica</SelectItem>
-                          <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
-                          <SelectItem value="Coordinación de Planeación y Calidad">Coordinación de Planeación y Calidad</SelectItem>
-                          <SelectItem value="Coordinación de Proyectos e Internacionalización">Coordinación de Proyectos e Internacionalización</SelectItem>
-                          <SelectItem value="Coordinación de Operaciones Financieras">Coordinación de Operaciones Financieras</SelectItem>
-                          <SelectItem value="Coordinación del Talento Humano">Coordinación del Talento Humano</SelectItem>
-                          <SelectItem value="Coordinación de Comunicaciones y Canales Digitales">Coordinación de Comunicaciones y Canales Digitales</SelectItem>
-                          <SelectItem value="Área de Operaciones Logísticas">Área de Operaciones Logísticas</SelectItem>
-                          <SelectItem value="Área de Tesorería">Área de Tesorería</SelectItem>
-                          <SelectItem value="Área de Contabilidad">Área de Contabilidad</SelectItem>
-                          <SelectItem value="Área de Práctica y Pasantías">Área de Práctica y Pasantías</SelectItem>
-                        </>
+                      {formData.oficina ? (
+                        <SelectItem value="Coordinación Comercial">Coordinación Comercial</SelectItem>
                       ) : null}
                     </SelectContent>
                   </Select>
