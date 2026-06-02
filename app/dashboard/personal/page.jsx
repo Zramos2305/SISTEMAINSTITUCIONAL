@@ -823,11 +823,11 @@ function PersonalContent() {
 
                                 {formData.horarioModalidad[dia].modalidad !== "libre" && (
                                   <div className="flex gap-2 pt-2">
-                                    <div className="flex-1 bg-muted/20 p-2 rounded-md border flex flex-col items-center justify-center">
-                                      <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Entrada</label>
+                                    <div className="flex-1 bg-muted/20 p-1.5 rounded-md border flex flex-col items-center justify-center overflow-hidden">
+                                      <label className="text-[9px] font-bold text-muted-foreground uppercase mb-0.5">Entrada</label>
                                       <Input
                                         type="time"
-                                        className="h-7 text-xs text-center border-none bg-transparent shadow-none focus-visible:ring-0 p-0"
+                                        className="h-6 w-full text-[11px] text-center border-none bg-transparent shadow-none focus-visible:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0"
                                         value={formData.horarioModalidad[dia].entrada}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -838,11 +838,11 @@ function PersonalContent() {
                                         })}
                                       />
                                     </div>
-                                    <div className="flex-1 bg-muted/20 p-2 rounded-md border flex flex-col items-center justify-center">
-                                      <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Salida</label>
+                                    <div className="flex-1 bg-muted/20 p-1.5 rounded-md border flex flex-col items-center justify-center overflow-hidden">
+                                      <label className="text-[9px] font-bold text-muted-foreground uppercase mb-0.5">Salida</label>
                                       <Input
                                         type="time"
-                                        className="h-7 text-xs text-center border-none bg-transparent shadow-none focus-visible:ring-0 p-0"
+                                        className="h-6 w-full text-[11px] text-center border-none bg-transparent shadow-none focus-visible:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0"
                                         value={formData.horarioModalidad[dia].salida}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -1095,11 +1095,11 @@ function PersonalContent() {
 
                   {horarioEdit[dia]?.modalidad !== "libre" && (
                     <div className="flex gap-2 mt-2">
-                      <div className="flex-1 bg-card p-2 rounded-lg border shadow-sm flex flex-col items-center">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Entrada</label>
+                      <div className="flex-1 bg-card p-1.5 rounded-lg border shadow-sm flex flex-col items-center overflow-hidden">
+                        <label className="text-[9px] font-bold uppercase text-muted-foreground mb-0.5">Entrada</label>
                         <Input
                           type="time"
-                          className="h-8 text-xs text-center border-none shadow-none focus-visible:ring-0 p-0"
+                          className="h-6 w-full text-[11px] text-center border-none shadow-none focus-visible:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0"
                           value={horarioEdit[dia]?.entrada}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
@@ -1107,11 +1107,11 @@ function PersonalContent() {
                           })}
                         />
                       </div>
-                      <div className="flex-1 bg-card p-2 rounded-lg border shadow-sm flex flex-col items-center">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Salida</label>
+                      <div className="flex-1 bg-card p-1.5 rounded-lg border shadow-sm flex flex-col items-center overflow-hidden">
+                        <label className="text-[9px] font-bold uppercase text-muted-foreground mb-0.5">Salida</label>
                         <Input
                           type="time"
-                          className="h-8 text-xs text-center border-none shadow-none focus-visible:ring-0 p-0"
+                          className="h-6 w-full text-[11px] text-center border-none shadow-none focus-visible:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0"
                           value={horarioEdit[dia]?.salida}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
