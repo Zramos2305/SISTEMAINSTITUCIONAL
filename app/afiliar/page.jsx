@@ -419,7 +419,7 @@ export default function AfiliarPage() {
       return;
     }
 
-    setCurrentCertData({ persona: formData, membresia });
+    setCurrentCertData({ persona: formData, membresia, fechaImpresion: new Date().toLocaleDateString("es-CO") });
     setTipoCertificadoActual(tipoMembresia);
     setIsDownloadingCert(tipoMembresia);
 
@@ -700,10 +700,10 @@ export default function AfiliarPage() {
                             ...p,
                             seleccionMembresias: { ...p.seleccionMembresias, integral: isIntegral },
                             beneficiarios: isIntegral && p.beneficiarios.length === 0
-                              ? Array(5).fill({ nombre: "", nuip: "" })
+                              ? Array.from({ length: 5 }, () => ({ nombre: "", nuip: "" }))
                               : p.beneficiarios,
                             mascotas: isIntegral && (!p.mascotas || p.mascotas.length === 0)
-                              ? Array(2).fill({ nombre: "", tipo: "", raza: "" })
+                              ? Array.from({ length: 2 }, () => ({ nombre: "", tipo: "", raza: "" }))
                               : p.mascotas,
                           }));
                         }}
@@ -968,7 +968,7 @@ export default function AfiliarPage() {
                 </div>
 
                 {/* Información Personal */}
-                <div className="mt-4 px-10 flex flex-col items-center text-center">
+                <div className="mt-4 px-10 flex flex-col items-center text-center mb-24">
                   <h3 className="text-xl font-black leading-tight uppercase" style={{ color: "#1e293b", margin: 0 }}>
                     {formData.nombre || "NOMBRE COMPLETO"}
                   </h3>
@@ -1244,7 +1244,7 @@ export default function AfiliarPage() {
             </div>
 
             {/* Información Personal */}
-            <div style={{ marginTop: '16px', paddingLeft: '40px', paddingRight: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ marginTop: '16px', paddingLeft: '40px', paddingRight: '40px', paddingBottom: '90px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1.2, textTransform: 'uppercase', color: '#1e293b', margin: 0, width: '100%' }}>
                 {formData.nombre || "NOMBRE COMPLETO"}
               </h3>
@@ -1367,7 +1367,7 @@ export default function AfiliarPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {currentCertData.fechaImpresion || new Date().toLocaleDateString("es-CO")}</p>
                     <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
                     <p style={{ margin: 0, fontSize: "12px" }}>Firma electrónica</p>
                     <p style={{ margin: 0, fontSize: "12px" }}>Verificable con el código QR</p>
@@ -1423,7 +1423,7 @@ export default function AfiliarPage() {
                     <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>BENEFICIARIOS:</p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       {currentCertData.persona.beneficiarios.map((b, i) => (
-                        <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre}</p>
+                        <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre} {b.nuip ? `(NIUP: ${b.nuip})` : ''}</p>
                       ))}
                     </div>
                   </div>
@@ -1445,7 +1445,7 @@ export default function AfiliarPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {new Date().toLocaleDateString("es-CO")}</p>
+                    <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {currentCertData.fechaImpresion || new Date().toLocaleDateString("es-CO")}</p>
                     <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
                     <p style={{ margin: 0, fontSize: "12px" }}>Firma electrónica</p>
                     <p style={{ margin: 0, fontSize: "12px" }}>Verificable con el código QR</p>

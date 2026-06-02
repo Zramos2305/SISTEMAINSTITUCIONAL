@@ -37,7 +37,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Users, UserPlus, RefreshCcw, LogOut, ArrowLeft, Mail, Lock, User, Briefcase, CalendarDays,
-  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint
+  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint, Pencil
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -64,16 +64,19 @@ function PersonalContent() {
   const { user, userData, logout } = useAuth();
   const esSuperAdmin = userData?.rol === "superadmin";
   const esRRHH = userData?.rol === "recursos_humanos";
-  
+
   const [usuarios, setUsuarios] = useState([]);
   const { empleados: personalList, isLoading: cargandoPersonal, recargar: recargarPersonal, actualizarModalidad } = useEmpleados();
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
-  
+
   // Vistas: 'table', 'create', 'success'
   const [view, setView] = useState("table");
-  
-  // Estados para Creación
+
+  // Estados para Creación y Edición
   const [formData, setFormData] = useState({
+    nombres: "",
+    primerApellido: "",
+    segundoApellido: "",
     nombre: "",
     documento: "",
     correo: "",
@@ -96,9 +99,12 @@ function PersonalContent() {
   });
   const [fotoPreview, setFotoPreview] = useState(null);
   const [creando, setCreando] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [personalReciente, setPersonalReciente] = useState(null);
   const [qrPersonal, setQrPersonal] = useState(null);
+  const [fechaCertificado, setFechaCertificado] = useState("");
 
   // Estados Table
   const [searchQuery, setSearchQuery] = useState("");
@@ -193,7 +199,7 @@ function PersonalContent() {
       toast.error("Faltan campos obligatorios");
       return;
     }
-    
+
     if (formData.password.length < 6) {
       toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
@@ -202,7 +208,7 @@ function PersonalContent() {
     setCreando(true);
     try {
       const codigoG = "FIC-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-      
+
       const beneficiariosValidos = formData.afiliarAutomaticamente ? (formData.beneficiarios || []).filter(b => b.nombre.trim() !== "") : [];
       const mascotasValidas = formData.afiliarAutomaticamente ? (formData.mascotas || []).filter(m => m.nombre.trim() !== "") : [];
 
@@ -224,13 +230,13 @@ function PersonalContent() {
           documentoId: result.personalId || formData.correo,
           detalles: `Se registró personal ${formData.nombre} (${formData.tipoPersonal}).`
         });
-        
+
         setPersonalReciente({
           ...payload,
           id: result.personalId,
           uid: result.uid
         });
-        
+
         toast.success("Personal registrado correctamente");
         setView("success");
         cargarDatos();
@@ -249,11 +255,11 @@ function PersonalContent() {
     try {
       const nuevoActivo = !currentStatus;
       await updateDoc(doc(db, "usuarios", uId), { activo: nuevoActivo });
-      
+
       const usuarioObj = usuarios.find(u => u.id === uId);
       if (usuarioObj?.empleadoId) {
         await updateDoc(doc(db, "empleados", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
-        
+
         // Sincronizar estado con afiliación institucional
         const q = query(collection(db, "afiliados"), where("personalId", "==", usuarioObj.empleadoId));
         const snap = await getDocs(q);
@@ -271,6 +277,131 @@ function PersonalContent() {
     }
   };
 
+  const abrirEdicion = (usuarioObj, personalObj) => {
+    const target = personalObj && !personalObj.isMock ? personalObj : usuarioObj;
+    
+    const parts = (target.nombre || "").trim().split(/\s+/);
+    let n = "", p1 = "", p2 = "";
+    if (parts.length >= 3) {
+      p2 = parts.pop();
+      p1 = parts.pop();
+      n = parts.join(" ");
+    } else if (parts.length === 2) {
+      p1 = parts[1];
+      n = parts[0];
+    } else {
+      n = parts[0] || "";
+    }
+
+    setFormData({
+      nombres: n,
+      primerApellido: p1,
+      segundoApellido: p2,
+      nombre: target.nombre || "",
+      documento: target.documento || "",
+      correo: target.correo || "",
+      telefono: target.telefono || "",
+      direccion: target.direccion || "",
+      rh: target.rh || "",
+      cargo: target.cargo || "",
+      tipoPersonal: target.tipoPersonal || "Empleado",
+      fechaIngreso: target.fechaIngreso || new Date().toISOString().split("T")[0],
+      estado: target.estado || "activo",
+      rol: usuarioObj.rol || "empleado",
+      password: "",
+      modalidadLaboral: target.modalidadLaboral || "Presencial",
+      diasTeletrabajo: target.diasTeletrabajo || "",
+      afiliarAutomaticamente: false,
+      beneficiarios: target.beneficiarios || [],
+      mascotas: target.mascotas || [],
+      foto: target.foto || null,
+      horarioModalidad: target.horarioModalidad || HORARIO_DEFAULT
+    });
+    setFotoPreview(target.foto || null);
+    setIsEditing(true);
+    setEditId({ uId: usuarioObj.id, empleadoId: target.id || null });
+    setView("create");
+  };
+
+  const handleNameChange = (field, value) => {
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      next.nombre = `${next.nombres} ${next.primerApellido} ${next.segundoApellido}`.trim().replace(/\s+/g, ' ');
+      
+      if (!isEditing && next.nombres && next.segundoApellido) {
+        const inicial = next.nombres.trim().charAt(0).toLowerCase();
+        const apellido2 = next.segundoApellido.trim().toLowerCase().replace(/\s+/g, '');
+        next.correo = `${inicial}${apellido2}@islacascajal.org`;
+      }
+      return next;
+    });
+  };
+
+  const handleDocumentChange = (e) => {
+    const numbersOnly = e.target.value.replace(/\D/g, "");
+    const finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    setFormData(prev => ({
+      ...prev,
+      documento: finalValue,
+      password: isEditing ? prev.password : numbersOnly
+    }));
+  };
+
+  const handleEditarUsuario = async (e) => {
+    e.preventDefault();
+    setCreando(true);
+    try {
+      if (editId.uId) {
+        await updateDoc(doc(db, "usuarios", editId.uId), {
+          nombre: formData.nombre,
+          correo: formData.correo,
+          rol: formData.rol,
+        });
+      }
+      if (editId.empleadoId) {
+        await updateDoc(doc(db, "empleados", editId.empleadoId), {
+          nombre: formData.nombre,
+          documento: formData.documento,
+          correo: formData.correo,
+          telefono: formData.telefono,
+          direccion: formData.direccion,
+          rh: formData.rh,
+          cargo: formData.cargo,
+          tipoPersonal: formData.tipoPersonal,
+          fechaIngreso: formData.fechaIngreso,
+          modalidadLaboral: formData.modalidadLaboral,
+          foto: formData.foto,
+        });
+      }
+      toast.success("Personal actualizado correctamente");
+      cargarDatos();
+      setView("table");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar personal");
+    } finally {
+      setCreando(false);
+      setIsEditing(false);
+      setEditId(null);
+    }
+  };
+
+  const handleEliminarPersonal = async (uId, empleadoId) => {
+    if (!window.confirm("¿Estás seguro de que deseas ELIMINAR este personal permanentemente? Esta acción no se puede deshacer.")) return;
+    try {
+      const result = await eliminarUsuarioInstitucional(uId, empleadoId);
+      if (result.success) {
+        toast.success("Personal eliminado correctamente");
+        cargarDatos();
+      } else {
+        toast.error(result.error || "Error al eliminar");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al eliminar personal");
+    }
+  };
+
   // ==========================================
   // GENERACIÓN DE DOCUMENTOS (SILENCIOSA)
   // ==========================================
@@ -281,10 +412,10 @@ function PersonalContent() {
       const VERIFICACION_BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/verificar?doc=` : 'https://ficong.com/verificar?doc=';
       const qrUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigoInstitucional}`);
       setQrPersonal(qrUrl);
-      setPersonalReciente(persona); 
-      
-      await new Promise(resolve => setTimeout(resolve, 600)); 
-      
+      setPersonalReciente(persona);
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
       const element = document.getElementById("hidden-carnet-personal");
       if (!element) throw new Error("Template no encontrado");
 
@@ -312,7 +443,7 @@ function PersonalContent() {
     try {
       setPersonalReciente(persona);
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       const element = document.getElementById("hidden-cert-personal");
       if (!element) throw new Error("Template no encontrado");
 
@@ -398,7 +529,7 @@ function PersonalContent() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
-        
+
         {/* ================================================== */}
         {/* VISTA: TABLA DASHBOARD PERSONAL */}
         {/* ================================================== */}
@@ -414,7 +545,7 @@ function PersonalContent() {
                   Administra accesos, roles, cargos e información institucional de los colaboradores.
                 </p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
                 <div className="relative w-full sm:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -447,8 +578,18 @@ function PersonalContent() {
                     </TableHeader>
                     <TableBody>
                       {usuariosFiltrados.map((u) => {
-                        const personal = u.empleadoId ? personalList.find(p => p.id === u.empleadoId) : null;
-                        
+                        const personal = u.empleadoId ? personalList.find(p => p.id === u.empleadoId) : {
+                          id: null,
+                          nombre: u.nombre,
+                          documento: "No Registrado",
+                          cargo: "Administrador / RRHH",
+                          tipoPersonal: u.rol,
+                          codigoInstitucional: u.uid?.substring(0, 8),
+                          fechaIngreso: new Date().toISOString().split("T")[0],
+                          horarioModalidad: HORARIO_DEFAULT,
+                          isMock: true
+                        };
+
                         return (
                           <TableRow key={u.id} className={u.activo === false ? "opacity-60 bg-muted/20" : ""}>
                             <TableCell>
@@ -471,8 +612,8 @@ function PersonalContent() {
                               <div className="flex flex-col gap-1 items-start">
                                 <Badge variant="outline" className={
                                   u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                                  u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
-                                  'bg-muted'
+                                    u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
+                                      'bg-muted'
                                 }>
                                   {u.rol}
                                 </Badge>
@@ -484,25 +625,28 @@ function PersonalContent() {
                               </div>
                             </TableCell>
                             <TableCell>
-                               <div className="flex flex-col gap-2 items-start">
+                              <div className="flex flex-col gap-2 items-start">
                                 {u.activo !== false ? (
                                   <Badge className="bg-success text-white border-none text-[10px] uppercase">Activo</Badge>
                                 ) : (
                                   <Badge variant="destructive" className="text-[10px] uppercase">Bloqueado</Badge>
                                 )}
-                                {personal && (
+                                {personal && !personal.isMock && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    {personal.modalidadLaboral === "Teletrabajo" ? <Monitor className="w-3 h-3" /> : <Building className="w-3 h-3"/>}
+                                    {personal.modalidadLaboral === "Teletrabajo" ? <Monitor className="w-3 h-3" /> : <Building className="w-3 h-3" />}
                                     {personal.modalidadLaboral}
                                   </div>
                                 )}
-                               </div>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
                                 {personal && (
                                   <>
-                                     <Button variant="ghost" size="icon" onClick={() => { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); }} title="Gestionar Horario">
+                                    <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Personal" className="text-warning hover:bg-warning/10">
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => { if(!personal.isMock) { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); } else { toast.info("Super Admins no tienen gestión de horario."); } }} title="Gestionar Horario">
                                       <CalendarDays className="h-4 w-4 text-primary" />
                                     </Button>
                                     <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
@@ -513,15 +657,9 @@ function PersonalContent() {
                                     </Button>
                                   </>
                                 )}
-                                {u.activo !== false ? (
-                                  <Button variant="ghost" size="icon" onClick={() => handleToggleEstado(u.id, u.activo)} title="Bloquear Acceso" className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-600">
-                                    <PowerOff className="h-4 w-4" />
-                                  </Button>
-                                ) : (
-                                  <Button variant="ghost" size="icon" onClick={() => handleToggleEstado(u.id, u.activo)} title="Reactivar Acceso" className="text-success hover:bg-success/10 hover:text-success">
-                                    <Power className="h-4 w-4" />
-                                  </Button>
-                                )}
+                                <Button variant="ghost" size="icon" onClick={() => handleEliminarPersonal(u.id, u.empleadoId)} title="Eliminar Personal" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -559,7 +697,7 @@ function PersonalContent() {
 
             <Card>
               <CardContent className="p-6">
-                <form onSubmit={handleCrearUsuario} className="space-y-8">
+                <form onSubmit={isEditing ? handleEditarUsuario : handleCrearUsuario} className="space-y-8">
                   {/* FOTO Y DATOS BÁSICOS */}
                   <div className="flex flex-col md:flex-row gap-8">
                     <div className="flex flex-col items-center gap-3 shrink-0">
@@ -576,28 +714,32 @@ function PersonalContent() {
 
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Nombre Completo *</label>
-                        <Input required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} placeholder="Ej. Juan Pérez" />
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Nombres *</label>
+                        <Input required value={formData.nombres} onChange={e => handleNameChange("nombres", e.target.value)} placeholder="Ej. Juan Carlos" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Primer Apellido *</label>
+                        <Input required value={formData.primerApellido} onChange={e => handleNameChange("primerApellido", e.target.value)} placeholder="Ej. Pérez" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Segundo Apellido *</label>
+                        <Input required value={formData.segundoApellido} onChange={e => handleNameChange("segundoApellido", e.target.value)} placeholder="Ej. Gómez" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NIUP) *</label>
-                        <Input required value={formData.documento} onChange={e => {
-                          const numbersOnly = e.target.value.replace(/\D/g, "");
-                          const finalValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                          setFormData({...formData, documento: finalValue});
-                        }} placeholder="1.234.567.890" />
+                        <Input required value={formData.documento} onChange={handleDocumentChange} placeholder="1.234.567.890" disabled={isEditing} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Teléfono</label>
-                        <Input value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="300 000 0000" />
+                        <Input value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value })} placeholder="300 000 0000" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Dirección</label>
-                        <Input value={formData.direccion} onChange={e => setFormData({...formData, direccion: e.target.value})} placeholder="Ej. Calle 1 # 2-3" />
+                        <Input value={formData.direccion} onChange={e => setFormData({ ...formData, direccion: e.target.value })} placeholder="Ej. Calle 1 # 2-3" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">RH</label>
-                        <Select value={formData.rh} onValueChange={v => setFormData({...formData, rh: v})}>
+                        <Select value={formData.rh} onValueChange={v => setFormData({ ...formData, rh: v })}>
                           <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="O+">O+</SelectItem><SelectItem value="O-">O-</SelectItem>
@@ -609,7 +751,7 @@ function PersonalContent() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
-                        <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({...formData, fechaIngreso: e.target.value})} />
+                        <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({ ...formData, fechaIngreso: e.target.value })} />
                       </div>
                     </div>
                   </div>
@@ -617,11 +759,11 @@ function PersonalContent() {
                   <div className="border-t pt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* INFORMACIÓN INSTITUCIONAL */}
                     <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Building className="w-4 h-4"/> Cargo y Funciones</h3>
+                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Building className="w-4 h-4" /> Cargo y Funciones</h3>
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Personal *</label>
-                          <Select value={formData.tipoPersonal} onValueChange={v => setFormData({...formData, tipoPersonal: v})}>
+                          <Select value={formData.tipoPersonal} onValueChange={v => setFormData({ ...formData, tipoPersonal: v })}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {TIPOS_PERSONAL.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -630,11 +772,11 @@ function PersonalContent() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Cargo Oficial *</label>
-                          <Input required value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} placeholder="Ej. Coordinador de Proyectos" />
+                          <Input required value={formData.cargo} onChange={e => setFormData({ ...formData, cargo: e.target.value })} placeholder="Ej. Coordinador de Proyectos" />
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Modalidad Laboral</label>
-                          <Select value={formData.modalidadLaboral} onValueChange={v => setFormData({...formData, modalidadLaboral: v})}>
+                          <Select value={formData.modalidadLaboral} onValueChange={v => setFormData({ ...formData, modalidadLaboral: v })}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Presencial">Presencial</SelectItem>
@@ -648,18 +790,18 @@ function PersonalContent() {
                       {/* HORARIO SEMANAL */}
                       <div className="space-y-4 md:col-span-2 mt-4 bg-muted/20 p-4 rounded-xl border border-dashed">
                         <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                          <CalendarDays className="w-4 h-4"/> Horario y Modalidad Semanal
+                          <CalendarDays className="w-4 h-4" /> Horario y Modalidad Semanal
                         </h3>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold">Configure la jornada y modalidad por cada día</p>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                           {DIAS_SEMANA.map((dia) => (
                             <div key={dia} className="bg-card p-3 rounded-lg border shadow-sm space-y-3">
                               <p className="text-xs font-black uppercase text-primary border-b pb-1">{dia}</p>
-                              <Select 
-                                value={formData.horarioModalidad[dia].modalidad} 
+                              <Select
+                                value={formData.horarioModalidad[dia].modalidad}
                                 onValueChange={(v) => setFormData({
-                                  ...formData, 
+                                  ...formData,
                                   horarioModalidad: {
                                     ...formData.horarioModalidad,
                                     [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
@@ -673,67 +815,69 @@ function PersonalContent() {
                                   <SelectItem value="libre">No Laboral</SelectItem>
                                 </SelectContent>
                               </Select>
-                              
-                              {formData.horarioModalidad[dia].modalidad !== "libre" && (
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="space-y-1">
-                                    <label className="text-[9px] font-bold text-muted-foreground uppercase">Entrada</label>
-                                    <Input 
-                                      type="time" 
-                                      className="h-7 text-[10px] px-1"
-                                      value={formData.horarioModalidad[dia].entrada}
-                                      onChange={(e) => setFormData({
-                                        ...formData,
-                                        horarioModalidad: {
-                                          ...formData.horarioModalidad,
-                                          [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
-                                        }
-                                      })}
-                                    />
+
+                                {formData.horarioModalidad[dia].modalidad !== "libre" && (
+                                  <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Entrada</label>
+                                      <Input
+                                        type="time"
+                                        className="h-8 text-xs"
+                                        value={formData.horarioModalidad[dia].entrada}
+                                        onChange={(e) => setFormData({
+                                          ...formData,
+                                          horarioModalidad: {
+                                            ...formData.horarioModalidad,
+                                            [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
+                                          }
+                                        })}
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Salida</label>
+                                      <Input
+                                        type="time"
+                                        className="h-8 text-xs"
+                                        value={formData.horarioModalidad[dia].salida}
+                                        onChange={(e) => setFormData({
+                                          ...formData,
+                                          horarioModalidad: {
+                                            ...formData.horarioModalidad,
+                                            [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
+                                          }
+                                        })}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[9px] font-bold text-muted-foreground uppercase">Salida</label>
-                                    <Input 
-                                      type="time" 
-                                      className="h-7 text-[10px] px-1"
-                                      value={formData.horarioModalidad[dia].salida}
-                                      onChange={(e) => setFormData({
-                                        ...formData,
-                                        horarioModalidad: {
-                                          ...formData.horarioModalidad,
-                                          [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
-                                        }
-                                      })}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                                )}
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </div>
 
                     {/* ACCESOS AL SISTEMA */}
                     <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Lock className="w-4 h-4"/> Acceso al Sistema</h3>
+                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Lock className="w-4 h-4" /> Acceso al Sistema</h3>
                       <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-dashed">
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Correo de Ingreso *</label>
-                          <Input required type="email" value={formData.correo} onChange={e => setFormData({...formData, correo: e.target.value})} placeholder="usuario@ficong.com" />
+                          <Input required type="email" value={formData.correo} onChange={e => setFormData({ ...formData, correo: e.target.value })} placeholder="usuario@islacascajal.org" disabled={isEditing} />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Contraseña Inicial *</label>
-                          <div className="relative">
-                            <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Min. 6 caracteres" />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
+                        {!isEditing && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Contraseña Inicial *</label>
+                            <div className="relative">
+                              <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Min. 6 caracteres" />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Rol de Permisos *</label>
-                          <Select value={formData.rol} onValueChange={v => setFormData({...formData, rol: v})} disabled={!esSuperAdmin}>
+                          <Select value={formData.rol} onValueChange={v => setFormData({ ...formData, rol: v })} disabled={!esSuperAdmin}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="empleado">Solo Reporte de Asistencia</SelectItem>
@@ -748,16 +892,16 @@ function PersonalContent() {
 
                   <div className="border-t pt-6">
                     <div className="flex items-start space-x-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
-                      <Checkbox 
-                        id="afiliarAuto" 
-                        checked={formData.afiliarAutomaticamente} 
+                      <Checkbox
+                        id="afiliarAuto"
+                        checked={formData.afiliarAutomaticamente}
                         onCheckedChange={(c) => {
                           const isAuto = !!c;
                           setFormData(prev => ({
-                            ...prev, 
+                            ...prev,
                             afiliarAutomaticamente: isAuto,
-                            beneficiarios: isAuto && prev.beneficiarios.length === 0 ? Array(5).fill({ nombre: "", nuip: "" }) : prev.beneficiarios,
-                            mascotas: isAuto && prev.mascotas.length === 0 ? Array(2).fill({ nombre: "", tipo: "", raza: "" }) : prev.mascotas
+                            beneficiarios: isAuto && prev.beneficiarios.length === 0 ? Array.from({ length: 5 }, () => ({ nombre: "", nuip: "" })) : prev.beneficiarios,
+                            mascotas: isAuto && prev.mascotas.length === 0 ? Array.from({ length: 2 }, () => ({ nombre: "", tipo: "", raza: "" })) : prev.mascotas
                           }));
                         }}
                       />
@@ -774,7 +918,7 @@ function PersonalContent() {
                             {/* Beneficiarios */}
                             <div className="space-y-3">
                               <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
-                                <Users className="h-4 w-4" /> 
+                                <Users className="h-4 w-4" />
                                 Beneficiarios
                               </p>
                               {formData.beneficiarios?.map((ben, idx) => (
@@ -806,7 +950,7 @@ function PersonalContent() {
                             {/* Mascotas */}
                             <div className="space-y-3">
                               <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
-                                <PawPrint className="h-4 w-4" /> 
+                                <PawPrint className="h-4 w-4" />
                                 Mascotas (Plan Integra)
                               </p>
                               {formData.mascotas?.map((mascota, idx) => (
@@ -851,10 +995,10 @@ function PersonalContent() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-6 border-t">
-                    <Button type="button" variant="outline" onClick={() => setView("table")} disabled={creando}>Cancelar</Button>
+                    <Button type="button" variant="outline" onClick={() => { setView("table"); setIsEditing(false); setEditId(null); }} disabled={creando}>Cancelar</Button>
                     <Button type="submit" className="min-w-[150px]" disabled={creando}>
-                      {creando ? <Spinner className="w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2"/>}
-                      Crear Personal
+                      {creando ? <Spinner className="w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                      {isEditing ? "Actualizar Personal" : "Crear Personal"}
                     </Button>
                   </div>
                 </form>
@@ -876,7 +1020,7 @@ function PersonalContent() {
                 <h2 className="text-2xl font-black text-success uppercase">Personal Registrado Exitosamente</h2>
                 <p className="text-muted-foreground">Se han generado los accesos y credenciales.</p>
               </div>
-              
+
               <CardContent className="p-8">
                 <div className="bg-muted/30 border rounded-xl p-6 text-left grid grid-cols-2 gap-y-4 gap-x-8 mb-8">
                   <div><p className="text-xs text-muted-foreground uppercase font-bold">Nombre</p><p className="font-medium text-sm">{personalReciente.nombre}</p></div>
@@ -928,11 +1072,11 @@ function PersonalContent() {
                       {horarioEdit[dia]?.modalidad}
                     </Badge>
                   </div>
-                  
-                  <Select 
-                    value={horarioEdit[dia]?.modalidad} 
+
+                  <Select
+                    value={horarioEdit[dia]?.modalidad}
                     onValueChange={(v) => setHorarioEdit({
-                      ...horarioEdit, 
+                      ...horarioEdit,
                       [dia]: { ...horarioEdit[dia], modalidad: v }
                     })}
                   >
@@ -943,13 +1087,13 @@ function PersonalContent() {
                       <SelectItem value="libre">No Laboral / Libre</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   {horarioEdit[dia]?.modalidad !== "libre" && (
                     <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1">
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-muted-foreground">Entrada</label>
-                        <Input 
-                          type="time" 
+                        <Input
+                          type="time"
                           value={horarioEdit[dia]?.entrada}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
@@ -959,8 +1103,8 @@ function PersonalContent() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-muted-foreground">Salida</label>
-                        <Input 
-                          type="time" 
+                        <Input
+                          type="time"
                           value={horarioEdit[dia]?.salida}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
@@ -976,7 +1120,7 @@ function PersonalContent() {
 
             <div className="flex justify-end gap-3 mt-6">
               <Button variant="outline" onClick={() => setEmpleadoSeleccionado(null)}>Cancelar</Button>
-              <Button 
+              <Button
                 onClick={async () => {
                   setGuardandoHorario(true);
                   try {
@@ -1013,7 +1157,7 @@ function PersonalContent() {
         {personalReciente && (
           <>
             {/* Template de Carnet de Personal */}
-            <div 
+            <div
               id="hidden-carnet-personal"
               style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}
             >
@@ -1036,7 +1180,7 @@ function PersonalContent() {
                 <p style={{ color: '#f3de4d', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Fundación</p>
               </div>
 
-              <div style={{ marginTop: '30px', padding: '0 40px', textAlign: 'center' }}>
+              <div style={{ marginTop: '30px', padding: '0 40px 100px 40px', textAlign: 'center' }}>
                 <div style={{ display: 'inline-block', backgroundColor: COLORS.rojo, color: 'white', padding: '4px 12px', borderRadius: '9999px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
                   {personalReciente.tipoPersonal}
                 </div>
@@ -1110,7 +1254,7 @@ function PersonalContent() {
                   </p>
                 )}
                 <p style={{ marginTop: "30px" }}>
-                  El presente documento se expide a solicitud de la parte interesada el día {new Date().toLocaleDateString("es-CO")}.
+                  El presente documento se expide a solicitud de la parte interesada el día {fechaCertificado || new Date().toLocaleDateString("es-CO")}.
                 </p>
               </div>
 
