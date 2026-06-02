@@ -328,10 +328,11 @@ function PersonalContent() {
       const next = { ...prev, [field]: value };
       next.nombre = `${next.nombres} ${next.primerApellido} ${next.segundoApellido}`.trim().replace(/\s+/g, ' ');
       
-      if (!isEditing && next.nombres && next.segundoApellido) {
-        const inicial = next.nombres.trim().charAt(0).toLowerCase();
-        const apellido2 = next.segundoApellido.trim().toLowerCase().replace(/\s+/g, '');
-        next.correo = `${inicial}${apellido2}@islacascajal.org`;
+      if (!isEditing && next.nombres && next.primerApellido && next.segundoApellido) {
+        const inicialNombre = next.nombres.trim().charAt(0).toLowerCase();
+        const apellido1 = next.primerApellido.trim().toLowerCase().replace(/\s+/g, '');
+        const inicialApellido2 = next.segundoApellido.trim().charAt(0).toLowerCase();
+        next.correo = `${inicialNombre}${apellido1}${inicialApellido2}@islacascajal.org`;
       }
       return next;
     });
@@ -690,8 +691,12 @@ function PersonalContent() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Registrar Nuevo Personal</h2>
-                <p className="text-sm text-muted-foreground">Llene los datos administrativos para habilitar un nuevo trabajador.</p>
+                <h2 className="text-2xl font-bold text-foreground">
+                  {isEditing ? "Actualizar Información de Personal" : "Registrar Nuevo Personal"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {isEditing ? "Edite los datos administrativos del trabajador." : "Llene los datos administrativos para habilitar un nuevo trabajador."}
+                </p>
               </div>
             </div>
 
@@ -817,12 +822,12 @@ function PersonalContent() {
                               </Select>
 
                                 {formData.horarioModalidad[dia].modalidad !== "libre" && (
-                                  <div className="grid grid-cols-2 gap-4 pt-2">
-                                    <div className="space-y-1.5">
-                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Entrada</label>
+                                  <div className="flex items-center gap-3 pt-2">
+                                    <div className="flex-1 space-y-1.5">
+                                      <label className="text-[10px] font-bold text-muted-foreground uppercase text-center block">Entrada</label>
                                       <Input
                                         type="time"
-                                        className="h-8 text-xs"
+                                        className="h-9 text-xs text-center font-medium"
                                         value={formData.horarioModalidad[dia].entrada}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -833,11 +838,11 @@ function PersonalContent() {
                                         })}
                                       />
                                     </div>
-                                    <div className="space-y-1.5">
-                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Salida</label>
+                                    <div className="flex-1 space-y-1.5">
+                                      <label className="text-[10px] font-bold text-muted-foreground uppercase text-center block">Salida</label>
                                       <Input
                                         type="time"
-                                        className="h-8 text-xs"
+                                        className="h-9 text-xs text-center font-medium"
                                         value={formData.horarioModalidad[dia].salida}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -1089,11 +1094,12 @@ function PersonalContent() {
                   </Select>
 
                   {horarioEdit[dia]?.modalidad !== "libre" && (
-                    <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">Entrada</label>
+                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-top-1 mt-2">
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase text-muted-foreground text-center block">Entrada</label>
                         <Input
                           type="time"
+                          className="h-9 text-xs text-center font-medium"
                           value={horarioEdit[dia]?.entrada}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
@@ -1101,10 +1107,11 @@ function PersonalContent() {
                           })}
                         />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">Salida</label>
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase text-muted-foreground text-center block">Salida</label>
                         <Input
                           type="time"
+                          className="h-9 text-xs text-center font-medium"
                           value={horarioEdit[dia]?.salida}
                           onChange={(e) => setHorarioEdit({
                             ...horarioEdit,
