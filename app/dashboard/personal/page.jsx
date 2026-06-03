@@ -306,6 +306,14 @@ function PersonalContent() {
       cargo: target.cargo || "",
       tipoPersonal: target.tipoPersonal || "Empleado",
       fechaIngreso: target.fechaIngreso || new Date().toISOString().split("T")[0],
+      tipoVinculacion: target.tipoVinculacion || "",
+      tienePeriodoPrueba: target.tienePeriodoPrueba || false,
+      tiempoPeriodoPrueba: target.tiempoPeriodoPrueba || "",
+      tipoContrato: target.tipoContrato || "",
+      tiempoContrato: target.tiempoContrato || "",
+      fechaTerminacion: target.fechaTerminacion || "",
+      motivoTerminacion: target.motivoTerminacion || "",
+      salario: target.salario || "",
       estado: target.estado || "activo",
       rol: usuarioObj.rol || "empleado",
       password: "",
@@ -408,6 +416,14 @@ function PersonalContent() {
           cargo: formData.cargo,
           tipoPersonal: formData.tipoPersonal,
           fechaIngreso: formData.fechaIngreso,
+          tipoVinculacion: formData.tipoVinculacion,
+          tienePeriodoPrueba: formData.tienePeriodoPrueba,
+          tiempoPeriodoPrueba: formData.tiempoPeriodoPrueba,
+          tipoContrato: formData.tipoContrato,
+          tiempoContrato: formData.tiempoContrato,
+          fechaTerminacion: formData.fechaTerminacion,
+          motivoTerminacion: formData.motivoTerminacion,
+          salario: formData.salario,
           modalidadLaboral: formData.modalidadLaboral,
           foto: formData.foto,
         });
@@ -792,9 +808,6 @@ function PersonalContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
-                        <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({ ...formData, fechaIngreso: e.target.value })} />
                       </div>
                     </div>
                   </div>
@@ -827,6 +840,86 @@ function PersonalContent() {
                               <SelectItem value="Híbrido">Híbrido</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        {/* INFORMACION CONTRACTUAL */}
+                        <div className="pt-6 mt-6 border-t border-dashed">
+                          <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Vinculación</label>
+                              <Select value={formData.tipoVinculacion} onValueChange={v => setFormData({ ...formData, tipoVinculacion: v })}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Contrato">Contrato</SelectItem>
+                                  <SelectItem value="Nombramiento">Nombramiento / Periodo de prueba</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
+                              <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
+                                  <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
+                                  <SelectItem value="De Obra o Labor">De Obra o Labor</SelectItem>
+                                  <SelectItem value="Por Prestación de Servicios">Por Prestación de Servicios</SelectItem>
+                                  <SelectItem value="Ocasional, Accidental o Transitorio">Ocasional, Accidental o Transitorio</SelectItem>
+                                  <SelectItem value="De Aprendizaje">De Aprendizaje</SelectItem>
+                                  <SelectItem value="De Prácticas">De Prácticas</SelectItem>
+                                  <SelectItem value="De Pasantías">De Pasantías</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">¿Período de prueba?</label>
+                              <Select value={formData.tienePeriodoPrueba ? "si" : "no"} onValueChange={v => setFormData({ ...formData, tienePeriodoPrueba: v === "si" })}>
+                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="si">Sí</SelectItem>
+                                  <SelectItem value="no">No</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {formData.tienePeriodoPrueba && (
+                              <div className="space-y-2 animate-in fade-in zoom-in duration-200">
+                                <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo de prueba (días)</label>
+                                <Input type="number" min="15" max="60" value={formData.tiempoPeriodoPrueba} onChange={e => setFormData({ ...formData, tiempoPeriodoPrueba: e.target.value })} placeholder="Ej. 15 a 60" />
+                              </div>
+                            )}
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Contrato</label>
+                              <Input value={formData.tiempoContrato} onChange={e => setFormData({ ...formData, tiempoContrato: e.target.value })} placeholder="Indefinido, o 1 a 60 meses" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
+                              <Input value={formData.salario} onChange={e => setFormData({ ...formData, salario: e.target.value })} placeholder="Ej. $ 1.500.000" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
+                              <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({ ...formData, fechaIngreso: e.target.value })} />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Terminación</label>
+                              <Input type="date" value={formData.fechaTerminacion} onChange={e => setFormData({ ...formData, fechaTerminacion: e.target.value })} />
+                            </div>
+
+                            {formData.fechaTerminacion && (
+                              <div className="space-y-2 sm:col-span-2 animate-in fade-in zoom-in duration-200">
+                                <label className="text-xs font-semibold uppercase text-muted-foreground">Motivo de Terminación</label>
+                                <Input value={formData.motivoTerminacion} onChange={e => setFormData({ ...formData, motivoTerminacion: e.target.value })} placeholder="Razón o motivo de la terminación..." />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 

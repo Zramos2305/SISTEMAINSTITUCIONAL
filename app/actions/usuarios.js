@@ -10,7 +10,9 @@ export async function crearUsuarioInstitucional(data) {
       foto, documento, telefono, direccion, rh, tipoPersonal,
       fechaIngreso, estado, modalidadLaboral, diasTeletrabajo,
       afiliarAutomaticamente, codigoInstitucional,
-      beneficiarios, mascotas
+      beneficiarios, mascotas,
+      tipoVinculacion, tienePeriodoPrueba, tiempoPeriodoPrueba,
+      tipoContrato, tiempoContrato, fechaTerminacion, motivoTerminacion, salario
     } = data;
 
     // 1. Crear usuario en Firebase Auth
@@ -51,7 +53,15 @@ export async function crearUsuarioInstitucional(data) {
       uidAuth: userRecord.uid,
       fechaCreacion: FieldValue.serverTimestamp(),
       creadoPor: creadoPorUid,
-      horarioModalidad: horarioDefault
+      horarioModalidad: horarioDefault,
+      tipoVinculacion: tipoVinculacion || "",
+      tienePeriodoPrueba: tienePeriodoPrueba || false,
+      tiempoPeriodoPrueba: tiempoPeriodoPrueba || "",
+      tipoContrato: tipoContrato || "",
+      tiempoContrato: tiempoContrato || "",
+      fechaTerminacion: fechaTerminacion || "",
+      motivoTerminacion: motivoTerminacion || "",
+      salario: salario || ""
     });
 
     // 3. Crear documento en colección 'usuarios' para el acceso al sistema
