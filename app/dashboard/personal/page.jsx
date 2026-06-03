@@ -840,165 +840,6 @@ function PersonalContent() {
                             </SelectContent>
                           </Select>
                         </div>
-
-                        {/* INFORMACION CONTRACTUAL */}
-                        <div className="pt-6 mt-6 border-t border-dashed">
-                          <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Vinculación</label>
-                              <Select value={formData.tipoVinculacion} onValueChange={v => setFormData({ ...formData, tipoVinculacion: v })}>
-                                <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Contrato">Contrato</SelectItem>
-                                  <SelectItem value="Nombramiento">Nombramiento / Periodo de prueba</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
-                              <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
-                                <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
-                                  <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
-                                  <SelectItem value="De Obra o Labor">De Obra o Labor</SelectItem>
-                                  <SelectItem value="Por Prestación de Servicios">Por Prestación de Servicios</SelectItem>
-                                  <SelectItem value="Ocasional, Accidental o Transitorio">Ocasional, Accidental o Transitorio</SelectItem>
-                                  <SelectItem value="De Aprendizaje">De Aprendizaje</SelectItem>
-                                  <SelectItem value="De Prácticas">De Prácticas</SelectItem>
-                                  <SelectItem value="De Pasantías">De Pasantías</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">¿Período de prueba?</label>
-                              <Select value={formData.tienePeriodoPrueba ? "si" : "no"} onValueChange={v => setFormData({ ...formData, tienePeriodoPrueba: v === "si" })}>
-                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="si">Sí</SelectItem>
-                                  <SelectItem value="no">No</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {formData.tienePeriodoPrueba && (
-                              <div className="space-y-2 animate-in fade-in zoom-in duration-200">
-                                <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo de prueba (días)</label>
-                                <Input type="number" min="15" max="60" value={formData.tiempoPeriodoPrueba} onChange={e => setFormData({ ...formData, tiempoPeriodoPrueba: e.target.value })} placeholder="Ej. 15 a 60" />
-                              </div>
-                            )}
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Contrato</label>
-                              <Input value={formData.tiempoContrato} onChange={e => setFormData({ ...formData, tiempoContrato: e.target.value })} placeholder="Indefinido, o 1 a 60 meses" />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
-                              <Input value={formData.salario} onChange={e => setFormData({ ...formData, salario: e.target.value })} placeholder="Ej. $ 1.500.000" />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
-                              <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({ ...formData, fechaIngreso: e.target.value })} />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Terminación</label>
-                              <Input type="date" value={formData.fechaTerminacion} onChange={e => setFormData({ ...formData, fechaTerminacion: e.target.value })} />
-                            </div>
-
-                            {formData.fechaTerminacion && (
-                              <div className="space-y-2 sm:col-span-2 animate-in fade-in zoom-in duration-200">
-                                <label className="text-xs font-semibold uppercase text-muted-foreground">Motivo de Terminación</label>
-                                <Input value={formData.motivoTerminacion} onChange={e => setFormData({ ...formData, motivoTerminacion: e.target.value })} placeholder="Razón o motivo de la terminación..." />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* HORARIO SEMANAL */}
-                      <div className="space-y-4 md:col-span-2 mt-4 bg-muted/20 p-4 rounded-xl border border-dashed">
-                        <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                          <CalendarDays className="w-4 h-4" /> Horario y Modalidad Semanal
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Configure la jornada y modalidad por cada día</p>
-
-                        <div className="flex flex-col space-y-3">
-                          {DIAS_SEMANA.map((dia) => (
-                            <div key={dia} className="flex flex-col md:flex-row md:items-center justify-between bg-card p-3 rounded-lg border shadow-sm gap-3 transition-colors hover:bg-muted/10">
-                              <div className="w-full md:w-32 font-black uppercase text-primary text-sm border-b md:border-b-0 pb-1 md:pb-0">
-                                {dia}
-                              </div>
-
-                              <div className="w-full md:w-48">
-                                <Select
-                                  value={formData.horarioModalidad[dia].modalidad}
-                                  onValueChange={(v) => setFormData({
-                                    ...formData,
-                                    horarioModalidad: {
-                                      ...formData.horarioModalidad,
-                                      [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
-                                    }
-                                  })}
-                                >
-                                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="presencial">Presencial</SelectItem>
-                                    <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
-                                    <SelectItem value="libre">No Laboral</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="flex-1 flex justify-end">
-                                {formData.horarioModalidad[dia].modalidad !== "libre" ? (
-                                  <div className="flex flex-row gap-4 items-center w-full md:w-auto bg-muted/20 md:bg-transparent p-2 md:p-0 rounded-md">
-                                    <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start">
-                                      <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
-                                      <Input
-                                        type="time"
-                                        className="w-[110px] sm:w-[130px] h-9 text-sm"
-                                        value={formData.horarioModalidad[dia].entrada}
-                                        onChange={(e) => setFormData({
-                                          ...formData,
-                                          horarioModalidad: {
-                                            ...formData.horarioModalidad,
-                                            [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
-                                          }
-                                        })}
-                                      />
-                                    </div>
-                                    <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start border-l md:border-l-0 pl-3 md:pl-0 border-muted-foreground/20">
-                                      <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
-                                      <Input
-                                        type="time"
-                                        className="w-[110px] sm:w-[130px] h-9 text-sm"
-                                        value={formData.horarioModalidad[dia].salida}
-                                        onChange={(e) => setFormData({
-                                          ...formData,
-                                          horarioModalidad: {
-                                            ...formData.horarioModalidad,
-                                            [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
-                                          }
-                                        })}
-                                      />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="w-full md:w-auto text-center md:text-right text-sm text-muted-foreground italic py-2 md:py-0">
-                                    Día de descanso
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       </div>
                     </div>
 
@@ -1028,10 +869,171 @@ function PersonalContent() {
                             <SelectContent>
                               <SelectItem value="empleado">Solo Reporte de Asistencia</SelectItem>
                               {esSuperAdmin && <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>}
-                              {esSuperAdmin && <SelectItem value="superadmin">Administrador Total</SelectItem>}
+                              {esSuperAdmin && <SelectItem value="admin">Administrador del Sistema</SelectItem>}
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* INFORMACION CONTRACTUAL */}
+                  <div className="pt-8 border-t">
+                    <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-muted/10 p-5 rounded-xl border">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Vinculación</label>
+                        <Select value={formData.tipoVinculacion} onValueChange={v => setFormData({ ...formData, tipoVinculacion: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Contrato">Contrato</SelectItem>
+                            <SelectItem value="Nombramiento">Nombramiento / Periodo de prueba</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
+                        <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
+                            <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
+                            <SelectItem value="De Obra o Labor">De Obra o Labor</SelectItem>
+                            <SelectItem value="Por Prestación de Servicios">Por Prestación de Servicios</SelectItem>
+                            <SelectItem value="Ocasional, Accidental o Transitorio">Ocasional, Accidental o Transitorio</SelectItem>
+                            <SelectItem value="De Aprendizaje">De Aprendizaje</SelectItem>
+                            <SelectItem value="De Prácticas">De Prácticas</SelectItem>
+                            <SelectItem value="De Pasantías">De Pasantías</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">¿Período de prueba?</label>
+                        <Select value={formData.tienePeriodoPrueba ? "si" : "no"} onValueChange={v => setFormData({ ...formData, tienePeriodoPrueba: v === "si" })}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="si">Sí</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {formData.tienePeriodoPrueba && (
+                        <div className="space-y-2 animate-in fade-in zoom-in duration-200">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo de prueba (días)</label>
+                          <Input type="number" min="15" max="60" value={formData.tiempoPeriodoPrueba} onChange={e => setFormData({ ...formData, tiempoPeriodoPrueba: e.target.value })} placeholder="Ej. 15 a 60" />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Contrato</label>
+                        <Input value={formData.tiempoContrato} onChange={e => setFormData({ ...formData, tiempoContrato: e.target.value })} placeholder="Indefinido, o 1 a 60 meses" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
+                        <Input value={formData.salario} onChange={e => setFormData({ ...formData, salario: e.target.value })} placeholder="Ej. $ 1.500.000" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
+                        <Input required type="date" value={formData.fechaIngreso} onChange={e => setFormData({ ...formData, fechaIngreso: e.target.value })} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Terminación</label>
+                        <Input type="date" value={formData.fechaTerminacion} onChange={e => setFormData({ ...formData, fechaTerminacion: e.target.value })} />
+                      </div>
+
+                      {formData.fechaTerminacion && (
+                        <div className="space-y-2 md:col-span-2 lg:col-span-3 animate-in fade-in zoom-in duration-200">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Motivo de Terminación</label>
+                          <Input value={formData.motivoTerminacion} onChange={e => setFormData({ ...formData, motivoTerminacion: e.target.value })} placeholder="Razón o motivo de la terminación..." />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* HORARIO SEMANAL */}
+                  <div className="pt-8 border-t">
+                    <div className="space-y-4 bg-muted/10 p-5 rounded-xl border border-dashed">
+                      <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4" /> Horario y Modalidad Semanal
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold mb-4">Configure la jornada y modalidad por cada día</p>
+
+                      <div className="flex flex-col space-y-3">
+                        {DIAS_SEMANA.map((dia) => (
+                          <div key={dia} className="flex flex-col md:flex-row md:items-center justify-between bg-card p-4 rounded-lg border shadow-sm gap-4 transition-colors hover:bg-muted/30">
+                            <div className="w-full md:w-32 font-black uppercase text-primary text-sm border-b md:border-b-0 pb-1 md:pb-0">
+                              {dia}
+                            </div>
+
+                            <div className="w-full md:w-48 shrink-0">
+                              <Select
+                                value={formData.horarioModalidad[dia].modalidad}
+                                onValueChange={(v) => setFormData({
+                                  ...formData,
+                                  horarioModalidad: {
+                                    ...formData.horarioModalidad,
+                                    [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
+                                  }
+                                })}
+                              >
+                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="presencial">Presencial</SelectItem>
+                                  <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                                  <SelectItem value="libre">No Laboral</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="flex-1 flex justify-end w-full">
+                              {formData.horarioModalidad[dia].modalidad !== "libre" ? (
+                                <div className="flex flex-row gap-4 items-center w-full lg:w-auto bg-muted/20 lg:bg-transparent p-2 lg:p-0 rounded-md">
+                                  <div className="flex items-center gap-2 w-1/2 lg:w-auto justify-between lg:justify-start">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
+                                    <Input
+                                      type="time"
+                                      className="w-[120px] lg:w-[130px] h-9 text-sm"
+                                      value={formData.horarioModalidad[dia].entrada}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
+                                        }
+                                      })}
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-2 w-1/2 lg:w-auto justify-between lg:justify-start border-l lg:border-l-0 pl-3 lg:pl-0 border-muted-foreground/20">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
+                                    <Input
+                                      type="time"
+                                      className="w-[120px] lg:w-[130px] h-9 text-sm"
+                                      value={formData.horarioModalidad[dia].salida}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
+                                        }
+                                      })}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-full lg:w-auto text-center lg:text-right text-sm text-muted-foreground italic py-2 lg:py-0">
+                                  Día de descanso
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
