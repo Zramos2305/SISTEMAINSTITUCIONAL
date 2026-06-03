@@ -326,17 +326,55 @@ function PersonalContent() {
   const handleNameChange = (field, value) => {
     setFormData(prev => {
       const next = { ...prev, [field]: value };
-      next.nombre = `${next.nombres} ${next.primerApellido} ${next.segundoApellido}`.trim().replace(/\s+/g, ' ');
-      
-      if (!isEditing && next.nombres && next.primerApellido && next.segundoApellido) {
-        const inicialNombre = next.nombres.trim().charAt(0).toLowerCase();
-        const apellido1 = next.primerApellido.trim().toLowerCase().replace(/\s+/g, '');
-        const inicialApellido2 = next.segundoApellido.trim().charAt(0).toLowerCase();
-        next.correo = `${inicialNombre}${apellido1}${inicialApellido2}@islacascajal.org`;
-      }
+      next.nombre = `${next.nombres} ${next.primerApellido} ${next.segundoApellido || ''}`.trim().replace(/\s+/g, ' ');
       return next;
     });
   };
+
+  useEffect(() => {
+    if (isEditing) return;
+
+    const generateEmail = async () => {
+      const { nombres, primerApellido } = formData;
+      if (nombres && primerApellido) {
+        const primerNombre = nombres.trim().split(/\s+/)[0].toLowerCase();
+        const apellido1 = primerApellido.trim().toLowerCase().replace(/\s+/g, '');
+        
+        // Limpiar acentos y caracteres especiales
+        const cleanName = primerNombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+        const cleanLast = apellido1.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+        
+        if (!cleanName || !cleanLast) return;
+
+        const baseEmail = `${cleanName}.${cleanLast}@islacascajal.org`;
+        
+        let finalEmail = baseEmail;
+        let counter = 0;
+        
+        while (true) {
+          const q = query(collection(db, "usuarios"), where("correo", "==", finalEmail));
+          const snap = await getDocs(q);
+          if (snap.empty) {
+            break;
+          }
+          const counterStr = counter.toString().padStart(2, '0');
+          finalEmail = `${cleanName}.${cleanLast}${counterStr}@islacascajal.org`;
+          counter++;
+        }
+        
+        setFormData(prev => {
+          // Solo actualizamos si realmente cambió para evitar ciclos de renderizado
+          if (prev.correo !== finalEmail) {
+            return { ...prev, correo: finalEmail };
+          }
+          return prev;
+        });
+      }
+    };
+
+    const timeoutId = setTimeout(generateEmail, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.nombres, formData.primerApellido, isEditing]);
 
   const handleDocumentChange = (e) => {
     const numbersOnly = e.target.value.replace(/\D/g, "");
@@ -727,8 +765,8 @@ function PersonalContent() {
                         <Input required value={formData.primerApellido} onChange={e => handleNameChange("primerApellido", e.target.value)} placeholder="Ej. Pérez" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Segundo Apellido *</label>
-                        <Input required value={formData.segundoApellido} onChange={e => handleNameChange("segundoApellido", e.target.value)} placeholder="Ej. Gómez" />
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Segundo Apellido</label>
+                        <Input value={formData.segundoApellido} onChange={e => handleNameChange("segundoApellido", e.target.value)} placeholder="Ej. Gómez (Opcional)" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Documento (NIUP) *</label>
