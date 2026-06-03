@@ -808,7 +808,6 @@ function PersonalContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      </div>
                     </div>
                   </div>
 
