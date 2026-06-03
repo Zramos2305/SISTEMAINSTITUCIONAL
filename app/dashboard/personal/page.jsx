@@ -837,35 +837,41 @@ function PersonalContent() {
                         </h3>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold">Configure la jornada y modalidad por cada día</p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="flex flex-col space-y-3">
                           {DIAS_SEMANA.map((dia) => (
-                            <div key={dia} className="bg-card p-3 rounded-lg border shadow-sm space-y-3">
-                              <p className="text-xs font-black uppercase text-primary border-b pb-1">{dia}</p>
-                              <Select
-                                value={formData.horarioModalidad[dia].modalidad}
-                                onValueChange={(v) => setFormData({
-                                  ...formData,
-                                  horarioModalidad: {
-                                    ...formData.horarioModalidad,
-                                    [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
-                                  }
-                                })}
-                              >
-                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="presencial">Presencial</SelectItem>
-                                  <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
-                                  <SelectItem value="libre">No Laboral</SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <div key={dia} className="flex flex-col md:flex-row md:items-center justify-between bg-card p-3 rounded-lg border shadow-sm gap-3 transition-colors hover:bg-muted/10">
+                              <div className="w-full md:w-32 font-black uppercase text-primary text-sm border-b md:border-b-0 pb-1 md:pb-0">
+                                {dia}
+                              </div>
 
-                                {formData.horarioModalidad[dia].modalidad !== "libre" && (
-                                  <div className="flex flex-col gap-2 pt-2">
-                                    <div className="w-full bg-muted/20 p-2 rounded-md border flex items-center justify-between">
-                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Entrada</label>
+                              <div className="w-full md:w-48">
+                                <Select
+                                  value={formData.horarioModalidad[dia].modalidad}
+                                  onValueChange={(v) => setFormData({
+                                    ...formData,
+                                    horarioModalidad: {
+                                      ...formData.horarioModalidad,
+                                      [dia]: { ...formData.horarioModalidad[dia], modalidad: v }
+                                    }
+                                  })}
+                                >
+                                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="presencial">Presencial</SelectItem>
+                                    <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                                    <SelectItem value="libre">No Laboral</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="flex-1 flex justify-end">
+                                {formData.horarioModalidad[dia].modalidad !== "libre" ? (
+                                  <div className="flex flex-row gap-4 items-center w-full md:w-auto bg-muted/20 md:bg-transparent p-2 md:p-0 rounded-md">
+                                    <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start">
+                                      <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
                                       <Input
                                         type="time"
-                                        className="w-[120px] h-8 text-xs text-center"
+                                        className="w-[110px] sm:w-[130px] h-9 text-sm"
                                         value={formData.horarioModalidad[dia].entrada}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -876,11 +882,11 @@ function PersonalContent() {
                                         })}
                                       />
                                     </div>
-                                    <div className="w-full bg-muted/20 p-2 rounded-md border flex items-center justify-between">
-                                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Salida</label>
+                                    <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start border-l md:border-l-0 pl-3 md:pl-0 border-muted-foreground/20">
+                                      <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
                                       <Input
                                         type="time"
-                                        className="w-[120px] h-8 text-xs text-center"
+                                        className="w-[110px] sm:w-[130px] h-9 text-sm"
                                         value={formData.horarioModalidad[dia].salida}
                                         onChange={(e) => setFormData({
                                           ...formData,
@@ -892,9 +898,14 @@ function PersonalContent() {
                                       />
                                     </div>
                                   </div>
+                                ) : (
+                                  <div className="w-full md:w-auto text-center md:text-right text-sm text-muted-foreground italic py-2 md:py-0">
+                                    Día de descanso
+                                  </div>
                                 )}
                               </div>
-                            ))}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -1106,59 +1117,64 @@ function PersonalContent() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="flex flex-col space-y-3 max-h-[60vh] overflow-y-auto pr-2">
               {DIAS_SEMANA.map((dia) => (
-                <div key={dia} className="bg-muted/30 p-4 rounded-xl border border-dashed space-y-4">
-                  <div className="flex justify-between items-center border-b pb-2">
-                    <p className="text-xs font-black uppercase text-primary">{dia}</p>
-                    <Badge variant="outline" className="text-[9px] uppercase">
-                      {horarioEdit[dia]?.modalidad}
-                    </Badge>
+                <div key={dia} className="flex flex-col md:flex-row md:items-center justify-between bg-muted/30 p-3 rounded-lg border border-dashed gap-3 transition-colors hover:bg-muted/50">
+                  <div className="w-full md:w-28 font-black uppercase text-primary text-sm border-b md:border-b-0 pb-1 md:pb-0">
+                    {dia}
                   </div>
 
-                  <Select
-                    value={horarioEdit[dia]?.modalidad}
-                    onValueChange={(v) => setHorarioEdit({
-                      ...horarioEdit,
-                      [dia]: { ...horarioEdit[dia], modalidad: v }
-                    })}
-                  >
-                    <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="presencial">Presencial</SelectItem>
-                      <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
-                      <SelectItem value="libre">No Laboral / Libre</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="w-full md:w-40">
+                    <Select
+                      value={horarioEdit[dia]?.modalidad}
+                      onValueChange={(v) => setHorarioEdit({
+                        ...horarioEdit,
+                        [dia]: { ...horarioEdit[dia], modalidad: v }
+                      })}
+                    >
+                      <SelectTrigger className="bg-card h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="presencial">Presencial</SelectItem>
+                        <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                        <SelectItem value="libre">No Laboral</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  {horarioEdit[dia]?.modalidad !== "libre" && (
-                    <div className="flex flex-col gap-2 mt-2">
-                      <div className="w-full bg-card p-2 rounded-lg border shadow-sm flex items-center justify-between">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground">Entrada</label>
-                        <Input
-                          type="time"
-                          className="w-[120px] h-8 text-xs text-center"
-                          value={horarioEdit[dia]?.entrada}
-                          onChange={(e) => setHorarioEdit({
-                            ...horarioEdit,
-                            [dia]: { ...horarioEdit[dia], entrada: e.target.value }
-                          })}
-                        />
+                  <div className="flex-1 flex justify-end">
+                    {horarioEdit[dia]?.modalidad !== "libre" ? (
+                      <div className="flex flex-row gap-4 items-center w-full md:w-auto bg-card md:bg-transparent p-2 md:p-0 rounded-md border md:border-0 shadow-sm md:shadow-none">
+                        <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
+                          <Input
+                            type="time"
+                            className="w-[110px] sm:w-[130px] h-9 text-sm"
+                            value={horarioEdit[dia]?.entrada}
+                            onChange={(e) => setHorarioEdit({
+                              ...horarioEdit,
+                              [dia]: { ...horarioEdit[dia], entrada: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start border-l md:border-l-0 pl-3 md:pl-0 border-muted-foreground/20">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
+                          <Input
+                            type="time"
+                            className="w-[110px] sm:w-[130px] h-9 text-sm"
+                            value={horarioEdit[dia]?.salida}
+                            onChange={(e) => setHorarioEdit({
+                              ...horarioEdit,
+                              [dia]: { ...horarioEdit[dia], salida: e.target.value }
+                            })}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-card p-2 rounded-lg border shadow-sm flex items-center justify-between">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground">Salida</label>
-                        <Input
-                          type="time"
-                          className="w-[120px] h-8 text-xs text-center"
-                          value={horarioEdit[dia]?.salida}
-                          onChange={(e) => setHorarioEdit({
-                            ...horarioEdit,
-                            [dia]: { ...horarioEdit[dia], salida: e.target.value }
-                          })}
-                        />
+                    ) : (
+                      <div className="w-full md:w-auto text-center md:text-right text-sm text-muted-foreground italic py-2 md:py-0">
+                        Día de descanso
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
