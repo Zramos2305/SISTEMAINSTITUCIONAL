@@ -144,16 +144,16 @@ function PersonalContent() {
       const generarCorreoAsync = async () => {
         const primerNombre = removerTildes(formData.nombres.trim().split(" ")[0].toLowerCase());
         const primerApe = removerTildes(formData.primerApellido.trim().split(" ")[0].toLowerCase());
-        
+
         if (!primerNombre || !primerApe) return;
 
         const baseCorreo = `${primerNombre}.${primerApe}`;
         let correoSugerido = `${baseCorreo}@islacascajal.org`;
-        
+
         try {
           const qBase = query(collection(db, "usuarios"), where("correo", ">=", baseCorreo), where("correo", "<=", baseCorreo + "\uf8ff"));
           const snapshot = await getDocs(qBase);
-          
+
           if (!snapshot.empty) {
             const correosExistentes = snapshot.docs.map(doc => doc.data().correo);
             if (correosExistentes.includes(correoSugerido)) {
@@ -164,13 +164,13 @@ function PersonalContent() {
               correoSugerido = `${baseCorreo}${contador.toString().padStart(2, '0')}@islacascajal.org`;
             }
           }
-          
+
           setFormData(prev => ({ ...prev, correo: correoSugerido }));
         } catch (error) {
           console.error("Error al generar correo automático:", error);
         }
       };
-      
+
       const timeoutId = setTimeout(() => {
         generarCorreoAsync();
       }, 800);
@@ -352,7 +352,7 @@ function PersonalContent() {
 
   const abrirEdicion = (usuarioObj, personalObj) => {
     const target = personalObj && !personalObj.isMock ? personalObj : usuarioObj;
-    
+
     const parts = (target.nombre || "").trim().split(/\s+/);
     let n = "", p1 = "", p2 = "";
     if (parts.length >= 3) {
@@ -422,18 +422,18 @@ function PersonalContent() {
       if (nombres && primerApellido) {
         const primerNombre = nombres.trim().split(/\s+/)[0].toLowerCase();
         const apellido1 = primerApellido.trim().toLowerCase().replace(/\s+/g, '');
-        
+
         // Limpiar acentos y caracteres especiales
         const cleanName = primerNombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
         const cleanLast = apellido1.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
-        
+
         if (!cleanName || !cleanLast) return;
 
         const baseEmail = `${cleanName}.${cleanLast}@islacascajal.org`;
-        
+
         let finalEmail = baseEmail;
         let counter = 0;
-        
+
         while (true) {
           const q = query(collection(db, "usuarios"), where("correo", "==", finalEmail));
           const snap = await getDocs(q);
@@ -444,7 +444,7 @@ function PersonalContent() {
           finalEmail = `${cleanName}.${cleanLast}${counterStr}@islacascajal.org`;
           counter++;
         }
-        
+
         setFormData(prev => {
           // Solo actualizamos si realmente cambió para evitar ciclos de renderizado
           if (prev.correo !== finalEmail) {
@@ -786,7 +786,7 @@ function PersonalContent() {
                                     <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Personal" className="text-warning hover:bg-warning/10">
                                       <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => { if(!personal.isMock) { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); } else { toast.info("Super Admins no tienen gestión de horario."); } }} title="Gestionar Horario">
+                                    <Button variant="ghost" size="icon" onClick={() => { if (!personal.isMock) { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); } else { toast.info("Super Admins no tienen gestión de horario."); } }} title="Gestionar Horario">
                                       <CalendarDays className="h-4 w-4 text-primary" />
                                     </Button>
                                     <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
@@ -896,12 +896,12 @@ function PersonalContent() {
                             </button>
                           )}
                         </label>
-                        <Input 
-                          required 
-                          value={formData.documento} 
-                          onChange={handleDocumentChange} 
-                          placeholder="1.234.567.890" 
-                          disabled={isEditing && !permitirModificarNiup} 
+                        <Input
+                          required
+                          value={formData.documento}
+                          onChange={handleDocumentChange}
+                          placeholder="1.234.567.890"
+                          disabled={isEditing && !permitirModificarNiup}
                         />
                       </div>
                       <div className="space-y-2">
@@ -996,12 +996,12 @@ function PersonalContent() {
                   {/* INFORMACION CONTRACTUAL */}
                   <div className="pt-8 border-t">
                     <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-muted/10 p-5 rounded-xl border">
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Vinculación</label>
                         <Select value={formData.tipoVinculacion} onValueChange={v => setFormData({ ...formData, tipoVinculacion: v, tiempoContrato: "", tiempoPeriodoPrueba: "" })}>
-                          <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Contrato">Contrato</SelectItem>
                             <SelectItem value="Nombramiento">Nombramiento</SelectItem>
@@ -1009,13 +1009,13 @@ function PersonalContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       {/* Tipo de contrato: solo visible si es Contrato o Nombramiento */}
                       {(formData.tipoVinculacion === "Contrato" || formData.tipoVinculacion === "Nombramiento") && (
                         <div className="space-y-2 animate-in fade-in zoom-in duration-200">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
                           <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione..."/></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
                               <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
@@ -1035,7 +1035,7 @@ function PersonalContent() {
                         <div className="space-y-2 animate-in fade-in zoom-in duration-200">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Período de Prueba</label>
                           <Select value={formData.tiempoPeriodoPrueba} onValueChange={v => setFormData({ ...formData, tiempoPeriodoPrueba: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione días..."/></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Seleccione días..." /></SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 20 }, (_, i) => i + 1).map(d => (
                                 <SelectItem key={d} value={String(d)}>{d} {d === 1 ? "día" : "días"}</SelectItem>
@@ -1050,7 +1050,7 @@ function PersonalContent() {
                         <div className="space-y-2 animate-in fade-in zoom-in duration-200">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Contrato</label>
                           <Select value={formData.tiempoContrato} onValueChange={v => setFormData({ ...formData, tiempoContrato: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione meses..."/></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Seleccione meses..." /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Indefinido">Indefinido</SelectItem>
                               {Array.from({ length: 60 }, (_, i) => i + 1).map(m => (
@@ -1063,8 +1063,8 @@ function PersonalContent() {
 
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
-                        <Input 
-                          value={formData.salario} 
+                        <Input
+                          value={formData.salario}
                           onChange={e => {
                             let val = e.target.value.replace(/\D/g, "");
                             if (!val) {
@@ -1073,8 +1073,8 @@ function PersonalContent() {
                               const formatted = "$ " + parseInt(val, 10).toLocaleString("es-CO");
                               setFormData({ ...formData, salario: formatted });
                             }
-                          }} 
-                          placeholder="Ej. $ 1.500.000" 
+                          }}
+                          placeholder="Ej. $ 1.500.000"
                         />
                       </div>
 
@@ -1288,7 +1288,7 @@ function PersonalContent() {
                       <AlertCircle className="w-4 h-4" /> Anotaciones de Memorando
                     </h3>
                     <p className="text-[10px] text-muted-foreground uppercase font-bold mb-4">Máximo tres anotaciones formales. Se visualizarán en el expediente.</p>
-                    
+
                     <div className="space-y-3">
                       {[0, 1, 2].map((idx) => (
                         <div key={idx} className="flex flex-col gap-1">
@@ -1482,22 +1482,22 @@ function PersonalContent() {
               id="hidden-carnet-personal"
               style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px', fontFamily: 'sans-serif' }}
             >
-              {/* Decoración Superior Anaranjado/Rojizo */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '220px', overflow: 'hidden', background: `linear-gradient(135deg, #ea580c 0%, #991b1b 100%)` }}>
+              {/* Decoración Superior Tierra */}
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden', background: `linear-gradient(135deg, #5c4033 0%, #8b5a2b 100%)` }}>
               </div>
 
               {/* Logo y Encabezado */}
-              <div style={{ position: 'relative', zIndex: 10, paddingTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: '96px', height: '96px', backgroundColor: '#ffffff', borderRadius: '9999px', marginBottom: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '88px', height: '88px', objectFit: 'contain' }} />
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
                 </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 6px rgba(0,0,0,0.6)', letterSpacing: '-0.05em', lineHeight: 1 }}>ISLA CASCAJAL</h2>
-                <p style={{ color: '#ffffff', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '4px', marginTop: '6px', textShadow: '0 2px 6px rgba(0,0,0,0.8)', lineHeight: 1 }}>Fundación</p>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '-0.05em' }}>ISLA CASCAJAL</h2>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px' }}>Fundación</p>
               </div>
 
               {/* Foto de Perfil y Badge LÍDER */}
-              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px' }}>
-                <div style={{ position: 'relative', width: '130px', height: '130px', borderRadius: '20px', border: '5px solid #ffffff', boxShadow: '0 15px 30px -10px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
+              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
+                <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '24px', border: '6px solid #ffffff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                   {personalReciente.foto ? (
                     <img src={personalReciente.foto} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
@@ -1509,17 +1509,17 @@ function PersonalContent() {
                   )}
                 </div>
 
-                <div style={{ marginTop: '-14px', position: 'relative', zIndex: 20, padding: '0 28px', height: '28px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#b91c1c', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', lineHeight: 1, marginTop: '2px', marginLeft: '2px' }}>LÍDER</span>
+                <div style={{ marginTop: '-10px', position: 'relative', zIndex: 20, padding: '6px 32px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#5c4033', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px' }}>LÍDER</span>
                 </div>
               </div>
 
               {/* Información Personal */}
-              <div style={{ marginTop: '12px', padding: '0 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '84px' }}>
+              <div style={{ marginTop: '16px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '96px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0, lineHeight: 1.1 }}>
                   {personalReciente.nombre}
                 </h3>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#b91c1c', marginTop: '4px', textTransform: 'uppercase', margin: '4px 0 0 0' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#8b5a2b', marginTop: '4px', textTransform: 'uppercase', margin: '4px 0 0 0' }}>
                   {personalReciente.cargo}
                 </p>
 
@@ -1534,30 +1534,30 @@ function PersonalContent() {
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
                     <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>CÓDIGO INSTITUCIONAL</p>
-                    <p style={{ fontSize: '16px', fontWeight: 900, color: '#b91c1c', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.codigoInstitucional}</p>
+                    <p style={{ fontSize: '16px', fontWeight: 900, color: '#8b5a2b', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.codigoInstitucional}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Area (QR and Footer) */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '12px', paddingBottom: '20px', paddingLeft: '32px', paddingRight: '20px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <p style={{ fontSize: '10px', fontWeight: 900, color: '#5c4033', margin: 0 }}>@fundacionislacascajal</p>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #8b5a2b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                   {qrPersonal ? (
-                    <img src={qrPersonal} alt="QR" style={{ width: '64px', height: '64px' }} />
+                    <img src={qrPersonal} alt="QR" style={{ width: '70px', height: '70px' }} />
                   ) : (
-                    <QrCode style={{ width: '64px', height: '64px', opacity: 0.2 }} />
+                    <QrCode style={{ width: '70px', height: '70px', opacity: 0.2 }} />
                   )}
                 </div>
               </div>
 
               {/* Franjas de color decorativas (Tierra) */}
               <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
-                <div style={{ flex: 1, backgroundColor: '#3e2723' }} />
-                <div style={{ flex: 1, backgroundColor: '#5c4033' }} />
+                <div style={{ flex: 1, backgroundColor: '#e19c2575' }} />
+                <div style={{ flex: 1, backgroundColor: '#ffa200ff' }} />
                 <div style={{ flex: 1, backgroundColor: '#8b5a2b' }} />
                 <div style={{ flex: 1, backgroundColor: '#cd853f' }} />
               </div>
@@ -1578,31 +1578,24 @@ function PersonalContent() {
 
               <div style={{ fontSize: "16px", textAlign: "justify" }}>
                 <p>La Fundación Isla Cascajal certifica que reconoce a:</p>
-                
+
                 <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
                   {personalReciente.nombre}
                 </p>
-                
+
                 <p>
                   con identificación número <strong>{personalReciente.documento}</strong>, y vinculación a nuestra institución bajo la modalidad de <strong>{personalReciente.tipoContrato || personalReciente.tipoVinculacion || "Contrato"}</strong> y con el código <strong>{personalReciente.codigoInstitucional}</strong>.
                 </p>
-                
+
                 <p>
                   La orientación de sus funciones institucionales se asocian propiamente a las que corresponden al cargo de <strong>{personalReciente.cargo}</strong>.
                 </p>
-                
+
                 <div style={{ marginTop: "30px", marginBottom: "30px", fontWeight: "bold" }}>
                   <p>FECHA DE INGRESO: {personalReciente.fechaIngreso}</p>
                   <p>TERMINACIÓN DEL CONTRATO: {personalReciente.fechaTerminacion || "No aplica"}</p>
                   <p>MOTIVO DE TERMINACIÓN: {personalReciente.motivoTerminacion || "No aplica"}</p>
-                  <p>SALARIO U HONORARIO MENSUAL: {(() => {
-                    const s = personalReciente.salario;
-                    if (!s) return "No especificado";
-                    const str = String(s);
-                    if (str.includes("$")) return str;
-                    const num = str.replace(/\D/g, "");
-                    return num ? "$ " + parseInt(num, 10).toLocaleString("es-CO") : str;
-                  })()}</p>
+                  <p>SALARIO U HONORARIO MENSUAL: {personalReciente.salario || "No especificado"}</p>
                 </div>
 
                 <p style={{ marginTop: "30px" }}>
@@ -1617,7 +1610,7 @@ function PersonalContent() {
                   <p style={{ margin: 0, fontSize: "12px" }}>Fundación Isla Cascajal</p>
                 </div>
               </div>
-              
+
               <div style={{ marginTop: "50px", fontSize: "12px", color: "#666", fontStyle: "italic" }}>
                 Documento electrónico Verificable con el código QR
               </div>
