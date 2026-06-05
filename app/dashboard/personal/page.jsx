@@ -1433,64 +1433,93 @@ function PersonalContent() {
             {/* Template de Carnet de Personal */}
             <div
               id="hidden-carnet-personal"
-              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}
+              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px', fontFamily: 'sans-serif' }}
             >
+              {/* Decoración Superior Tierra */}
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
                 <div style={{
                   position: 'absolute', top: '-40px', left: '-40px', width: '120%', height: '120%',
                   transform: 'rotate(15deg)', background: `linear-gradient(135deg, #5c4033 0%, #8b5a2b 100%)`
                 }} />
+                <div
+                  style={{ position: 'absolute', top: 0, right: 0, width: '33%', height: '100%', backgroundColor: '#cd853f', opacity: 0.3, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
+                />
               </div>
 
+              {/* Logo y Encabezado */}
               <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  {personalReciente.foto ? (
-                    <img src={personalReciente.foto} alt="Foto" style={{ width: '80px', height: '80px', borderRadius: '9999px', objectFit: 'cover' }} />
-                  ) : (
-                    <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '9999px' }} />
-                  )}
+                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
                 </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>ISLA CASCAJAL</h2>
-                <p style={{ color: '#f3de4d', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Fundación</p>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '-0.05em' }}>ISLA CASCAJAL</h2>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px' }}>Fundación</p>
               </div>
 
-              <div style={{ marginTop: '30px', padding: '0 40px 100px 40px', textAlign: 'center' }}>
-                <div style={{ display: 'inline-block', backgroundColor: COLORS.rojo, color: 'white', padding: '4px 12px', borderRadius: '9999px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
-                  LÍDER
+              {/* Foto de Perfil y Badge LÍDER */}
+              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
+                <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '24px', border: '6px solid #ffffff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
+                  {personalReciente.foto ? (
+                    <img src={personalReciente.foto} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0 }}>
+
+                <div style={{ marginTop: '-20px', position: 'relative', zIndex: 20, padding: '6px 32px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#5c4033', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px' }}>LÍDER</span>
+                </div>
+              </div>
+
+              {/* Información Personal */}
+              <div style={{ marginTop: '16px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '96px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0, lineHeight: 1.1 }}>
                   {personalReciente.nombre}
                 </h3>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', color: COLORS.azul, marginTop: '4px', textTransform: 'uppercase' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#8b5a2b', marginTop: '4px', textTransform: 'uppercase', margin: '4px 0 0 0' }}>
                   {personalReciente.cargo}
                 </p>
 
-                <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'left', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
+                <div style={{ marginTop: '16px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', textAlign: 'left' }}>
                   <div>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>NIUP</p>
-                    <p style={{ fontSize: '12px', fontWeight: 900, color: '#1e293b', margin: 0 }}>{personalReciente.documento}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>NIUP</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.documento}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>RH</p>
-                    <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.rojo, margin: 0 }}>{personalReciente.rh || "—"}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>RH</p>
+                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0, textTransform: 'uppercase' }}>{personalReciente.rh || "—"}</p>
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0 }}>CÓDIGO INSTITUCIONAL</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>{personalReciente.codigoInstitucional}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>CÓDIGO INSTITUCIONAL</p>
+                    <p style={{ fontSize: '16px', fontWeight: 900, color: '#8b5a2b', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.codigoInstitucional}</p>
                   </div>
                 </div>
               </div>
 
-              <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '15px', border: `2px solid ${COLORS.azul}10`, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
-                  <div style={{ width: '90px', height: '90px', background: '#fff', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {qrPersonal ? (
-                      <img src={qrPersonal} alt="QR" style={{ width: '100%', height: '100%' }} />
-                    ) : (
-                      <QrCode style={{ width: '40px', height: '40px', opacity: 0.2 }} />
-                    )}
-                  </div>
+              {/* Bottom Area (QR and Footer) */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 900, color: '#5c4033', margin: 0 }}>@fundacionislacascajal</p>
                 </div>
+
+                <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #8b5a2b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  {qrPersonal ? (
+                    <img src={qrPersonal} alt="QR" style={{ width: '70px', height: '70px' }} />
+                  ) : (
+                    <QrCode style={{ width: '70px', height: '70px', opacity: 0.2 }} />
+                  )}
+                </div>
+              </div>
+
+              {/* Franjas de color decorativas (Tierra) */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
+                <div style={{ flex: 1, backgroundColor: '#3e2723' }} />
+                <div style={{ flex: 1, backgroundColor: '#5c4033' }} />
+                <div style={{ flex: 1, backgroundColor: '#8b5a2b' }} />
+                <div style={{ flex: 1, backgroundColor: '#cd853f' }} />
               </div>
             </div>
 
