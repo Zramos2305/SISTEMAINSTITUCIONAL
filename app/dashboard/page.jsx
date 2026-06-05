@@ -548,8 +548,9 @@ function DashboardContent() {
       });
       toast.success("Eliminado correctamente");
       cargarAuditoria();
-    } catch {
-      toast.error("Error al eliminar");
+    } catch (err) {
+      console.error("Detalle del error al eliminar:", err);
+      toast.error(`Error al eliminar: ${err.message}`);
     } finally {
       setCodigoAEliminar(null);
     }
@@ -599,8 +600,9 @@ function DashboardContent() {
       });
       toast.success("Desactivado manualmente");
       cargarAuditoria();
-    } catch {
-      toast.error("Error al desactivar");
+    } catch (err) {
+      console.error("Detalle del error al desactivar:", err);
+      toast.error(`Error al desactivar: ${err.message}`);
     } finally {
       setUpdatingStatus(null);
       setConfirmarInactivacion(null);
