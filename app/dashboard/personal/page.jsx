@@ -1482,26 +1482,28 @@ function PersonalContent() {
                 </div>
               </div>
 
-              <div style={{ textAlign: "center", marginBottom: "40px" }}>
-                <h2 style={{ fontSize: "22px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE VINCULACIÓN INSTITUCIONAL</h2>
-              </div>
-
               <div style={{ fontSize: "16px", textAlign: "justify" }}>
-                <p>La Fundación Isla Cascajal certifica que:</p>
+                <p>La Fundación Isla Cascajal certifica que reconoce a:</p>
+                
                 <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
                   {personalReciente.nombre}
                 </p>
+                
                 <p>
-                  identificado(a) con documento número <strong>{personalReciente.documento}</strong>, se encuentra vinculado(a) a nuestra institución bajo el código de registro oficial <strong>{personalReciente.codigoInstitucional}</strong>.
+                  con identificación número <strong>{personalReciente.documento}</strong>, y vinculación a nuestra institución bajo la modalidad de <strong>{personalReciente.tipoContrato || personalReciente.tipoVinculacion || "Contrato"}</strong> y con el código <strong>{personalReciente.codigoInstitucional}</strong>.
                 </p>
+                
                 <p>
-                  Actualmente ejerce funciones en calidad de <strong>{personalReciente.tipoPersonal}</strong> ocupando el cargo de <strong>{personalReciente.cargo}</strong>, con fecha de ingreso registrada el <strong>{personalReciente.fechaIngreso}</strong>.
+                  La orientación de sus funciones institucionales se asocian propiamente a las que corresponden al cargo de <strong>{personalReciente.cargo}</strong>.
                 </p>
-                {personalReciente.afiliarAutomaticamente && (
-                  <p>
-                    Asimismo, consta que cuenta con afiliación activa a los convenios y beneficios institucionales otorgados por la Fundación Isla Cascajal de manera indefinida mientras mantenga su vínculo con la institución.
-                  </p>
-                )}
+                
+                <div style={{ marginTop: "30px", marginBottom: "30px", fontWeight: "bold" }}>
+                  <p>FECHA DE INGRESO: {personalReciente.fechaIngreso}</p>
+                  <p>TERMINACIÓN DEL CONTRATO: {personalReciente.fechaTerminacion || "No aplica"}</p>
+                  <p>MOTIVO DE TERMINACIÓN: {personalReciente.motivoTerminacion || "No aplica"}</p>
+                  <p>SALARIO U HONORARIO MENSUAL: {personalReciente.salario || "No especificado"}</p>
+                </div>
+
                 <p style={{ marginTop: "30px" }}>
                   El presente documento se expide a solicitud de la parte interesada el día {fechaCertificado || new Date().toLocaleDateString("es-CO")}.
                 </p>
@@ -1510,9 +1512,13 @@ function PersonalContent() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "80px" }}>
                 <div>
                   <div style={{ width: "200px", borderBottom: "1px solid #000", marginBottom: "10px" }}></div>
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Departamento de Recursos Humanos</p>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Área de Talento Humano</p>
                   <p style={{ margin: 0, fontSize: "12px" }}>Fundación Isla Cascajal</p>
                 </div>
+              </div>
+              
+              <div style={{ marginTop: "50px", fontSize: "12px", color: "#666", fontStyle: "italic" }}>
+                Documento electrónico Verificable con el código QR
               </div>
             </div>
           </>
