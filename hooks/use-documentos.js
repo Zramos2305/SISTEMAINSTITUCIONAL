@@ -30,6 +30,7 @@ export function useDocumentos() {
       dataDocs = snapshot.docs.map((doc) => ({
         codigo: doc.id,
         ...doc.data(),
+        id: doc.id,
         _collection: "documentos"
       }));
       mergeAndSort();
@@ -39,6 +40,7 @@ export function useDocumentos() {
       dataAfiliados = snapshot.docs.map((doc) => ({
         codigo: doc.id,
         ...doc.data(),
+        id: doc.id,
         tipo: "afiliado",
         _collection: "afiliados"
       }));

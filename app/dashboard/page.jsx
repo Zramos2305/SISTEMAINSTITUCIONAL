@@ -531,10 +531,9 @@ function DashboardContent() {
     });
   }, [documentos, selectedDate]);
 
-  // Elimina un documento seleccionado y resetea la variable de "codigoAEliminar"
   const handleEliminar = async () => {
     if (!codigoAEliminar) return;
-    const docEncontrado = documentos.find(d => d.codigo === codigoAEliminar);
+    const docEncontrado = documentos.find(d => (d.id === codigoAEliminar || d.codigo === codigoAEliminar));
     const colName = docEncontrado?._collection || "documentos";
 
     try {
@@ -557,14 +556,14 @@ function DashboardContent() {
   };
 
   // Reactivar directamente (sin confirmación). Desactivar requiere confirmación.
-  const handleToggleEstado = async (codigo, estadoActual) => {
+  const handleToggleEstado = async (idDocumento, estadoActual) => {
     if (estadoActual === "activo") return;
-    const docEncontrado = documentos.find(d => d.codigo === codigo);
+    const docEncontrado = documentos.find(d => (d.id === idDocumento || d.codigo === idDocumento));
     const colName = docEncontrado?._collection || "documentos";
 
-    setUpdatingStatus(codigo);
+    setUpdatingStatus(idDocumento);
     try {
-      await actualizarEstado(codigo, "activo", { desactivadoManualmente: null, fechaDesactivacion: null }, colName);
+      await actualizarEstado(idDocumento, "activo", { desactivadoManualmente: null, fechaDesactivacion: null }, colName);
       await registrarAuditoria({
         user,
         userData,
@@ -585,9 +584,10 @@ function DashboardContent() {
   const handleConfirmarInactivar = async () => {
     if (!confirmarInactivacion) return;
     const colName = confirmarInactivacion._collection || "documentos";
-    setUpdatingStatus(confirmarInactivacion.codigo);
+    const docId = confirmarInactivacion.id || confirmarInactivacion.codigo;
+    setUpdatingStatus(docId);
     try {
-      await actualizarEstado(confirmarInactivacion.codigo, "inactivo", {
+      await actualizarEstado(docId, "inactivo", {
         desactivadoManualmente: true,
         fechaDesactivacion: new Date().toISOString(),
       }, colName);
@@ -595,7 +595,7 @@ function DashboardContent() {
         user,
         userData,
         accion: "Inactivar Registro",
-        documentoId: confirmarInactivacion.codigo,
+        documentoId: docId,
         detalles: `Desactivación manual por el administrador en ${colName}`
       });
       toast.success("Desactivado manualmente");
@@ -1005,7 +1005,7 @@ function DashboardContent() {
                                       } else if (esActivo) {
                                         setConfirmarInactivacion(doc);
                                       } else {
-                                        handleToggleEstado(doc.codigo, doc.estado);
+                                        handleToggleEstado(doc.id || doc.codigo, doc.estado);
                                       }
                                     }}
                                     disabled={cargando}
@@ -1066,7 +1066,7 @@ function DashboardContent() {
                                       size="icon"
                                       className="text-destructive hover:text-destructive"
                                       title="Eliminar"
-                                      onClick={() => setCodigoAEliminar(doc.codigo)}
+                                      onClick={() => setCodigoAEliminar(doc.id || doc.codigo)}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -1460,16 +1460,14 @@ function DashboardContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleConfirmarInactivar();
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogCancel disabled={!!updatingStatus}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" disabled={!!updatingStatus} onClick={(e) => {
+              e.preventDefault();
+              handleConfirmarInactivar();
+            }}>
+              {updatingStatus === (confirmarInactivacion?.id || confirmarInactivacion?.codigo) ? <Spinner className="w-4 h-4 mr-2" /> : null}
               Desactivar
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
