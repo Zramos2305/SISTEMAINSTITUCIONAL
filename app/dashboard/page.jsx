@@ -1434,7 +1434,10 @@ function DashboardContent() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleEliminar}
+              onClick={(e) => {
+                e.preventDefault();
+                handleEliminar();
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar
@@ -1457,7 +1460,10 @@ function DashboardContent() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmarInactivar}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmarInactivar();
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Desactivar
