@@ -1483,21 +1483,21 @@ function PersonalContent() {
               style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px', fontFamily: 'sans-serif' }}
             >
               {/* Decoración Superior Anaranjado/Rojizo */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '210px', overflow: 'hidden', background: `linear-gradient(135deg, #ea580c 0%, #991b1b 100%)` }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '220px', overflow: 'hidden', background: `linear-gradient(135deg, #ea580c 0%, #991b1b 100%)` }}>
               </div>
 
               {/* Logo y Encabezado */}
-              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '85px', height: '85px', borderRadius: '9999px', objectFit: 'contain' }} />
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '96px', height: '96px', backgroundColor: '#ffffff', borderRadius: '9999px', marginBottom: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '88px', height: '88px', objectFit: 'contain' }} />
                 </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '26px', margin: 0, textShadow: '0 2px 6px rgba(0,0,0,0.6)', letterSpacing: '-0.05em' }}>ISLA CASCAJAL</h2>
-                <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '4px', marginTop: '6px', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>Fundación</p>
+                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 6px rgba(0,0,0,0.6)', letterSpacing: '-0.05em', lineHeight: 1 }}>ISLA CASCAJAL</h2>
+                <p style={{ color: '#ffffff', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '4px', marginTop: '6px', textShadow: '0 2px 6px rgba(0,0,0,0.8)', lineHeight: 1 }}>Fundación</p>
               </div>
 
               {/* Foto de Perfil y Badge LÍDER */}
-              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
-                <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '24px', border: '6px solid #ffffff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
+              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px' }}>
+                <div style={{ position: 'relative', width: '130px', height: '130px', borderRadius: '20px', border: '5px solid #ffffff', boxShadow: '0 15px 30px -10px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                   {personalReciente.foto ? (
                     <img src={personalReciente.foto} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
@@ -1509,13 +1509,13 @@ function PersonalContent() {
                   )}
                 </div>
 
-                <div style={{ marginTop: '-20px', position: 'relative', zIndex: 20, padding: '6px 32px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#b91c1c', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px', marginLeft: '2px' }}>LÍDER</span>
+                <div style={{ marginTop: '-14px', position: 'relative', zIndex: 20, padding: '0 28px', height: '28px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#b91c1c', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', lineHeight: 1, marginTop: '2px', marginLeft: '2px' }}>LÍDER</span>
                 </div>
               </div>
 
               {/* Información Personal */}
-              <div style={{ marginTop: '16px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '96px' }}>
+              <div style={{ marginTop: '12px', padding: '0 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '84px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0, lineHeight: 1.1 }}>
                   {personalReciente.nombre}
                 </h3>
@@ -1540,16 +1540,16 @@ function PersonalContent() {
               </div>
 
               {/* Bottom Area (QR and Footer) */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '12px', paddingBottom: '20px', paddingLeft: '32px', paddingRight: '20px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <p style={{ fontSize: '10px', fontWeight: 900, color: '#5c4033', margin: 0 }}>@fundacionislacascajal</p>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #8b5a2b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                   {qrPersonal ? (
-                    <img src={qrPersonal} alt="QR" style={{ width: '70px', height: '70px' }} />
+                    <img src={qrPersonal} alt="QR" style={{ width: '64px', height: '64px' }} />
                   ) : (
-                    <QrCode style={{ width: '70px', height: '70px', opacity: 0.2 }} />
+                    <QrCode style={{ width: '64px', height: '64px', opacity: 0.2 }} />
                   )}
                 </div>
               </div>
