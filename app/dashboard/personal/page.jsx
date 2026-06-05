@@ -111,6 +111,7 @@ function PersonalContent() {
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
   const [horarioEdit, setHorarioEdit] = useState({});
   const [guardandoHorario, setGuardandoHorario] = useState(false);
+  const [confirmDuplicado, setConfirmDuplicado] = useState(false);
 
   const cargarDatos = async () => {
     setCargandoUsuarios(true);
@@ -130,6 +131,50 @@ function PersonalContent() {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  const removerTildes = (str) => {
+    if (!str) return "";
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
+
+  useEffect(() => {
+    if (view === "create" && !isEditing && formData.nombres && formData.primerApellido) {
+      const generarCorreoAsync = async () => {
+        const primerNombre = removerTildes(formData.nombres.trim().split(" ")[0].toLowerCase());
+        const primerApe = removerTildes(formData.primerApellido.trim().split(" ")[0].toLowerCase());
+        
+        if (!primerNombre || !primerApe) return;
+
+        const baseCorreo = `${primerNombre}.${primerApe}`;
+        let correoSugerido = `${baseCorreo}@islacascajal.org`;
+        
+        try {
+          const qBase = query(collection(db, "usuarios"), where("correo", ">=", baseCorreo), where("correo", "<=", baseCorreo + "\uf8ff"));
+          const snapshot = await getDocs(qBase);
+          
+          if (!snapshot.empty) {
+            const correosExistentes = snapshot.docs.map(doc => doc.data().correo);
+            if (correosExistentes.includes(correoSugerido)) {
+              let contador = 0;
+              while (correosExistentes.includes(`${baseCorreo}${contador.toString().padStart(2, '0')}@islacascajal.org`)) {
+                contador++;
+              }
+              correoSugerido = `${baseCorreo}${contador.toString().padStart(2, '0')}@islacascajal.org`;
+            }
+          }
+          
+          setFormData(prev => ({ ...prev, correo: correoSugerido }));
+        } catch (error) {
+          console.error("Error al generar correo automático:", error);
+        }
+      };
+      
+      const timeoutId = setTimeout(() => {
+        generarCorreoAsync();
+      }, 800);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.nombres, formData.primerApellido, view, isEditing]);
 
   const comprimirImagen = (base64Str, quality = 0.7, maxWidth = 500) => {
     return new Promise((resolve) => {
@@ -200,9 +245,28 @@ function PersonalContent() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    if (formData.password.length < 4) {
+      toast.error("La contraseña debe tener al menos 4 caracteres");
       return;
+    }
+
+    // Verificar si ya existe un empleado con esa cédula
+    if (!confirmDuplicado) {
+      try {
+        const docNumeroLimpio = formData.documento.replace(/\./g, "");
+        const q = query(collection(db, "empleados"), where("documento", "in", [formData.documento, docNumeroLimpio]));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const existente = snap.docs[0].data();
+          const confirmar = window.confirm(
+            `⚠️ Ya existe un empleado registrado con este número de cédula:\n\n👤 ${existente.nombre}\n📋 Documento: ${existente.documento}\n\n¿Deseas continuar de todas formas con el registro?`
+          );
+          if (!confirmar) return;
+          setConfirmDuplicado(true);
+        }
+      } catch (err) {
+        console.warn("No se pudo verificar duplicado:", err);
+      }
     }
 
     setCreando(true);
@@ -248,32 +312,39 @@ function PersonalContent() {
       toast.error("Error inesperado");
     } finally {
       setCreando(false);
+      setConfirmDuplicado(false);
     }
   };
 
-  const handleToggleEstado = async (uId, currentStatus) => {
-    try {
-      const nuevoActivo = !currentStatus;
-      await updateDoc(doc(db, "usuarios", uId), { activo: nuevoActivo });
+  const handleToggleEstado = async (empleadoId, uId, estadoActual) => {
+    const nuevoEstado = estadoActual === "activo" ? "inactivo" : "activo";
+    const accion = nuevoEstado === "activo" ? "habilitar" : "inhabilitar";
+    const confirmar = window.confirm(
+      `¿Deseas ${accion} a este empleado? ${nuevoEstado === "inactivo" ? "No podrá acceder al sistema." : "Podrá volver a acceder al sistema."}`
+    );
+    if (!confirmar) return;
 
-      const usuarioObj = usuarios.find(u => u.id === uId);
-      if (usuarioObj?.empleadoId) {
-        await updateDoc(doc(db, "empleados", usuarioObj.empleadoId), { estado: nuevoActivo ? "activo" : "inactivo" });
+    try {
+      const nuevoActivo = nuevoEstado === "activo";
+      if (uId) await updateDoc(doc(db, "usuarios", uId), { activo: nuevoActivo, estado: nuevoEstado });
+
+      if (empleadoId) {
+        await updateDoc(doc(db, "empleados", empleadoId), { estado: nuevoEstado });
 
         // Sincronizar estado con afiliación institucional
-        const q = query(collection(db, "afiliados"), where("personalId", "==", usuarioObj.empleadoId));
+        const q = query(collection(db, "afiliados"), where("personalId", "==", empleadoId));
         const snap = await getDocs(q);
         const promesas = snap.docs.map(async (d) => {
-          await updateDoc(doc(db, "afiliados", d.id), { estado: nuevoActivo ? "activo" : "inactivo" });
+          await updateDoc(doc(db, "afiliados", d.id), { estado: nuevoEstado });
         });
         await Promise.all(promesas);
       }
 
-      toast.success(nuevoActivo ? "Acceso y beneficios reactivados" : "Acceso y beneficios bloqueados");
+      toast.success(`Empleado ${nuevoEstado === "activo" ? "habilitado" : "inhabilitado"} correctamente`);
       cargarDatos();
     } catch (error) {
       console.error(error);
-      toast.error("Error al cambiar estado");
+      toast.error("Error al cambiar el estado del empleado");
     }
   };
 
@@ -440,6 +511,8 @@ function PersonalContent() {
       setEditId(null);
     }
   };
+
+
 
   const handleEliminarPersonal = async (uId, empleadoId) => {
     if (!window.confirm("¿Estás seguro de que deseas ELIMINAR este personal permanentemente? Esta acción no se puede deshacer.")) return;
@@ -710,6 +783,15 @@ function PersonalContent() {
                                     <Button variant="ghost" size="icon" onClick={() => generarCertificadoPersonal(personal)} title="Descargar Certificado">
                                       <FileText className="h-4 w-4 text-success" />
                                     </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleToggleEstado(u.empleadoId, u.id, personal?.estado || "activo")}
+                                      title={personal?.estado === "inactivo" ? "Habilitar Empleado" : "Inhabilitar Empleado"}
+                                      className={personal?.estado === "inactivo" ? "text-success hover:bg-success/10" : "text-orange-500 hover:bg-orange-500/10"}
+                                    >
+                                      {personal?.estado === "inactivo" ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
+                                    </Button>
                                   </>
                                 )}
                                 <Button variant="ghost" size="icon" onClick={() => handleEliminarPersonal(u.id, u.empleadoId)} title="Eliminar Personal" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
@@ -855,7 +937,7 @@ function PersonalContent() {
                           <div className="space-y-2">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">Contraseña Inicial *</label>
                             <div className="relative">
-                              <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Min. 6 caracteres" />
+                              <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Min. 4 caracteres" />
                               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                               </button>
