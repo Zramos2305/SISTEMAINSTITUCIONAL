@@ -537,7 +537,7 @@ function PersonalContent() {
   const generarCarnetPersonal = async (persona) => {
     toast.info("Generando carnet...");
     try {
-      const VERIFICACION_BASE_URL = 'https://sistema-verificacion.vercel.app/verificar?doc=';
+      const VERIFICACION_BASE_URL = `${window.location.origin}/verificar?doc=`;
       const qrUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigoInstitucional}`);
       setQrPersonal(qrUrl);
       setPersonalReciente(persona);
@@ -590,7 +590,7 @@ function PersonalContent() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
       // Generar QR
-      const VERIFICACION_BASE_URL = 'https://sistema-verificacion.vercel.app/verificar?doc=';
+      const VERIFICACION_BASE_URL = `${window.location.origin}/verificar?doc=`;
       const qrDataUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigoInstitucional}`);
       const qrSize = 35;
       const marginX = pdfWidth - qrSize - 20;

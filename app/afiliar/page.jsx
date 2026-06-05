@@ -45,7 +45,7 @@ import QRCode from "qrcode";
 import html2canvas from "html2canvas";
 import { FileText as FileTextIcon } from "lucide-react";
 
-const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar?doc=";
+const getVerificacionBaseUrl = () => `${window.location.origin}/verificar?doc=`;
 
 const PAISES = [
   "Colombia", "Venezuela", "Ecuador", "Perú", "Chile", "Argentina", "Brasil", "Panamá", "México", "Estados Unidos", "España", "Otro"
@@ -120,7 +120,7 @@ export default function AfiliarPage() {
   useEffect(() => {
     const generateQR = async () => {
       try {
-        const link = VERIFICACION_BASE_URL + formData.codigo;
+        const link = getVerificacionBaseUrl() + formData.codigo;
         const url = await QRCode.toDataURL(link, {
           width: 400,
           margin: 1,

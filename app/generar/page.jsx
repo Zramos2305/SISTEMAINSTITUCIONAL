@@ -27,7 +27,7 @@ import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
 
-const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar?doc=";
+const getVerificacionBaseUrl = () => `${window.location.origin}/verificar?doc=`;
 
 // Función auxiliar para generar un código alfanumérico aleatorio (ejemplo: FICONG-4F8A0X1P)
 function generarCodigo() {
@@ -124,7 +124,7 @@ function GenerarContent() {
       }
 
       const codigo = generarCodigo();
-      const link = VERIFICACION_BASE_URL + codigo;
+      const link = getVerificacionBaseUrl() + codigo;
 
       let fechaCreacion = new Date();
       const now = new Date();

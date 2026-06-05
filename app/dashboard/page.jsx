@@ -107,7 +107,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 
-const VERIFICACION_BASE_URL = "https://sistema-verificacion.vercel.app/verificar?doc=";
+const getVerificacionBaseUrl = () => `${window.location.origin}/verificar?doc=`;
 
 
 
@@ -163,7 +163,7 @@ function exportarCSV(lista, nombre) {
 // Función asíncrona para generar un código QR con el mismo estilo que /generar y descargarlo como PNG
 async function descargarQR(docObj) {
   const codigo = typeof docObj === "string" ? docObj : docObj.codigo;
-  const link = VERIFICACION_BASE_URL + codigo;
+  const link = getVerificacionBaseUrl() + codigo;
   try {
     const QRCode = (await import("qrcode")).default;
     const qrDataUrl = await QRCode.toDataURL(link, {
@@ -698,7 +698,7 @@ function DashboardContent() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
       // Generar QR
-      const qrDataUrl = await QRCode.toDataURL(`${VERIFICACION_BASE_URL}${persona.codigo}`);
+      const qrDataUrl = await QRCode.toDataURL(`${getVerificacionBaseUrl()}${persona.codigo}`);
       const qrSize = 35;
       const marginX = pdfWidth - qrSize - 20;
       const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
