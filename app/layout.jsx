@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
+import RefreshButton from '@/components/refresh-button'
 
 // Configuramos la fuente web "Inter" desde Google Fonts para toda la app
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -55,6 +56,7 @@ export default function RootLayout({ children }) {
             </p>
           </div>
         </footer>
+        <RefreshButton />
         <Toaster richColors position="top-center" />
         <Analytics />
       </body>
