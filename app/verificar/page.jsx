@@ -141,7 +141,16 @@ function VerificarContent() {
 
   const formatearFecha = (f) => {
     if (!f) return "-";
-    return new Date(f).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+    let d;
+    if (f && typeof f.toDate === 'function') {
+      d = f.toDate();
+    } else {
+      d = new Date(f);
+    }
+    
+    if (isNaN(d.getTime())) return "-";
+    
+    return d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
   };
 
   return (
