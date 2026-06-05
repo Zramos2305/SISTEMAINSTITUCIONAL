@@ -21,7 +21,9 @@ export default function HomePage() {
     if (userData) {
       if (userData.rol === "empleado") {
         router.push("/asistencia");
-      } else if (userData.rol === "recursos_humanos" || userData.rol === "superadmin") {
+      } else if (userData.rol === "recursos_humanos") {
+        router.push("/dashboard/personal");
+      } else if (userData.rol === "superadmin") {
         router.push("/dashboard");
       } else {
         router.push("/unauthorized");

@@ -9,7 +9,7 @@ import Image from "next/image";
 /**
  * Componente Guardián de Rutas
  * 
- * @param {string[]} allowedRoles - Array de roles permitidos para esta ruta. Ej: ["superadmin", "admin"]
+ * @param {string[]} allowedRoles - Array de roles permitidos para esta ruta. Ej: ["superadmin", "recursos_humanos"]
  * @param {React.ReactNode} children - El contenido a renderizar si el usuario tiene permiso
  */
 export default function ProtectedRoute({ allowedRoles, children }) {
@@ -45,9 +45,9 @@ export default function ProtectedRoute({ allowedRoles, children }) {
       if (userData.rol === "empleado" && !pathname.startsWith("/asistencia")) {
         router.push("/asistencia");
       } 
-      // Si es un admin intentando entrar a zona superadmin o asistencia, forzar al dashboard
-      else if (userData.rol === "admin" && (pathname.startsWith("/asistencia") || pathname.includes("/usuarios") || pathname.includes("/modalidad-laboral"))) {
-        router.push("/dashboard");
+      // Si es un recursos_humanos intentando entrar a zona superadmin o asistencia, forzar a personal
+      else if (userData.rol === "recursos_humanos" && !pathname.includes("/dashboard/personal") && !pathname.includes("/generar")) {
+        router.push("/dashboard/personal");
       }
       // Redirigir a unauthorized por defecto
       else {

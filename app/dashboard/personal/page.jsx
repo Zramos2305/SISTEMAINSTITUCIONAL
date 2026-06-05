@@ -971,12 +971,12 @@ function PersonalContent() {
                         )}
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Rol de Permisos *</label>
-                          <Select value={formData.rol} onValueChange={v => setFormData({ ...formData, rol: v })} disabled={!esSuperAdmin}>
+                          <Select value={formData.rol} onValueChange={v => setFormData({ ...formData, rol: v })}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="empleado">Solo Reporte de Asistencia</SelectItem>
-                              {esSuperAdmin && <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>}
-                              {esSuperAdmin && <SelectItem value="admin">Administrador del Sistema</SelectItem>}
+                              <SelectItem value="empleado">Empleado</SelectItem>
+                              <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
+                              {esSuperAdmin && <SelectItem value="superadmin">Súper Administrador</SelectItem>}
                             </SelectContent>
                           </Select>
                         </div>

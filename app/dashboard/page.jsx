@@ -319,8 +319,7 @@ function DashboardContent() {
   const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
 
   const esSuperAdmin = userData?.rol === "superadmin";
-  const esRRHH = userData?.rol === "recursos_humanos";
-  const puedeVerAsistenciasYPersonal = esSuperAdmin || esRRHH;
+  const puedeVerAsistenciasYPersonal = esSuperAdmin;
 
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -2034,7 +2033,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute allowedRoles={["superadmin", "recursos_humanos"]}>
+    <ProtectedRoute allowedRoles={["superadmin"]}>
       <DashboardContent />
     </ProtectedRoute>
   );
