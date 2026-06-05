@@ -45,13 +45,29 @@ function VerificarContent() {
       try {
         let docData = null;
 
-        // 1. Buscar en 'afiliados' por campo 'codigo' (no por ID del documento)
-        const afiliadosQuery = query(collection(db, "afiliados"), where("codigo", "==", codigo));
-        const afiliadosSnap = await getDocs(afiliadosQuery);
+        // 1. Buscar en 'afiliados'
+        let afiliadoDoc = null;
+        const afiliadoById = await getDoc(doc(db, "afiliados", codigo));
+        if (afiliadoById.exists()) {
+          afiliadoDoc = afiliadoById;
+        } else {
+          const afiQ1 = query(collection(db, "afiliados"), where("codigo", "==", codigo));
+          const snap1 = await getDocs(afiQ1);
+          if (!snap1.empty) {
+            afiliadoDoc = snap1.docs[0];
+          } else {
+            const afiQ2 = query(collection(db, "afiliados"), where("codigoInstitucional", "==", codigo));
+            const snap2 = await getDocs(afiQ2);
+            if (!snap2.empty) afiliadoDoc = snap2.docs[0];
+          }
+        }
 
-        if (!afiliadosSnap.empty) {
-          const afiliadoDoc = afiliadosSnap.docs[0];
-          docData = { codigo: afiliadoDoc.data().codigo, tipo: "afiliado", ...afiliadoDoc.data() };
+        if (afiliadoDoc) {
+          docData = { 
+            codigo: afiliadoDoc.data().codigo || afiliadoDoc.data().codigoInstitucional || afiliadoDoc.id, 
+            tipo: "afiliado", 
+            ...afiliadoDoc.data() 
+          };
         } else {
           // 2. Buscar en 'empleados' por codigoInstitucional (exacto tal como fue guardado)
           // Intentar con el valor tal como viene, y también en mayúsculas
