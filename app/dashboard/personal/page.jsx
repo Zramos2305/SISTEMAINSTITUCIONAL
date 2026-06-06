@@ -34,10 +34,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
   Users, UserPlus, RefreshCcw, LogOut, ArrowLeft, Mail, Lock, User, Briefcase, CalendarDays,
-  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint, Pencil, AlertCircle
+  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint, Pencil, AlertCircle, HelpCircle
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -636,440 +637,80 @@ function PersonalContent() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-full" />
-            <div>
-              <h1 className="font-semibold text-foreground text-sm leading-tight">Módulo de Personal</h1>
-              <p className="text-xs text-muted-foreground">Institucional</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={cargarDatos} title="Recargar">
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-2" /> Salir
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 max-w-6xl">
-
-        {/* ================================================== */}
-        {/* VISTA: TABLA DASHBOARD PERSONAL */}
-        {/* ================================================== */}
-        {view === "table" && (
-          <div className="space-y-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <Briefcase className="h-7 w-7 text-primary" />
-                  Directorio de Personal
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Administra accesos, roles, cargos e información institucional de los colaboradores.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                <div className="relative w-full sm:w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nombre o correo..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
-                  />
-                </div>
-                <Button onClick={() => setView("create")} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
-                  <UserPlus className="h-4 w-4" /> Nuevo Personal
-                </Button>
-              </div>
-            </div>
-
-            {cargandoUsuarios || cargandoPersonal ? (
-              <div className="flex justify-center py-12"><Spinner className="h-8 w-8 text-primary" /></div>
-            ) : (
-              <Card>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Colaborador</TableHead>
-                        <TableHead>Rol / Cargo</TableHead>
-                        <TableHead>Modalidad / Estado</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {usuariosFiltrados.map((u) => {
-                        const personal = u.empleadoId ? personalList.find(p => p.id === u.empleadoId) : {
-                          id: null,
-                          nombre: u.nombre,
-                          documento: "No Registrado",
-                          cargo: "Administrador / RRHH",
-                          tipoPersonal: u.rol,
-                          codigoInstitucional: u.uid?.substring(0, 8),
-                          fechaIngreso: new Date().toISOString().split("T")[0],
-                          horarioModalidad: HORARIO_DEFAULT,
-                          isMock: true
-                        };
-
-                        return (
-                          <TableRow key={u.id} className={u.activo === false ? "opacity-60 bg-muted/20" : ""}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                {personal?.foto ? (
-                                  <img src={personal.foto} alt="" className="w-10 h-10 rounded-full object-cover border" />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <User className="h-5 w-5 text-primary" />
-                                  </div>
-                                )}
-                                <div className="flex flex-col">
-                                  <span className="font-semibold text-sm">{u.nombre}</span>
-                                  <span className="text-xs text-muted-foreground">{u.correo}</span>
-                                  <span className="text-[10px] text-muted-foreground">ID: {personal?.documento || "—"}</span>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-1 items-start">
-                                <Badge variant="outline" className={
-                                  u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                                    u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
-                                      'bg-muted'
-                                }>
-                                  {u.rol}
-                                </Badge>
-                                {Array.isArray(personal?.memorandos) && personal.memorandos.filter(m => typeof m === 'string' && m.trim() !== "").length > 0 && (
-                                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[9px] mt-1 flex gap-1 items-center w-fit">
-                                    <AlertCircle className="w-3 h-3" />
-                                    {personal.memorandos.filter(m => typeof m === 'string' && m.trim() !== "").length} Memorando(s)
-                                  </Badge>
-                                )}
-                                {personal && (
-                                  <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-1" title={personal.cargo}>
-                                    <Briefcase className="h-3 w-3" /> {personal.cargo} ({personal.tipoPersonal})
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-2 items-start">
-                                {u.activo !== false ? (
-                                  <Badge className="bg-success text-white border-none text-[10px] uppercase">Activo</Badge>
-                                ) : (
-                                  <Badge variant="destructive" className="text-[10px] uppercase">Bloqueado</Badge>
-                                )}
-                                {personal && !personal.isMock && (
-                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    {personal.modalidadLaboral === "Teletrabajo" ? <Monitor className="w-3 h-3" /> : <Building className="w-3 h-3" />}
-                                    {personal.modalidadLaboral}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {personal && (
-                                  <>
-                                    <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Personal" className="text-warning hover:bg-warning/10">
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => { if (!personal.isMock) { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); } else { toast.info("Super Admins no tienen gestión de horario."); } }} title="Gestionar Horario">
-                                      <CalendarDays className="h-4 w-4 text-primary" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
-                                      <QrCode className="h-4 w-4 text-info" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => generarCertificadoPersonal(personal)} title="Descargar Certificado">
-                                      <FileText className="h-4 w-4 text-success" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleToggleEstado(u.empleadoId, u.id, personal?.estado || "activo")}
-                                      title={personal?.estado === "inactivo" ? "Habilitar Empleado" : "Inhabilitar Empleado"}
-                                      className={personal?.estado === "inactivo" ? "text-success hover:bg-success/10" : "text-orange-500 hover:bg-orange-500/10"}
-                                    >
-                                      {personal?.estado === "inactivo" ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
-                                    </Button>
-                                  </>
-                                )}
-                                <Button variant="ghost" size="icon" onClick={() => handleEliminarPersonal(u.id, u.empleadoId)} title="Eliminar Personal" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                      {usuariosFiltrados.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                            No se encontraron registros.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* ================================================== */}
-        {/* VISTA: CREAR PERSONAL */}
-        {/* ================================================== */}
-        {view === "create" && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center gap-4 border-b pb-4">
-              <Button variant="ghost" size="icon" onClick={() => setView("table")}>
-                <ArrowLeft className="h-5 w-5" />
+    <TooltipProvider>
+      <div className="min-h-screen bg-background pb-20">
+        <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/dashboard">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
               </Button>
+              <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-full" />
               <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  {isEditing ? "Actualizar Información de Personal" : "Registrar Nuevo Personal"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {isEditing ? "Edite los datos administrativos del trabajador." : "Llene los datos administrativos para habilitar un nuevo trabajador."}
-                </p>
+                <h1 className="font-semibold text-foreground text-sm leading-tight">Módulo de Personal</h1>
+                <p className="text-xs text-muted-foreground">Institucional</p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={cargarDatos} title="Recargar">
+                <RefreshCcw className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" /> Salir
+              </Button>
+            </div>
+          </div>
+        </header>
 
-            <Card>
-              <CardContent className="p-6">
-                <form onSubmit={isEditing ? handleEditarUsuario : handleCrearUsuario} className="space-y-8" autoComplete="off">
-                  {/* FOTO Y DATOS BÁSICOS */}
-                  <div className="flex flex-col md:flex-row gap-8">
-                    <div className="flex flex-col items-center gap-3 shrink-0">
-                      <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed bg-muted flex items-center justify-center group cursor-pointer hover:border-primary transition-colors">
-                        {fotoPreview ? (
-                          <img src={fotoPreview} alt="Foto" className="w-full h-full object-cover" />
-                        ) : (
-                          <UserPlus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                        )}
-                        <input type="file" accept="image/*" required={!isEditing && !fotoPreview} onChange={handleFotoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                      </div>
-                      <p className="text-xs text-muted-foreground font-medium">Foto oficial (requerida)*</p>
-                    </div>
+        <main className="container mx-auto px-4 py-6 max-w-6xl">
 
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Nombres *</label>
-                        <Input required value={formData.nombres} onChange={e => handleNameChange("nombres", e.target.value)} placeholder="Ej. Juan Carlos" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Primer Apellido *</label>
-                        <Input required value={formData.primerApellido} onChange={e => handleNameChange("primerApellido", e.target.value)} placeholder="Ej. Pérez" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Segundo Apellido</label>
-                        <Input value={formData.segundoApellido} onChange={e => handleNameChange("segundoApellido", e.target.value)} placeholder="Ej. Gómez (Opcional)" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground flex items-center justify-between">
-                          <span>Documento (NIUP) *</span>
-                          {isEditing && !permitirModificarNiup && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const seguro = window.confirm("¿Está seguro de que desea modificar el NIUP? Esto cambiará el número de documento de este personal.");
-                                if (seguro) {
-                                  setPermitirModificarNiup(true);
-                                }
-                              }}
-                              className="text-xs font-semibold text-amber-500 hover:text-amber-600 hover:underline cursor-pointer"
-                            >
-                              Modificar NIUP
-                            </button>
-                          )}
-                        </label>
-                        <Input
-                          required
-                          value={formData.documento}
-                          onChange={handleDocumentChange}
-                          placeholder="1.234.567.890"
-                          disabled={isEditing && !permitirModificarNiup}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Teléfono</label>
-                        <Input value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value })} placeholder="300 000 0000" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Dirección</label>
-                        <Input value={formData.direccion} onChange={e => setFormData({ ...formData, direccion: e.target.value })} placeholder="Ej. Calle 1 # 2-3" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">RH</label>
-                        <Select value={formData.rh} onValueChange={v => setFormData({ ...formData, rh: v })}>
-                          <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="O+">O+</SelectItem><SelectItem value="O-">O-</SelectItem>
-                            <SelectItem value="A+">A+</SelectItem><SelectItem value="A-">A-</SelectItem>
-                            <SelectItem value="B+">B+</SelectItem><SelectItem value="B-">B-</SelectItem>
-                            <SelectItem value="AB+">AB+</SelectItem><SelectItem value="AB-">AB-</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+          {/* ================================================== */}
+          {/* VISTA: TABLA DASHBOARD PERSONAL */}
+          {/* ================================================== */}
+          {view === "table" && (
+            <div className="space-y-6">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <Briefcase className="h-7 w-7 text-primary" />
+                    Directorio de Personal
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Administra accesos, roles, cargos e información institucional de los colaboradores.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre o correo..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
+                    />
                   </div>
+                  <Button onClick={() => setView("create")} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
+                    <UserPlus className="h-4 w-4" /> Nuevo Personal
+                  </Button>
+                </div>
+              </div>
 
-                  <div className="border-t pt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* INFORMACIÓN INSTITUCIONAL */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Building className="w-4 h-4" /> Cargo y Funciones</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Personal *</label>
-                          <Select value={formData.tipoPersonal} onValueChange={v => setFormData({ ...formData, tipoPersonal: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {TIPOS_PERSONAL.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Cargo Oficial *</label>
-                          <Input required value={formData.cargo} onChange={e => setFormData({ ...formData, cargo: e.target.value })} placeholder="Ej. Coordinador de Proyectos" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Modalidad Laboral</label>
-                          <Select value={formData.modalidadLaboral} onValueChange={v => setFormData({ ...formData, modalidadLaboral: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Presencial">Presencial</SelectItem>
-                              <SelectItem value="Teletrabajo">Teletrabajo</SelectItem>
-                              <SelectItem value="Híbrido">Híbrido</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ACCESOS AL SISTEMA */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2"><Lock className="w-4 h-4" /> Acceso al Sistema</h3>
-                      <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-dashed">
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Correo de Ingreso *</label>
-                          <Input required type="email" value={formData.correo} onChange={e => setFormData({ ...formData, correo: e.target.value })} placeholder="usuario@islacascajal.org" disabled={isEditing} />
-                        </div>
-                        {!isEditing && (
-                          <div className="space-y-2">
-                            <label className="text-xs font-semibold uppercase text-muted-foreground">Contraseña Inicial *</label>
-                            <div className="relative">
-                              <Input required type={showPassword ? "text" : "password"} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Min. 4 caracteres" />
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Rol de Permisos *</label>
-                          <Select value={formData.rol} onValueChange={v => setFormData({ ...formData, rol: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="empleado">Empleado</SelectItem>
-                              <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
-                              {esSuperAdmin && <SelectItem value="superadmin">Súper Administrador</SelectItem>}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* INFORMACION CONTRACTUAL */}
-                  <div className="pt-8 border-t">
-                    <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-muted/10 p-5 rounded-xl border">
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Vinculación</label>
-                        <Select value={formData.tipoVinculacion} onValueChange={v => setFormData({ ...formData, tipoVinculacion: v, tiempoContrato: "", tiempoPeriodoPrueba: "" })}>
-                          <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Contrato">Contrato</SelectItem>
-                            <SelectItem value="Nombramiento">Nombramiento</SelectItem>
-                            <SelectItem value="Periodo de Prueba">Período de Prueba</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Tipo de contrato: solo visible si es Contrato o Nombramiento */}
-                      {(formData.tipoVinculacion === "Contrato" || formData.tipoVinculacion === "Nombramiento") && (
-                        <div className="space-y-2 animate-in fade-in zoom-in duration-200">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
-                          <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
-                              <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
-                              <SelectItem value="De Obra o Labor">De Obra o Labor</SelectItem>
-                              <SelectItem value="Por Prestación de Servicios">Por Prestación de Servicios</SelectItem>
-                              <SelectItem value="Ocasional, Accidental o Transitorio">Ocasional, Accidental o Transitorio</SelectItem>
-                              <SelectItem value="De Aprendizaje">De Aprendizaje</SelectItem>
-                              <SelectItem value="De Prácticas">De Prácticas</SelectItem>
-                              <SelectItem value="De Pasantías">De Pasantías</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {/* Tiempo del período de prueba: 1-20 días */}
-                      {formData.tipoVinculacion === "Periodo de Prueba" && (
-                        <div className="space-y-2 animate-in fade-in zoom-in duration-200">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Período de Prueba</label>
-                          <Select value={formData.tiempoPeriodoPrueba} onValueChange={v => setFormData({ ...formData, tiempoPeriodoPrueba: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione días..." /></SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 20 }, (_, i) => i + 1).map(d => (
-                                <SelectItem key={d} value={String(d)}>{d} {d === 1 ? "día" : "días"}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {/* Tiempo del contrato: 1-60 meses, solo para Contrato o Nombramiento */}
-                      {(formData.tipoVinculacion === "Contrato" || formData.tipoVinculacion === "Nombramiento") && (
-                        <div className="space-y-2 animate-in fade-in zoom-in duration-200">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Tiempo del Contrato</label>
-                          <Select value={formData.tiempoContrato} onValueChange={v => setFormData({ ...formData, tiempoContrato: v })}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione meses..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Indefinido">Indefinido</SelectItem>
-                              {Array.from({ length: 60 }, (_, i) => i + 1).map(m => (
-                                <SelectItem key={m} value={String(m)}>{m} {m === 1 ? "mes" : "meses"}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
-                        <Input
-                          value={formData.salario}
-                          onChange={e => {
-                            let val = e.target.value.replace(/\D/g, "");
-                            if (!val) {
-                              setFormData({ ...formData, salario: "" });
-                            } else {
+              {cargandoUsuarios || cargandoPersonal ? (
+                <div className="flex justify-center py-12"><Spinner className="h-8 w-8 text-primary" /></div>
+              ) : (
+                <Card>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Colaborador</TableHead>
+                          <TableHead>Rol / Cargo</TableHead>
+                          <TableHead>Modalidad / Estado</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
                               const formatted = "$ " + parseInt(val, 10).toLocaleString("es-CO");
                               setFormData({ ...formData, salario: formatted });
                             }
@@ -1619,6 +1260,7 @@ function PersonalContent() {
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
