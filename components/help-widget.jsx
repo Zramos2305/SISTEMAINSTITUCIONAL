@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { helpCategories } from "@/lib/help-data";
 
 export function HelpWidget() {
@@ -66,7 +65,7 @@ export function HelpWidget() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-6">
+        <div className="flex-1 overflow-y-auto p-6 pb-24">
           {filteredCategories.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               No se encontraron resultados para "{searchTerm}"
@@ -92,7 +91,7 @@ export function HelpWidget() {
               </div>
             ))
           )}
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   );
