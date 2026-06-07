@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const router = useRouter();
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error("Por favor, escribe tu correo en la casilla de arriba para enviarte el enlace");
+      return;
+    }
+    
+    setIsResetting(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success("¡Enlace enviado! Revisa tu correo (bandeja de entrada o spam).");
+    } catch (error) {
+      toast.error("Hubo un error o el correo no existe en el sistema.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -108,6 +126,16 @@ export default function LoginPage() {
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
+                </button>
+              </div>
+              <div className="flex justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={isResetting || isLoading}
+                  className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  {isResetting ? "Enviando enlace..." : "¿Olvidaste tu contraseña?"}
                 </button>
               </div>
             </Field>
