@@ -1500,11 +1500,11 @@ function PersonalContent() {
 
               {/* Logo y Encabezado */}
               <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
+                <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '9999px' }} />
                 </div>
                 <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '-0.05em' }}>ISLA CASCAJAL</h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px' }}>Fundación</p>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '5px', margin: 0 }}>Fundación</p>
               </div>
 
               {/* Foto de Perfil y Badge LÍDER */}

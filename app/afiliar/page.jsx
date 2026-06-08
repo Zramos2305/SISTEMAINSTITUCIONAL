@@ -922,23 +922,17 @@ export default function AfiliarPage() {
                 }}
               >
                 {/* Decoración Superior */}
-                <div className="absolute top-0 left-0 w-full h-[180px] overflow-hidden">
-                  <div
-                    className="absolute -top-10 -left-10 w-[120%] h-[120%] rotate-[15deg]"
-                    style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
-                  />
-                  <div
-                    className="absolute top-0 right-0 w-1/3 h-full"
-                    style={{ backgroundColor: COLORS.amarillo, opacity: 0.2, clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
-                  />
-                </div>
+                <div
+                  className="absolute top-0 left-0 w-full h-[180px] overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }}
+                />
 
                 <div className="relative z-10 pt-8 px-8 flex flex-col items-center">
-                  <div className="bg-white p-2 rounded-full shadow-lg mb-3" style={{ backgroundColor: '#ffffff' }}>
-                    <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", borderRadius: "9999px" }} />
+                  <div className="bg-white p-1.5 rounded-full shadow-lg mb-3" style={{ backgroundColor: '#ffffff' }}>
+                    <img src="/logo.png" alt="Logo" style={{ width: "80px", height: "80px", borderRadius: "9999px" }} />
                   </div>
                   <h2 className="font-black text-2xl tracking-tighter leading-none" style={{ color: '#ffffff' }}>ISLA CASCAJAL</h2>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>Fundación</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-[5px]" style={{ color: 'rgba(255,255,255,0.8)' }}>Fundación</p>
                 </div>
 
                 {/* Foto de Perfil */}
@@ -993,17 +987,7 @@ export default function AfiliarPage() {
                       <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Cargo</p>
                       <p className="text-sm font-black uppercase" style={{ color: "#334155", margin: 0 }}>{formData.cargo}</p>
                     </div>
-                    <div className="text-left col-span-2">
-                      <p className="text-[9px] font-black uppercase" style={{ color: "#94a3b8", margin: 0 }}>Membresías Activas</p>
-                      <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                        {formData.seleccionMembresias.educativa && (
-                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">EDUCATIVA</span>
-                        )}
-                        {formData.seleccionMembresias.integral && (
-                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/20">INTEGRAL</span>
-                        )}
-                      </div>
-                    </div>
+
                   </div>
                 </div>
 
@@ -1175,34 +1159,15 @@ export default function AfiliarPage() {
         >
           <div ref={exportRef} style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px' }}>
             {/* Decoración Superior */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden' }}>
-              <div style={{
-                position: 'absolute',
-                top: '-40px',
-                left: '-40px',
-                width: '120%',
-                height: '120%',
-                transform: 'rotate(15deg)',
-                background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)`
-              }} />
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '33.33%',
-                height: '100%',
-                backgroundColor: COLORS.amarillo,
-                opacity: 0.2
-              }} />
-            </div>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden', background: `linear-gradient(135deg, ${COLORS.azul} 0%, ${COLORS.verde} 100%)` }} />
 
             {/* Logo y Header */}
             <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', paddingLeft: '32px', paddingRight: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '9999px', marginBottom: '12px' }}>
-                <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '9999px' }} />
+              <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '9999px', marginBottom: '12px' }}>
+                <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '9999px' }} />
               </div>
               <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, lineHeight: 1 }}>ISLA CASCAJAL</h2>
-              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '4px', margin: 0 }}>Fundación</p>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '5px', margin: 0 }}>Fundación</p>
             </div>
 
             {/* Foto de Perfil */}
@@ -1269,17 +1234,7 @@ export default function AfiliarPage() {
                   <p style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Cargo</p>
                   <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#334155', margin: 0 }}>{formData.cargo}</p>
                 </div>
-                <div style={{ marginTop: '8px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <p style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>Membresías Activas</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '3px', justifyContent: 'center' }}>
-                    {formData.seleccionMembresias.educativa && (
-                      <span style={{ fontSize: '8px', fontWeight: 900, padding: '1px 5px', borderRadius: '3px', background: 'rgba(5, 49, 138, 0.1)', color: '#05318a', border: '1px solid rgba(5, 49, 138, 0.2)' }}>EDUCATIVA</span>
-                    )}
-                    {formData.seleccionMembresias.integral && (
-                      <span style={{ fontSize: '8px', fontWeight: 900, padding: '1px 5px', borderRadius: '3px', background: 'rgba(14, 98, 53, 0.1)', color: '#0e6235', border: '1px solid rgba(14, 98, 53, 0.2)' }}>INTEGRAL</span>
-                    )}
-                  </div>
-                </div>
+
               </div>
             </div>
 
