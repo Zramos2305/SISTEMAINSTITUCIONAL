@@ -76,7 +76,8 @@ service cloud.firestore {
 
     match /auditoria/{id} {
       allow read, create: if isLogged();
-      allow update, delete: if false;
+      allow delete: if isLogged();
+      allow update: if false;
     }
   }
 }
