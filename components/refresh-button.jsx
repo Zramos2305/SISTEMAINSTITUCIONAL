@@ -22,7 +22,7 @@ export default function RefreshButton() {
       aria-label="Refrescar página"
       title="Refrescar página"
       className={cn(
-        "fixed bottom-6 right-6 z-50 flex items-center justify-center h-12 w-12 rounded-full",
+        "fixed bottom-24 right-6 z-50 flex items-center justify-center h-12 w-12 rounded-full",
         "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50",
         "shadow-lg hover:shadow-xl hover:bg-white dark:hover:bg-slate-900",
         "text-slate-700 dark:text-slate-200 transition-all duration-300 ease-in-out cursor-pointer",

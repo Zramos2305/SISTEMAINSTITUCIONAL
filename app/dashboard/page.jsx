@@ -1125,12 +1125,6 @@ function DashboardContent() {
                           className="border rounded-md px-3 py-1.5 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
-                      <div className="pt-5">
-                        <Button variant="outline" size="sm" onClick={recargar} disabled={cargandoAsistencias}>
-                          <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAsistencias ? "animate-spin" : ""}`} />
-                          Actualizar
-                        </Button>
-                      </div>
                     </div>
                     <div className="relative flex-1 sm:max-w-xs">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1291,10 +1285,6 @@ function DashboardContent() {
                           />
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          <Button variant="outline" size="sm" onClick={cargarAuditoria} disabled={cargandoAuditoria}>
-                            <RefreshCcw className={`h-4 w-4 mr-2 ${cargandoAuditoria ? 'animate-spin' : ''}`} />
-                            Actualizar
-                          </Button>
                           {seleccionadosAuditoria.length > 0 && (
                             <Button variant="destructive" size="sm" onClick={handleEliminarSeleccionadosAuditoria}>
                               <Trash2 className="h-4 w-4 mr-2" />
