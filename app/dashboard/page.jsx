@@ -1926,11 +1926,13 @@ function DashboardContent() {
                 </p>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", textTransform: "uppercase" }}>Dirección Administrativa</p>
-                  <p style={{ margin: 0, fontSize: "12px" }}>Fundación Isla Cascajal</p>
-                  <p style={{ margin: 0, fontSize: "12px", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+              <div style={{ marginTop: "60px", paddingBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+                  <img src="/firma.png" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
+                  <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
                 </div>
               </div>
             </div>
@@ -1971,35 +1973,40 @@ function DashboardContent() {
               </div>
 
               {currentCertData.persona.beneficiarios?.length > 0 && (
-                <div style={{ marginTop: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
-                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>BENEFICIARIOS AUTORIZADOS:</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div style={{ marginTop: "30px", border: "1px solid #000", padding: "10px", paddingBottom: "15px" }}>
+                  <p style={{ color: "#0070C0", margin: 0, marginBottom: "15px", fontSize: "14px" }}>BENEFICIARIOS:</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {currentCertData.persona.beneficiarios.map((b, i) => (
-                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>• {b.nombre} - NUIP: {b.nuip || "Sin registro"}</p>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", paddingRight: "40px" }}>
+                        <span>{b.nombre}</span>
+                        <span>NUIP: {b.nuip || "Sin registro"}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
               {currentCertData.persona.mascotas?.length > 0 && (
-                <div style={{ marginTop: "15px", padding: "15px", border: "1px solid #eee", borderRadius: "8px" }}>
-                  <p style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "8px", color: COLORS.azul }}>MASCOTAS (PLAN INTEGRA DOG-CAT):</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div style={{ marginTop: "15px", border: "1px solid #000", padding: "10px", paddingBottom: "15px" }}>
+                  <p style={{ color: "#0070C0", margin: 0, marginBottom: "15px", fontSize: "14px" }}>MASCOTAS (PLAN INTEGRAL):</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                     {currentCertData.persona.mascotas.map((m, i) => (
-                      <p key={i} style={{ fontSize: "11px", margin: 0 }}>
-                        • {m.nombre} ({m.tipo}{m.raza ? ` - ${m.raza}` : ''})
-                      </p>
+                      <div key={i} style={{ fontSize: "12px" }}>
+                        {m.nombre} ({m.tipo}{m.raza ? ` - ${m.raza}` : ''})
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: "14px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", marginTop: "15px", textTransform: "uppercase" }}>Dirección Administrativa</p>
-                  <p style={{ margin: 0, fontSize: "12px" }}>Fundación Isla Cascajal</p>
-                  <p style={{ margin: 0, fontSize: "12px", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+              <div style={{ marginTop: "40px", paddingBottom: "20px" }}>
+                <p style={{ margin: 0, fontSize: "14px", marginBottom: "50px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+                  <img src="/firma.png" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
+                  <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
                 </div>
               </div>
             </div>
