@@ -373,7 +373,7 @@ function AsistenciaContent() {
       if (!snap.exists()) {
         await setDoc(ref, {
           fecha: hoy,
-          usuarioId: user.uid, // 🔥 IMPORTANTE
+          usuarioId: user.uid, 
           empleadoId,
           nombre: empleadoData?.nombre || userData?.nombre || user?.email,
           cargo: empleadoData?.cargo || "",
