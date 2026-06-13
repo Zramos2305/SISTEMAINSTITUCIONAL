@@ -11,6 +11,7 @@ export default function RefreshButton() {
 
   // Ocultar botón en pantallas específicas para evitar distracciones
   if (
+    pathname?.startsWith('/verificar') ||
     pathname?.startsWith('/registro') ||
     pathname?.startsWith('/afiliado') ||
     pathname?.startsWith('/login')

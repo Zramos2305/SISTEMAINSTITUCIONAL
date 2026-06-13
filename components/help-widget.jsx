@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { helpCategories } from "@/lib/help-data";
 
 export function HelpWidget() {
@@ -27,6 +28,7 @@ export function HelpWidget() {
 
   // Ocultar widget en pantallas de enfoque
   if (
+    pathname?.startsWith('/verificar') ||
     pathname?.startsWith('/registro') ||
     pathname?.startsWith('/afiliado') ||
     pathname?.startsWith('/login')

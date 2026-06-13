@@ -1,0 +1,49 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Función auxiliar para verificar sesión
+    function isLogged() {
+      return request.auth != null;
+    }
+
+    // ==========================================
+    // 1. CARPETA PÚBLICA DE SOPORTES (Registro)
+    // ==========================================
+    match /soportes/{document=**} {
+      // Permitimos descargar un documento específico si se conoce la ruta
+      allow get: if true;
+      // Bloqueamos el listar la carpeta entera para evitar descargas masivas
+      allow list: if isLogged();
+      
+      // DEFENSA EN PROFUNDIDAD: Solo se pueden subir archivos públicos si:
+      // - Pesan menos de 5MB
+      // - Son estrictamente Imágenes (PNG/JPG) o Archivos PDF
+      allow create: if request.resource.size < 5 * 1024 * 1024
+                   && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('application/pdf'));
+      
+      // Una vez subido, nadie sin sesión iniciada puede alterarlo o borrarlo
+      allow update, delete: if isLogged();
+    }
+
+    // ==========================================
+    // 2. CARPETA DE DOCUMENTOS OFICIALES
+    // ==========================================
+    match /documentos_oficiales/{document=**} {
+      // Público: Permite a cualquiera visualizar el PDF del Código QR
+      allow get: if true;
+      allow list: if isLogged();
+      
+      // Privado: Solo los administradores (desde el dashboard) pueden subir nuevos
+      allow create, update, delete: if isLogged();
+    }
+
+    // ==========================================
+    // 3. RESTO DEL ALMACENAMIENTO (Fallback)
+    // ==========================================
+    match /{allPaths=**} {
+      // Bloqueo total para cualquier otra carpeta no especificada arriba
+      allow read, write: if isLogged();
+    }
+  }
+}

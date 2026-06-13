@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { collection, doc, setDoc, query, where, getDocs, getFirestore } from "firebase/firestore";
+import { app } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,22 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, FileCheck, QrCode, Download, ExternalLink, User, IdCard, Calendar, Award } from "lucide-react";
+import { ArrowLeft, Eye, FileCheck, QrCode, Download, ExternalLink, User, IdCard, Calendar, Award, PenTool, Upload } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import QRCode from "qrcode";
+import { jsPDF } from "jspdf";
+import { ref, uploadBytes, getDownloadURL, getStorage } from "firebase/storage";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const getVerificacionBaseUrl = () => `${window.location.origin}/verificar?doc=`;
 
@@ -59,6 +71,23 @@ function GenerarContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [documentoCreado, setDocumentoCreado] = useState(null);
   const [mostrarPreview, setMostrarPreview] = useState(false);
+
+  // Estados del Módulo Redactar Oficial
+  const [modalRedactarOpen, setModalRedactarOpen] = useState(false);
+  const [contenidoRedactado, setContenidoRedactado] = useState("");
+  const [firmaImagen, setFirmaImagen] = useState(null);
+  const [isGenerandoOficial, setIsGenerandoOficial] = useState(false);
+
+  const handleFirmaUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFirmaImagen(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Cuando el usuario modifica un input en el formulario, actualizamos el respectivo estado
   const handleInputChange = (field, value) => {
@@ -101,7 +130,7 @@ function GenerarContent() {
   // Ejecuta la creación del registro y lo guarda en la base de datos Firestore
   const handleCrear = async () => {
     if (!isFormValid()) {
-      toast.error("Por favor, completa todos los campos requeridos");
+      toast.error("Por favor completa todos los campos requeridos");
       return;
     }
 
@@ -110,7 +139,7 @@ function GenerarContent() {
     try {
       if (formData.tipo === "afiliado") {
         const q = query(
-          collection(db, "documentos"),
+          collection(getFirestore(app), "documentos"),
           where("cedula", "==", formData.cedula),
           where("tipo", "==", "afiliado")
         );
@@ -146,7 +175,7 @@ function GenerarContent() {
         }
       }
 
-      await setDoc(doc(db, "documentos", codigo), {
+      await setDoc(doc(getFirestore(app), "documentos", codigo), {
         nombre: formData.nombre.trim(),
         cedula: formData.cedula.trim(),
         tipo: formData.tipo,
@@ -196,6 +225,149 @@ function GenerarContent() {
     toast.success("QR descargado");
   };
 
+  // Motor Oficial: Crea el PDF, lo sube al Storage y lo archiva en BD
+  const handleRedactarYGuardar = async () => {
+    if (!isFormValid() || !contenidoRedactado) {
+      toast.error("Debes completar el formulario y redactar el documento");
+      return;
+    }
+
+    setIsGenerandoOficial(true);
+
+    try {
+      if (formData.tipo === "afiliado") {
+        toast.error("Los afiliados no usan el redactor oficial");
+        setIsGenerandoOficial(false);
+        return;
+      }
+
+      const codigo = generarCodigo();
+      const link = getVerificacionBaseUrl() + codigo;
+
+      // 1. Generar QR Code
+      const qrDataUrl = await QRCode.toDataURL(link, {
+        width: 150, margin: 1, color: { dark: "#1e3a5f", light: "#ffffff" },
+      });
+
+      // 2. Dibujar el PDF Oficial (Con compresión activada)
+      const docPdf = new jsPDF({ format: 'letter', unit: 'mm', compress: true });
+      const pageWidth = docPdf.internal.pageSize.getWidth();
+      const pageHeight = docPdf.internal.pageSize.getHeight();
+      
+      // Cargar Membrete de fondo
+      let membreteBase64 = null;
+      try {
+        const response = await fetch('/membrete.png');
+        if (response.ok) {
+          const blob = await response.blob();
+          const reader = new FileReader();
+          membreteBase64 = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (e) {
+        console.warn("No se encontró membrete.png en public/");
+      }
+
+      // Dibujar fondo si existe (dejamos que jsPDF autodetecte el formato)
+      if (membreteBase64) {
+        docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight, "membrete", "FAST");
+      } else {
+        docPdf.setFontSize(22);
+        docPdf.setTextColor(30, 58, 95);
+        docPdf.text("FUNDACIÓN ISLA CASCAJAL", pageWidth / 2, 30, { align: "center" });
+      }
+
+      // Dibujar QR en el cuadro superior derecho (Cuarto ajuste: 3mm a la derecha)
+      docPdf.addImage(qrDataUrl, undefined, pageWidth - 52, 6, 24, 24, "qr", "FAST");
+
+      // Cuerpo Redactado Clásico (Texto Plano)
+      docPdf.setFontSize(11);
+      docPdf.setTextColor(30, 30, 30);
+      const lineasTexto = docPdf.splitTextToSize(contenidoRedactado, pageWidth - 45); 
+      docPdf.text(lineasTexto, 20, 70);
+
+      // Pie: Firma y Dependencia
+      if (firmaImagen) {
+        // Movido a la derecha, arriba del pie de página
+        const firmX = pageWidth - 65; 
+        docPdf.addImage(firmaImagen, undefined, firmX - 22, pageHeight - 65, 44, 22, "firma", "FAST");
+        
+        docPdf.setDrawColor(100, 100, 100);
+        docPdf.line(firmX - 25, pageHeight - 40, firmX + 25, pageHeight - 40);
+        
+        docPdf.setFontSize(9);
+        docPdf.setFont("helvetica", "bold");
+        docPdf.text("Firma Autorizada", firmX, pageHeight - 35, { align: "center" });
+        
+        docPdf.setFont("helvetica", "normal");
+        docPdf.setFontSize(8);
+        docPdf.setTextColor(80, 80, 80);
+        if (formData.oficina) docPdf.text(formData.oficina, firmX, pageHeight - 31, { align: "center" });
+        if (formData.dependencia) docPdf.text(formData.dependencia, firmX, pageHeight - 27, { align: "center" });
+      }
+
+      // 3. Subir el Archivo PDF al Storage
+      const pdfBlob = docPdf.output('blob');
+      const anioActual = new Date().getFullYear();
+      let storageRef, pdfUrl;
+      try {
+        storageRef = ref(getStorage(app), `documentos_oficiales/${anioActual}/${codigo}.pdf`);
+        await uploadBytes(storageRef, pdfBlob);
+        pdfUrl = await getDownloadURL(storageRef);
+      } catch (eStorage) {
+        toast.error("Error Storage: " + eStorage.message);
+        throw eStorage;
+      }
+
+      // 4. Registrar en Base de Datos
+      let fechaCreacion = new Date();
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      if (formData.fecha && formData.fecha !== todayStr) {
+        const [year, month, day] = formData.fecha.split('-');
+        fechaCreacion = new Date(year, month - 1, day, 12, 0, 0);
+      }
+
+      try {
+        await setDoc(doc(getFirestore(app), "documentos", codigo), {
+          nombre: formData.nombre?.trim() || "",
+          cedula: formData.cedula?.trim() || "",
+          tipo: formData.tipo,
+          oficina: formData.oficina || "",
+          dependencia: formData.dependencia || "",
+          evento: formData.evento || "",
+          descripcion: formData.descripcion?.trim() || "",
+          estado: "activo",
+          fecha: fechaCreacion.toISOString(),
+          pdfUrl: pdfUrl
+        });
+      } catch (eDb) {
+        toast.error("Error BD: " + eDb.message);
+        throw eDb;
+      }
+
+      await registrarAuditoria({
+        user, userData,
+        accion: "Generar y Archivar Documento PDF",
+        documentoId: codigo,
+        detalles: `Redacción oficial archivada para ${formData.nombre} (${codigo})`
+      });
+
+      setDocumentoCreado({ codigo, link, qrDataUrl, pdfUrl });
+      toast.success("Documento blindado, archivado en nube y generado con éxito");
+      setModalRedactarOpen(false);
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Ocurrió un error guardando el archivo en la nube");
+    } finally {
+      setIsGenerandoOficial(false);
+    }
+  };
+
   const handleNuevoDocumento = () => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -226,7 +398,9 @@ function GenerarContent() {
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
             <div>
-              <h1 className="font-semibold text-foreground">Generar Documento</h1>
+              <h1 className="text-xl font-bold tracking-tight text-indigo-900">
+                {formData.tipo === "certificado" ? "Generar Certificado" : "Generar Documento"}
+              </h1>
               <p className="text-xs text-muted-foreground">Fundación Isla Cascajal</p>
             </div>
           </div>
@@ -261,20 +435,32 @@ function GenerarContent() {
                   {documentoCreado.codigo}
                 </Badge>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button onClick={handleDescargarQR} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar QR
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href={`${documentoCreado.link}&source=generar`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Verificar
-                  </a>
-                </Button>
-                <Button onClick={handleNuevoDocumento}>
+              <div className="flex flex-col gap-3 justify-center max-w-sm mx-auto">
+                {documentoCreado.pdfUrl && (
+                  <Button variant="default" className="bg-indigo-600 hover:bg-indigo-700 w-full shadow-lg" asChild>
+                    <a href={documentoCreado.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar PDF Oficial
+                    </a>
+                  </Button>
+                )}
+                
+                <div className="flex gap-2">
+                  <Button onClick={handleDescargarQR} variant="outline" className="flex-1">
+                    <Download className="h-4 w-4 mr-2" />
+                    QR
+                  </Button>
+                  <Button variant="outline" className="flex-1" asChild>
+                    <a href={`${documentoCreado.link}&source=generar`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Verificar
+                    </a>
+                  </Button>
+                </div>
+                
+                <Button onClick={handleNuevoDocumento} variant="secondary" className="w-full">
                   <QrCode className="h-4 w-4 mr-2" />
-                  Nuevo Documento
+                  Crear Otro
                 </Button>
               </div>
             </CardContent>
@@ -498,10 +684,75 @@ function GenerarContent() {
                     ) : (
                       <>
                         <FileCheck className="h-4 w-4 mr-2" />
-                        Generar Documento
+                        Generar Normal
                       </>
                     )}
                   </Button>
+
+                  {/* NUEVO BOTON REDACTAR OFICIAL */}
+                  {formData.tipo !== "afiliado" && (
+                    <Dialog open={modalRedactarOpen} onOpenChange={setModalRedactarOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          type="button"
+                          disabled={!isFormValid() || isCreating}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all hover:scale-105"
+                        >
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Redactar Oficial
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-3xl h-[85vh] flex flex-col bg-slate-50">
+                        <DialogHeader>
+                          <DialogTitle className="text-2xl text-indigo-900 flex items-center gap-2">
+                            <PenTool className="h-5 w-5 text-indigo-600" />
+                            Notaría Digital
+                          </DialogTitle>
+                          <DialogDescription className="sr-only">
+                            Estudio de redacción para generar documentos oficiales blindados con QR y firma.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
+                          <p className="text-sm text-slate-500 bg-indigo-50 p-3 rounded border border-indigo-100">
+                            <strong>Instrucciones:</strong> Redacta el contenido de la carta o certificado. El sistema creará un documento blindado, agregará el logo, NIT de la Fundación, tu firma al final y el Código QR de validación.
+                          </p>
+                          <Textarea 
+                            className="min-h-[350px] text-base resize-none shadow-inner bg-white"
+                            placeholder="Por medio de la presente certificamos que..."
+                            value={contenidoRedactado}
+                            onChange={(e) => setContenidoRedactado(e.target.value)}
+                          />
+                          <div className="border-2 border-dashed border-indigo-200 rounded-xl p-6 flex flex-col items-center justify-center bg-white relative transition-colors hover:bg-indigo-50/50">
+                            <Upload className="h-8 w-8 text-indigo-300 mb-2" />
+                            <span className="text-sm font-bold text-slate-700">Adjuntar Firma Digital</span>
+                            <span className="text-xs text-slate-500 mt-1">Formato PNG o JPG. Aparecerá en la esquina inferior derecha.</span>
+                            <input 
+                              type="file" 
+                              accept="image/png, image/jpeg" 
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={handleFirmaUpload}
+                            />
+                            {firmaImagen && (
+                              <div className="mt-4 p-2 bg-white rounded shadow-sm border border-slate-200 relative z-10 pointer-events-none">
+                                <img src={firmaImagen} alt="Firma" width="140" height="70" className="object-contain" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <DialogFooter className="bg-white p-4 border-t mt-auto -mx-6 -mb-6">
+                          <Button variant="ghost" onClick={() => setModalRedactarOpen(false)}>Cancelar</Button>
+                          <Button 
+                            onClick={handleRedactarYGuardar} 
+                            disabled={isGenerandoOficial || !contenidoRedactado}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8"
+                          >
+                            {isGenerandoOficial ? <Spinner className="mr-2" /> : <FileCheck className="mr-2 h-5 w-5" />}
+                            Sellar, Generar y Archivar PDF
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </CardContent>
             </Card>

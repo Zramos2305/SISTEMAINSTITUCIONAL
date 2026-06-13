@@ -26,10 +26,8 @@ service cloud.firestore {
     ============================ */
 
     match /empleados/{empId} {
-      allow read: if true;
-      allow create: if isLogged();
-      allow update: if isLogged();
-      allow delete: if isLogged();
+      allow get: if true;
+      allow list, create, update, delete: if isLogged();
     }
 
     /* ============================
@@ -48,8 +46,8 @@ service cloud.firestore {
     ============================ */
 
     match /afiliados/{id} {
-      allow read: if true;
-      allow create, update, delete: if isLogged();
+      allow get, create, update: if true;
+      allow list, delete: if isLogged();
     }
 
     /* ============================
@@ -57,8 +55,8 @@ service cloud.firestore {
     ============================ */
 
     match /afiliaciones/{id} {
-      allow read: if true;
-      allow create, update, delete: if isLogged();
+      allow get, create, update: if true;
+      allow list, delete: if isLogged();
     }
 
     /* ============================
@@ -66,8 +64,8 @@ service cloud.firestore {
     ============================ */
 
     match /documentos/{id} {
-      allow read: if true;
-      allow create, update, delete: if isLogged();
+      allow get: if true;
+      allow list, create, update, delete: if isLogged();
     }
 
     /* ============================
@@ -76,8 +74,7 @@ service cloud.firestore {
 
     match /auditoria/{id} {
       allow read, create: if isLogged();
-      allow delete: if isLogged();
-      allow update: if false;
+      allow update, delete: if false;
     }
   }
 }
