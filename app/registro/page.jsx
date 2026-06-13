@@ -309,13 +309,13 @@ export default function RegistroPublicoPage() {
       // ==========================================
       const referenceCode = `${finalId}_${Date.now()}`;
       
-      // Cálculo inteligente del precio según las tablas de la Fundación
+      // Cálculo inteligente del precio final a pagar
       let cantidadMembresias = 0;
-      if (formData.membresiaEducativa) cantidadMembresias++;
-      if (formData.membresiaIntegral) cantidadMembresias++;
+      if (formData.seleccionMembresias.educativa) cantidadMembresias++;
+      if (formData.seleccionMembresias.integral) cantidadMembresias++;
       
-      // Si escoge ambas es 299.990, si escoge una es 149.990.
-      const amount = cantidadMembresias === 2 ? "299990" : "149990"; 
+      // Valores con el descuento ya aplicado
+      const amount = cantidadMembresias === 2 ? "246662" : "122657"; 
       const currency = "COP";
 
       const resSignature = await fetch('/api/payu/signature', {
@@ -923,7 +923,7 @@ export default function RegistroPublicoPage() {
                           })()
                         } (Corte Académico)</span>
                       </div>
-                      <span className="font-semibold text-slate-800">$199.990</span>
+                      <span className="font-semibold text-slate-800">$149.990</span>
                     </div>
                   )}
                   {formData.seleccionMembresias.integral && (
@@ -932,14 +932,14 @@ export default function RegistroPublicoPage() {
                         <span>Membresía Integral</span>
                         <span className="text-[10px] text-slate-400">Vence: {new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString('es-CO')} (1 Año Calendario)</span>
                       </div>
-                      <span className="font-semibold text-slate-800">$199.990</span>
+                      <span className="font-semibold text-slate-800">$149.990</span>
                     </div>
                   )}
                   
                   <div className="border-t pt-3 flex justify-between items-center">
-                    <span className="font-bold">Subtotal</span>
+                    <span className="font-bold">Subtotal Base</span>
                     <span className="font-bold text-slate-800">
-                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "399.980" : "199.990"}
+                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "299.990" : "149.990"}
                     </span>
                   </div>
 
@@ -948,13 +948,13 @@ export default function RegistroPublicoPage() {
                       <BadgeCheck className="h-5 w-5" />
                       <span>Beca FICong (Aporte 25%)</span>
                     </div>
-                    <span>- ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "99.990" : "50.000"}</span>
+                    <span>- ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "53.328" : "27.333"}</span>
                   </div>
 
                   <div className="border-t border-slate-300 pt-3 flex justify-between items-center text-xl">
                     <span className="font-black text-slate-800">Total a Pagar</span>
                     <span className="font-black text-blue-700">
-                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "299.990" : "149.990"} COP
+                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "246.662" : "122.657"} COP
                     </span>
                   </div>
                 </div>

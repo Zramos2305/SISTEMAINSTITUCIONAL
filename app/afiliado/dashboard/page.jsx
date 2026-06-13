@@ -262,7 +262,7 @@ export default function AfiliadoDashboard() {
       const referenceCode = `${afiliado.codigoInstitucional}_${Date.now()}`;
       
       const cantidadMembresias = afiliado?.membresias?.length || 1;
-      const amount = cantidadMembresias === 2 ? "299990" : "149990"; 
+      const amount = cantidadMembresias === 2 ? "246662" : "122657"; 
       
       const currency = "COP";
 
@@ -735,7 +735,7 @@ export default function AfiliadoDashboard() {
                 </p>
               </div>
               <div className="text-xl font-black text-green-600 text-right">
-                ${afiliado?.membresias?.length === 2 ? "299.990" : "149.990"} <span className="text-xs font-normal text-slate-500">COP</span>
+                ${afiliado?.membresias?.length === 2 ? "246.662" : "122.657"} <span className="text-xs font-normal text-slate-500">COP</span>
               </div>
             </div>
             <div className="bg-green-100 text-green-800 text-xs font-bold p-2 rounded text-center border border-green-200 mt-1 shadow-sm">
