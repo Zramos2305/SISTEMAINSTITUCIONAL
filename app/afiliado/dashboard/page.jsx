@@ -171,6 +171,78 @@ export default function AfiliadoDashboard() {
     }
   };
 
+  const descargarReciboPago = (pago) => {
+    try {
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
+      
+      // Configurar logo y encabezado
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.setTextColor(5, 49, 138); // Azul institucional
+      pdf.text("FUNDACIÓN ISLA CASCAJAL", 20, 35);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text("NIT: 900.248.351-0", 20, 42);
+      
+      // Título del recibo
+      pdf.setFontSize(16);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text("COMPROBANTE DE PAGO ELECTRÓNICO", 105, 65, { align: "center" });
+      
+      // Detalles del cliente
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Fecha de Pago: ${new Date(pago.fecha).toLocaleDateString("es-CO")} ${new Date(pago.fecha).toLocaleTimeString("es-CO")}`, 20, 85);
+      pdf.text(`Referencia Transacción: ${pago.referencia}`, 20, 92);
+      
+      pdf.text(`Afiliado: ${afiliado.nombre}`, 20, 105);
+      pdf.text(`Documento (NUIP): ${afiliado.cedula}`, 20, 112);
+      pdf.text(`Código Institucional: ${afiliado.codigoInstitucional}`, 20, 119);
+      
+      // Tabla de concepto
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(20, 130, 175, 10, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Concepto", 25, 137);
+      pdf.text("Valor Pagado", 155, 137);
+      
+      pdf.setFont("helvetica", "normal");
+      pdf.rect(20, 140, 175, 15);
+      pdf.text(pago.concepto || "Afiliación / Renovación de Membresía", 25, 149);
+      
+      // Formatear monto
+      const montoNum = parseInt(pago.monto) || 0;
+      const montoFormateado = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(montoNum);
+      pdf.text(montoFormateado, 155, 149);
+      
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Total:", 130, 165);
+      pdf.text(montoFormateado, 155, 165);
+      
+      // Beca Message
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 128, 0);
+      pdf.text("¡Gracias por tu pago! Recuerda que este valor ya incluye", 105, 185, { align: "center" });
+      pdf.text("la beca solidaria del 25% otorgada por la Fundación.", 105, 190, { align: "center" });
+
+      // Pie de página
+      pdf.setFont("helvetica", "italic");
+      pdf.setFontSize(9);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text("Este documento es un comprobante de pago electrónico generado automáticamente.", 105, 250, { align: "center" });
+      pdf.text("Fundación Isla Cascajal - Santiago de Cali, Colombia", 105, 255, { align: "center" });
+      
+      pdf.save(`Recibo_FICONG_${pago.referencia}.pdf`);
+      toast.success("Recibo descargado correctamente.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Hubo un error al generar el PDF del recibo.");
+    }
+  };
+
   const handleRenovacionPago = async () => {
     if(!datosRenovacion.telefono || !datosRenovacion.correo) {
       return toast.error("Por favor completa teléfono y correo.");
@@ -188,7 +260,10 @@ export default function AfiliadoDashboard() {
 
       // 2. Pedir firma criptográfica al servidor local
       const referenceCode = `${afiliado.codigoInstitucional}_${Date.now()}`;
-      const amount = "50000"; // Precio provisional acordado
+      
+      const cantidadMembresias = afiliado?.membresias?.length || 1;
+      const amount = cantidadMembresias === 2 ? "299990" : "149990"; 
+      
       const currency = "COP";
 
       const res = await fetch('/api/payu/signature', {
@@ -563,6 +638,50 @@ export default function AfiliadoDashboard() {
             </CardContent>
           </Card>
 
+          {/* Historial de Pagos */}
+          <Card className="shadow-md border-t-4" style={{ borderTopColor: COLORS.azul }}>
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-blue-600" /> Historial de Pagos y Facturas
+              </h3>
+              
+              {(!afiliado.historialPagos || afiliado.historialPagos.length === 0) ? (
+                <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed">
+                  Aún no tienes facturas o pagos registrados en tu historial.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b">
+                      <tr>
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3">Referencia</th>
+                        <th className="px-4 py-3 text-right">Valor</th>
+                        <th className="px-4 py-3 text-center">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {[...afiliado.historialPagos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).map((pago, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-slate-700 font-medium">{new Date(pago.fecha).toLocaleDateString('es-CO')}</td>
+                          <td className="px-4 py-3 text-xs text-slate-500 font-mono">{pago.referencia}</td>
+                          <td className="px-4 py-3 text-right font-bold text-green-700">
+                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(parseInt(pago.monto) || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => descargarReciboPago(pago)}>
+                              <Download className="h-4 w-4 mr-1" /> PDF
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
         </div>
       </main>
 
@@ -607,13 +726,20 @@ export default function AfiliadoDashboard() {
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 border rounded-xl flex items-center justify-between mb-4">
-            <div>
-              <p className="font-bold text-slate-800">Costo de Renovación</p>
-              <p className="text-xs text-slate-500">Valor provisional de prueba</p>
+          <div className="bg-slate-50 p-4 border rounded-xl flex flex-col mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <p className="font-bold text-slate-800">Costo de Renovación</p>
+                <p className="text-xs text-slate-500">
+                  {afiliado?.membresias?.length === 2 ? "Para ambas membresías (Educativa e Integral)" : "Para tu membresía activa"}
+                </p>
+              </div>
+              <div className="text-xl font-black text-green-600 text-right">
+                ${afiliado?.membresias?.length === 2 ? "299.990" : "149.990"} <span className="text-xs font-normal text-slate-500">COP</span>
+              </div>
             </div>
-            <div className="text-xl font-black text-green-600">
-              $50.000 <span className="text-xs font-normal text-slate-500">COP</span>
+            <div className="bg-green-100 text-green-800 text-xs font-bold p-2 rounded text-center border border-green-200 mt-1 shadow-sm">
+              ✨ El valor ya incluye el Aporte (Beca) del 25% por parte de la Fundación.
             </div>
           </div>
 

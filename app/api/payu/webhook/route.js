@@ -21,10 +21,25 @@ export async function POST(request) {
         const data = afiliadoSnap.data();
         let membresiasActualizadas = data.membresias || [];
         
-        // 2. Activar membresías
+        // 2. Activar membresías con plazos diferenciados
         membresiasActualizadas = membresiasActualizadas.map(m => {
           const hoy = new Date();
-          const nuevaExpiracion = new Date(hoy.getFullYear() + 1, hoy.getMonth(), hoy.getDate()); // +1 año
+          let nuevaExpiracion = new Date(hoy);
+          
+          if (m.tipo === 'educativa') {
+            const mes = hoy.getMonth();
+            const year = hoy.getFullYear();
+            if (mes >= 0 && mes <= 4) {
+              nuevaExpiracion = new Date(year, 4, 30); // 30 de Mayo
+            } else if (mes >= 5 && mes <= 10) {
+              nuevaExpiracion = new Date(year, 10, 30); // 30 de Noviembre
+            } else {
+              nuevaExpiracion = new Date(year + 1, 4, 30); // 30 de Mayo del próximo año
+            }
+          } else {
+            nuevaExpiracion.setFullYear(hoy.getFullYear() + 1); // 1 año para integral
+          }
+          
           return {
             ...m,
             estado: 'activa',
@@ -33,10 +48,20 @@ export async function POST(request) {
           };
         });
 
+        // 2.5 Guardar la Memoria Contable (Historial)
+        const nuevoPago = {
+          fecha: new Date().toISOString(),
+          monto: formData.get('value') || "Valor No Reportado",
+          referencia: formData.get('reference_sale') || "Referencia Interna",
+          concepto: "Afiliación / Renovación de Membresías FICong"
+        };
+        const historialPagosActualizado = data.historialPagos ? [...data.historialPagos, nuevoPago] : [nuevoPago];
+
         // 3. Guardar en Firebase
         await setDoc(afiliadoRef, {
           estado: "activo",
           membresias: membresiasActualizadas,
+          historialPagos: historialPagosActualizado,
           fechaUltimoPago: new Date().toISOString()
         }, { merge: true });
 

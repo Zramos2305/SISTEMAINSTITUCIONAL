@@ -6,11 +6,11 @@ export async function POST(request) {
     const body = await request.json();
     const { referenceCode, amount, currency } = body;
 
-    // Utilizamos variables de entorno para máxima seguridad, 
-    // pero dejamos tus llaves como respaldo por si pruebas localmente.
-    const apiKey = process.env.PAYU_API_KEY || "Ek1UQtAs3b1WCm898tnFklp0n8";
-    const merchantId = process.env.PAYU_MERCHANT_ID || "1017224";
-    const accountId = process.env.PAYU_ACCOUNT_ID || "1026167";
+    // Usamos las llaves OFICIALES de prueba (Sandbox) de PayU para que no nos rechace.
+    // Cuando pasemos a producción (plata real), las cambiaremos por las tuyas en Vercel.
+    const apiKey = process.env.PAYU_API_KEY || "4Vj8eK4rloUd272L48hsrarnUA";
+    const merchantId = process.env.PAYU_MERCHANT_ID || "508029";
+    const accountId = process.env.PAYU_ACCOUNT_ID || "512321";
 
     // La fórmula oficial de PayU Latam: apiKey~merchantId~referenceCode~amount~currency
     const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
