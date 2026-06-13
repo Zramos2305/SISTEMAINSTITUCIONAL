@@ -44,10 +44,10 @@ import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 
 const COLORS = {
-  azul: "#05318a",
-  verde: "#0e6235",
-  amarillo: "#f3de4d",
-  rojo: "#ce181b"
+  azul: "#3f7384",
+  verde: "#606f3a",
+  amarillo: "#f4b958",
+  rojo: "#cd7243"
 };
 import {
   Dialog,
@@ -563,12 +563,16 @@ function DashboardContent() {
 
     setUpdatingStatus(idDocumento);
     try {
-      await actualizarEstado(idDocumento, "activo", { desactivadoManualmente: null, fechaDesactivacion: null }, colName);
+      const payload = { desactivadoManualmente: null, fechaDesactivacion: null };
+      if (colName === "afiliados" && docEncontrado.membresias) {
+        payload.membresias = docEncontrado.membresias.map(m => ({ ...m, estado: "activo" }));
+      }
+      await actualizarEstado(idDocumento, "activo", payload, colName);
       await registrarAuditoria({
         user,
         userData,
         accion: "Activar Registro",
-        documentoId: codigo,
+        documentoId: idDocumento,
         detalles: `Re-activación manual de registro inactivo en ${colName}`
       });
       toast.success("Activado correctamente");
@@ -587,10 +591,16 @@ function DashboardContent() {
     const docId = confirmarInactivacion.id || confirmarInactivacion.codigo;
     setUpdatingStatus(docId);
     try {
-      await actualizarEstado(docId, "inactivo", {
+      const payload = {
         desactivadoManualmente: true,
         fechaDesactivacion: new Date().toISOString(),
-      }, colName);
+      };
+
+      if (colName === "afiliados" && confirmarInactivacion.membresias) {
+        payload.membresias = confirmarInactivacion.membresias.map(m => ({ ...m, estado: "vencida" }));
+      }
+
+      await actualizarEstado(docId, "inactivo", payload, colName);
       await registrarAuditoria({
         user,
         userData,
@@ -965,7 +975,7 @@ function DashboardContent() {
                           return (
                             <TableRow key={doc.codigo}>
                               <TableCell className="font-mono text-sm">{doc.codigo}</TableCell>
-                              <TableCell className="font-medium">{doc.nombre}</TableCell>
+                              <TableCell className="font-medium uppercase">{doc.nombre}</TableCell>
                               <TableCell className="hidden md:table-cell">{doc.cedula || "-"}</TableCell>
                               <TableCell>
                                 <Badge
@@ -1516,263 +1526,386 @@ function DashboardContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de información de afiliación con historial de periodos */}
+      {/* Modal MEGA de información de afiliación con historial y Aprobación */}
       <Dialog open={!!infoDoc} onOpenChange={(open) => !open && setInfoDoc(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Información del Documento</DialogTitle>
-            <DialogDescription>
-              Detalles del registro de{" "}
-              <span className="font-semibold text-foreground">{infoDoc?.nombre}</span>.
-            </DialogDescription>
-          </DialogHeader>
-          {infoDoc && (
-            <div className="space-y-3 pt-2">
-              {/* MEMBRESÍAS (DENTRO DEL AFILIADO) */}
-              {infoDoc.tipo === "afiliado" && (
-                <div className="space-y-3">
-                  <p className="text-xs text-primary uppercase font-bold tracking-wider">Membresías Activas</p>
-                  <div className="space-y-2">
-                    {infoDoc.membresias?.map((m, idx) => {
-                      const isExpired = m.fechaExpiracion && new Date() > new Date(m.fechaExpiracion);
-                      return (
-                        <div key={idx} className="bg-background border rounded-lg p-3 flex justify-between items-center shadow-sm">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="capitalize text-[10px]">
-                                {m.tipo}
-                              </Badge>
-                              <span className={`text-[10px] font-bold ${isExpired ? "text-destructive" : "text-success"}`}>
-                                {isExpired ? "VENCIDA" : "ACTIVA"}
-                              </span>
-                            </div>
-                            <p className="text-xs font-medium">Cód: {m.codigo}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {formatearFecha(m.fechaInicio)} — {formatearFecha(m.fechaExpiracion)}
-                            </p>
-                          </div>
-                           <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-success hover:bg-success/10"
-                            onClick={() => descargarCertificadoEspecifico(infoDoc, m)}
-                            disabled={!!isDownloadingCert}
-                            title="Descargar Certificado"
-                          >
-                            {isDownloadingCert === m.codigo ? (
-                              <Spinner className="h-3 w-3" />
-                            ) : (
-                              <FileText className="h-4 w-4" />
-                            )}
-                          </Button>
+        <DialogContent className={infoDoc?.tipo === "afiliado" ? "max-w-6xl w-[95vw] md:w-[90vw] max-h-[90vh] overflow-y-auto p-0 bg-slate-100" : "max-h-[85vh] overflow-y-auto"}>
+          {infoDoc?.tipo === "afiliado" ? (
+            <>
+              <div className="bg-white border-b p-6 sticky top-0 z-10 flex flex-col md:flex-row justify-between md:items-center gap-4 shadow-sm">
+            <div>
+              <DialogTitle className="text-xl md:text-2xl font-black uppercase text-blue-900 flex items-center gap-2">
+                <User className="h-6 w-6 shrink-0" /> <span className="truncate">{infoDoc?.nombre}</span>
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 mt-2 flex flex-wrap items-center gap-2">
+                <span className="font-mono bg-white px-2 py-1 rounded border shadow-sm flex items-center gap-1 text-xs md:text-sm"><IdCard className="h-3 w-3 shrink-0" /> {infoDoc?.cedula}</span>
+                <span className="font-mono bg-white px-2 py-1 rounded border shadow-sm flex items-center gap-1 text-xs md:text-sm"><QrCode className="h-3 w-3 shrink-0" /> {infoDoc?.codigo}</span>
+              </DialogDescription>
+            </div>
+            {infoDoc?.estado === "pendiente" && infoDoc?.tipo === "afiliado" && (
+              <Button 
+                className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-5 text-sm shadow flex-shrink-0 w-full md:w-auto"
+                disabled={!!updatingStatus}
+                onClick={async () => {
+                  try {
+                    setUpdatingStatus(infoDoc.codigo);
+                    const nuevasMembresias = (infoDoc.membresias || []).map(m => ({ ...m, estado: "activo" }));
+                    await setDoc(doc(db, "afiliados", infoDoc.id || infoDoc.codigo), {
+                      estado: "activo",
+                      membresias: nuevasMembresias,
+                      fechaActivacion: new Date().toISOString()
+                    }, { merge: true });
+                    toast.success("¡Afiliado activado exitosamente!");
+                    setInfoDoc(prev => ({ ...prev, estado: "activo", membresias: nuevasMembresias }));
+                  } catch(err) {
+                    toast.error("Error al activar");
+                  } finally {
+                    setUpdatingStatus(null);
+                  }
+                }}
+              >
+                {updatingStatus === infoDoc.codigo ? <Spinner className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                APROBAR Y ACTIVAR
+              </Button>
+            )}
+            {infoDoc?.estado === "activo" && infoDoc?.tipo === "afiliado" && (
+              <Badge className="bg-green-100 text-green-700 border-green-300 px-4 py-2 text-sm shrink-0 w-max">
+                <CheckCircle2 className="w-4 h-4 mr-1" /> Afiliado Activo
+              </Badge>
+            )}
+          </div>
+
+          <div className="p-6">
+            <Tabs defaultValue="datos" className="w-full">
+              <TabsList className="flex flex-wrap h-auto bg-slate-100 p-2 rounded-xl mb-6 gap-2">
+                <TabsTrigger className="flex-1 min-w-[120px]" value="datos">Datos Básicos</TabsTrigger>
+                <TabsTrigger className="flex-1 min-w-[120px]" value="social">Perfil Social</TabsTrigger>
+                <TabsTrigger className="flex-1 min-w-[120px]" value="salud">Salud</TabsTrigger>
+                <TabsTrigger className="flex-1 min-w-[120px]" value="educacion">Educación</TabsTrigger>
+                <TabsTrigger className="flex-1 min-w-[120px]" value="carnet">Membresía</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="datos" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Contacto</p>
+                    <div className="space-y-2">
+                      <p className="text-sm"><strong>Teléfono:</strong> {infoDoc?.telefono || "-"}</p>
+                      <p className="text-sm"><strong>Correo:</strong> {infoDoc?.correo || "-"}</p>
+                      <p className="text-sm"><strong>Dirección:</strong> {infoDoc?.direccion || "-"}</p>
+                      <p className="text-sm"><strong>Ubicación:</strong> {infoDoc?.ciudad || "-"}, {infoDoc?.departamento || infoDoc?.pais || "-"}</p>
+                    </div>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Ingreso</p>
+                    <div className="space-y-2">
+                      <p className="text-sm"><strong>Fecha Emisión:</strong> {formatearFecha(infoDoc?.fechaCreacion || infoDoc?.fechaIngreso)}</p>
+                      <p className="text-sm"><strong>RH:</strong> {infoDoc?.rh || "-"}</p>
+                      <p className="text-sm"><strong>Referido por:</strong> {infoDoc?.referido || "-"} ({infoDoc?.comoEntero || "-"})</p>
+                    </div>
+                  </div>
+                </div>
+
+                {infoDoc?.beneficiarios?.length > 0 && (
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Beneficiarios Familiares</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {infoDoc.beneficiarios.map((b, i) => (
+                        <div key={i} className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg text-sm">
+                          <span className="font-semibold uppercase truncate mr-3 flex-1">{b.nombre}</span>
+                          <span className="font-mono text-slate-500 whitespace-nowrap bg-white px-2 py-1 rounded shadow-sm border">{b.nuip}</span>
                         </div>
-                      );
-                    })}
-                    {(!infoDoc.membresias || infoDoc.membresias.length === 0) && (
-                      <div className="bg-muted/30 border border-dashed rounded-lg p-6 text-center">
-                        <p className="text-xs text-muted-foreground italic">No se encontraron membresías registradas.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-
-
-              {/* Datos de Registro y Origen */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">País de Registro</p>
-                    <p className="font-medium text-sm">{infoDoc.pais || "Colombia"}</p>
-                  </div>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
-                  <CalendarIcon className="h-5 w-5 text-success shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Emisión</p>
-                    <p className="font-medium text-sm">
-                      {formatearFecha(infoDoc.tipo === 'afiliado' ? (infoDoc.fechaCreacion || infoDoc.fechaIngreso) : (infoDoc.fecha || infoDoc.fechaIngreso))}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* NUIP y Datos de Afiliado */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
-                  <IdCard className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">NUIP</p>
-                    <p className="font-medium text-sm font-mono">{infoDoc.cedula || "-"}</p>
-                  </div>
-                </div>
-                {infoDoc.tipo === "afiliado" && (
-                  <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
-                    <Droplets className="h-5 w-5 text-destructive shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">RH</p>
-                      <p className="font-medium text-sm uppercase">{infoDoc.rh || "-"}</p>
+                      ))}
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* Datos de contacto para afiliados */}
-              {infoDoc.tipo === "afiliado" && (
-                <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Contacto y Ubicación</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-primary shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase">Teléfono</p>
-                        <p className="text-sm font-medium">{infoDoc.telefono || "-"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase">Correo</p>
-                        <p className="text-sm font-medium truncate max-w-[150px]">{infoDoc.correo || "-"}</p>
-                      </div>
+                {infoDoc?.mascotas?.length > 0 && (
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Mascotas (Integra Dog-Cat)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {infoDoc.mascotas.map((m, i) => (
+                        <div key={i} className="flex justify-between items-center p-3 bg-slate-50 border rounded-lg text-sm">
+                          <span className="font-semibold uppercase truncate mr-3 flex-1">{m.nombre}</span>
+                          <span className="text-slate-500 whitespace-nowrap">({m.tipo}{m.raza ? ` - ${m.raza}` : ''})</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 pt-1 border-t">
-                    <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase">Dirección</p>
-                      <p className="text-sm font-medium">{infoDoc.direccion || "-"}</p>
-                    </div>
-                  </div>
-                  {(infoDoc.pais || infoDoc.ciudad) && (
-                    <div className="grid grid-cols-2 gap-4 pt-1 border-t">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary shrink-0" />
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">País</p>
-                          <p className="text-sm font-medium">{infoDoc.pais || "-"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Map className="h-4 w-4 text-primary shrink-0" />
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Ciudad</p>
-                          <p className="text-sm font-medium">{infoDoc.ciudad || "-"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </TabsContent>
 
-              {/* Beneficiarios */}
-              {infoDoc.tipo === "afiliado" && Array.isArray(infoDoc.beneficiarios) && infoDoc.beneficiarios.length > 0 && (
-                <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Beneficiarios</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {infoDoc.beneficiarios.map((ben, i) => (
-                      <div key={i} className="flex justify-between items-center p-2 bg-background rounded border border-dashed">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-3 w-3 text-primary" />
-                          <span className="text-xs font-semibold uppercase">{ben.nombre}</span>
-                        </div>
-                        <span className="text-xs font-mono text-muted-foreground">{ben.nuip}</span>
-                      </div>
-                    ))}
+              <TabsContent value="social">
+                <div className="bg-white p-5 rounded-xl border shadow-sm grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <p className="text-sm"><strong>Sexo biológico:</strong> {infoDoc?.sexo || "-"}</p>
+                    <p className="text-sm"><strong>Orientación Sexual:</strong> {infoDoc?.orientacionSexual || "-"}</p>
+                    <p className="text-sm"><strong>Grupo Étnico:</strong> {infoDoc?.etnia || "-"}</p>
+                    <p className="text-sm"><strong>Estrato:</strong> {infoDoc?.estrato || "-"}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm"><strong>Sisbén:</strong> {infoDoc?.sisben || "-"}</p>
+                    <p className="text-sm"><strong>Víctima Conflicto:</strong> {infoDoc?.victimaConflicto || "-"} {infoDoc?.victimaTipo && infoDoc?.victimaTipo !== "N/A" ? `(${infoDoc?.victimaTipo})` : ""}</p>
+                    <p className="text-sm"><strong>Unidad Víctimas:</strong> {infoDoc?.victimaInscrito || "-"}</p>
+                    <p className="text-sm"><strong>Víctima Discriminación:</strong> {infoDoc?.discriminacion || "-"} {infoDoc?.discriminacionTipo && infoDoc?.discriminacionTipo !== "N/A" ? `(${infoDoc?.discriminacionTipo})` : ""}</p>
                   </div>
                 </div>
-              )}
+              </TabsContent>
 
-              {/* Mascotas */}
-              {infoDoc.tipo === "afiliado" && Array.isArray(infoDoc.mascotas) && infoDoc.mascotas.length > 0 && (
-                <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Mascotas (Plan Integra Dog-Cat)</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {infoDoc.mascotas.map((mascota, i) => (
-                      <div key={i} className="flex justify-between items-center p-2 bg-background rounded border border-dashed">
-                        <div className="flex items-center gap-2">
-                          <PawPrint className="h-3 w-3 text-primary" />
-                          <span className="text-xs font-semibold uppercase">{mascota.nombre}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">({mascota.tipo}{mascota.raza ? ` - ${mascota.raza}` : ''})</span>
-                      </div>
-                    ))}
+              <TabsContent value="salud">
+                <div className="bg-white p-5 rounded-xl border shadow-sm grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <p className="text-sm"><strong>EPS:</strong> {infoDoc?.eps || "-"}</p>
+                    <p className="text-sm"><strong>Enfermedades:</strong> {infoDoc?.enfermedad === "Sí" ? infoDoc?.enfermedadCual : "Ninguna"}</p>
+                    <p className="text-sm"><strong>Alergias:</strong> {infoDoc?.alergia === "Sí" ? infoDoc?.alergiaCual : "Ninguna"}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm"><strong>ARL:</strong> {infoDoc?.arl || "-"}</p>
+                    <p className="text-sm"><strong>Discapacidad:</strong> {infoDoc?.discapacidad === "Sí" ? infoDoc?.discapacidadTipo : "Ninguna"}</p>
+                    <p className="text-sm"><strong>Trastorno:</strong> {infoDoc?.trastorno === "Sí" ? infoDoc?.trastornoTipo : "Ninguno"}</p>
                   </div>
                 </div>
-              )}
+              </TabsContent>
 
-              {/* Emisión (Oficina y Dependencia) */}
-              {(infoDoc.oficina || infoDoc.dependencia) && (
-                <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Emisión</p>
-                  {infoDoc.oficina && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary shrink-0" />
-                      <p className="text-sm font-medium">{infoDoc.oficina}</p>
-                    </div>
-                  )}
-                  {infoDoc.dependencia && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary shrink-0" />
-                      <p className="text-sm font-medium text-muted-foreground">{infoDoc.dependencia}</p>
-                    </div>
-                  )}
+              <TabsContent value="educacion">
+                <div className="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                  <p className="text-sm"><strong>Nivel Educativo:</strong> {infoDoc?.educacionNivel || "-"}</p>
+                  <p className="text-sm"><strong>Estudio / Carrera:</strong> {infoDoc?.educacionEstudio || "-"}</p>
+                  <p className="text-sm"><strong>Semestre / Nivel:</strong> {infoDoc?.educacionSemestre || "-"}</p>
+                  <p className="text-sm"><strong>Plantel Educativo:</strong> {infoDoc?.educacionPlantel || "-"}</p>
                 </div>
-              )}
+              </TabsContent>
 
-              {/* Desactivado manualmente */}
-              {infoDoc.desactivadoManualmente && (
-                <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg space-y-1">
-                  <p className="text-xs text-destructive uppercase font-semibold">Desactivado Manualmente</p>
-                  <p className="font-medium text-sm text-destructive">{formatearFecha(infoDoc.fechaDesactivacion)}</p>
-                </div>
-              )}
-
-              {/* Historial de periodos anteriores */}
-              {Array.isArray(infoDoc.periodos) && infoDoc.periodos.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider pt-1">Historial de Periodos</p>
-                  {[...infoDoc.periodos].reverse().map((periodo, idx) => {
-                    const key = `${infoDoc.codigo}-${idx}`;
-                    const expandido = periodosExpandidos[key];
-                    const numero = infoDoc.periodos.length - idx;
+              <TabsContent value="carnet">
+                <div className="space-y-4">
+                  {infoDoc?.membresias?.map((m, idx) => {
+                    const isExpired = m.fechaExpiracion && new Date() > new Date(m.fechaExpiracion);
                     return (
-                      <div key={key} className="border rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => setPeriodosExpandidos((prev) => ({ ...prev, [key]: !prev[key] }))}
-                          className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5 font-mono">#{numero}</span>
-                            <span className="text-sm font-medium">
-                              {periodo.tipo === "registro" ? "Registro Inicial" : `Renovación`}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              — {periodo.duracion === "educativa" ? "Educativa" : periodo.duracion === "integral" ? "Integral" : (periodo.duracion === "1_ano" ? "Educativa (Antiguo)" : periodo.duracion === "6_meses" ? "Integral (Antiguo)" : "No especificada")}
-                            </span>
-                          </div>
-                          <span className="text-muted-foreground text-xs">{expandido ? "▲" : "▼"}</span>
-                        </button>
-                        {expandido && (
-                          <div className="p-3 grid grid-cols-2 gap-3 bg-background">
-                            <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground uppercase font-semibold">Inicio</p>
-                              <p className="text-sm font-medium">{formatearFecha(periodo.inicio)}</p>
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground uppercase font-semibold">Fin</p>
-                              <p className="text-sm font-medium text-destructive">{formatearFecha(periodo.fin)}</p>
-                            </div>
-                          </div>
-                        )}
+                      <div key={idx} className="bg-white border rounded-xl p-4 flex justify-between items-center shadow-sm">
+                        <div>
+                          <p className="font-black uppercase text-blue-900">{m.tipo} {isExpired ? <span className="text-red-500">(VENCIDA)</span> : ""}</p>
+                          <p className="text-xs text-slate-500 font-mono mt-1">Cód: {m.codigo}</p>
+                          <p className="text-xs font-semibold mt-1">Expira: {formatearFecha(m.fechaExpiracion)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                           <Button
+                            variant="outline"
+                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                            onClick={() => descargarCertificadoEspecifico(infoDoc, m)}
+                            disabled={!!isDownloadingCert || infoDoc?.estado === "pendiente"}
+                          >
+                            {isDownloadingCert === m.codigo ? <Spinner className="h-4 w-4 mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
+                            Certificado
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
+                  
+                  {infoDoc?.estado === "activo" && infoDoc?.membresias?.length > 0 && (
+                     <div className="mt-8 border-t pt-8 flex flex-col items-center">
+                        <p className="text-sm font-bold text-slate-500 uppercase mb-4 tracking-widest">Carnet Institucional Virtual</p>
+                        
+                        <div 
+                          id="carnet-virtual"
+                          style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column' }}
+                        >
+                          {/* Decoración Superior */}
+                          <div style={{ width: '100%', height: '20px', display: 'flex', flexShrink: 0 }}>
+                            <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
+                            <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
+                            <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
+                            <div style={{ flex: 1, backgroundColor: '#05318a' }} />
+                          </div>
+
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '8px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '8px', position: 'relative' }}>
+                            <img src="/logo.png" alt="Logo" crossOrigin="anonymous" style={{ width: '115px', height: '115px', borderRadius: '50%', objectFit: 'contain', backgroundColor: 'white' }} />
+                            
+                            <h2 style={{ color: '#0e6235', fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
+                            <p style={{ color: '#ea580c', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', margin: 0, marginTop: '-2px', letterSpacing: '1px' }}>Fundación</p>
+
+                            <div style={{ marginTop: '12px', width: '100px', height: '110px', borderRadius: '12px', backgroundColor: '#f1f5f9', border: '2px solid #e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                              {infoDoc?.foto ? (
+                                <img src={infoDoc.foto} alt="Foto Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                                </svg>
+                              )}
+                            </div>
+
+                            <div style={{ marginTop: '12px', width: '100%', textAlign: 'center' }}>
+                              <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: '#0e6235', margin: 0 }}>
+                                {infoDoc?.nombre || "NOMBRE COMPLETO"}
+                              </h3>
+                              <p style={{ fontWeight: 900, fontSize: '14px', color: '#ea580c', margin: 0, marginTop: '2px' }}>
+                                NUIP. {infoDoc?.cedula || "XXXXXXXX"}
+                              </p>
+                            </div>
+
+                            <div style={{ marginTop: '8px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', gap: '24px' }}>
+                                  <div>
+                                    <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>CÓD. INSTITUCIONAL</p>
+                                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{infoDoc?.codigo}</p>
+                                  </div>
+                                  <div>
+                                    <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>RH</p>
+                                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{infoDoc?.rh || "A+"}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#0e6235', margin: 0 }}>PAÍS</p>
+                                  <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#ea580c', margin: 0 }}>{infoDoc?.pais || "COLOMBIA"}</p>
+                                </div>
+                                <div style={{ marginTop: '4px' }}>
+                                  <p style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#64748b', margin: 0, marginBottom: '4px' }}>MEMBRESÍAS ACTIVAS</p>
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    {infoDoc?.membresias?.map((m, i) => (
+                                      <span key={i} style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: m.tipo === 'educativa' ? '#1d4ed8' : '#15803d', backgroundColor: m.tipo === 'educativa' ? '#dbeafe' : '#dcfce3', padding: '4px 12px', borderRadius: '12px', border: `1px solid ${m.tipo === 'educativa' ? '#93c5fd' : '#86efac'}` }}>
+                                        {m.tipo}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ padding: '4px', borderRadius: '12px', border: '3px solid #854d0e', backgroundColor: 'white' }}>
+                                  <img id="dashboard-qr-image" src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=05318a&data=${encodeURIComponent('https://cascajal.com/verificar?doc=' + infoDoc?.codigo)}`} crossOrigin="anonymous" alt="QR" style={{ width: "85px", height: "85px" }} />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ position: 'absolute', bottom: '8px', right: '16px' }}>
+                              <p style={{ fontSize: '12px', fontWeight: 900, color: '#05318a', margin: 0 }}>@fundacionislacascajal</p>
+                            </div>
+                          </div>
+
+                          <div style={{ width: '100%', height: '20px', display: 'flex', marginTop: 'auto', flexShrink: 0 }}>
+                            <div style={{ flex: 1, backgroundColor: '#05318a' }} />
+                            <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
+                            <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
+                            <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
+                          </div>
+                        </div>
+
+                        <Button 
+                          className="mt-6 font-bold shadow-md hover:opacity-90" 
+                          style={{ backgroundColor: COLORS.azul, color: '#ffffff', height: '48px', padding: '0 24px' }}
+                          onClick={async () => {
+                            try {
+                              const element = document.getElementById("carnet-virtual");
+                              if (!element) return;
+                              toast.info("Capturando imagen, por favor espera...");
+                              
+                              // Configurar HTML2Canvas con opciones para no fallar
+                              const QRCode = (await import("qrcode")).default;
+                              const linkQr = getVerificacionBaseUrl() + infoDoc.codigo;
+                              const qrUrl = await QRCode.toDataURL(linkQr, { width: 400, margin: 1, color: { dark: '#05318a', light: '#ffffff' } });
+                              const qrImg = document.getElementById("dashboard-qr-image");
+                              if (qrImg) qrImg.src = qrUrl;
+                              
+                              // Esperar un segundo para que la imagen cargue
+                              await new Promise(r => setTimeout(r, 500));
+
+                              const canvas = await html2canvas(element, { 
+                                scale: 2,
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: null
+                              });
+                              
+                              const link = document.createElement("a");
+                              link.download = `Carnet_${infoDoc.nombre.replace(/\s+/g, '_')}.png`;
+                              link.href = canvas.toDataURL("image/png");
+                              link.click();
+                              toast.success("¡Carnet descargado exitosamente!");
+                            } catch (error) {
+                              console.error(error);
+                              toast.error("Hubo un problema al generar la imagen. Intenta de nuevo.");
+                            }
+                          }}
+                        >
+                          <Download className="w-5 h-5 mr-2" />
+                          Descargar Carnet (PNG)
+                        </Button>
+                     </div>
+                  )}
+
+                  {(!infoDoc?.membresias || infoDoc?.membresias?.length === 0) && (
+                    <div className="bg-white border border-dashed rounded-lg p-6 text-center shadow-sm">
+                      <p className="text-sm text-muted-foreground italic">No se encontraron membresías registradas.</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+          </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Información del Documento</DialogTitle>
+                <DialogDescription>
+                  Detalles del registro de{" "}
+                  <span className="font-semibold text-foreground">{infoDoc?.nombre}</span>.
+                </DialogDescription>
+              </DialogHeader>
+              {infoDoc && (
+                <div className="space-y-3 pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                      <Globe className="h-5 w-5 text-primary shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">País de Registro</p>
+                        <p className="font-medium text-sm">{infoDoc.pais || "Colombia"}</p>
+                      </div>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                      <CalendarIcon className="h-5 w-5 text-success shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Emisión</p>
+                        <p className="font-medium text-sm">
+                          {formatearFecha(infoDoc.fecha || infoDoc.fechaIngreso)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-muted/50 p-3 rounded-lg border flex items-center gap-3">
+                      <IdCard className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">Documento / NIT</p>
+                        <p className="font-medium text-sm font-mono">{infoDoc.cedula || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {(infoDoc.oficina || infoDoc.dependencia) && (
+                    <div className="bg-muted/30 p-3 rounded-lg border space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Emisión</p>
+                      {infoDoc.oficina && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <p className="text-sm font-medium">{infoDoc.oficina}</p>
+                        </div>
+                      )}
+                      {infoDoc.dependencia && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <p className="text-sm font-medium text-muted-foreground">{infoDoc.dependencia}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {infoDoc.desactivadoManualmente && (
+                    <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg space-y-1">
+                      <p className="text-xs text-destructive uppercase font-semibold">Desactivado Manualmente</p>
+                      <p className="font-medium text-sm text-destructive">{formatearFecha(infoDoc.fechaDesactivacion)}</p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -1821,7 +1954,7 @@ function DashboardContent() {
                         <div key={doc.codigo} className="bg-background p-4 rounded-lg border">
                           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
                             <div>
-                              <p className="font-semibold">{doc.nombre}</p>
+                              <p className="font-semibold uppercase">{doc.nombre}</p>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono mt-1">
                                 <span className="flex items-center gap-1">
                                   <IdCard className="h-3.5 w-3.5" /> {doc.cedula}

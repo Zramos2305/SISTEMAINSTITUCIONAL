@@ -43,8 +43,27 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <div className="flex-1">
+      <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen relative`}>
+        {/* MARCA DE AGUA FLOTANTE (CORTADA A LA DERECHA) */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-[9999]">
+          <img 
+            src="/logo.png" 
+            alt="Marca de Agua" 
+            className="absolute object-contain grayscale opacity-[0.06]" 
+            style={{ 
+              top: '50%',
+              right: '-35vw', /* Mueve la imagen a la derecha la mitad de su ancho */
+              transform: 'translateY(-50%)',
+              width: '70vw', 
+              height: '70vw',
+              minWidth: '800px',
+              minHeight: '800px',
+              maxWidth: 'none'
+            }} 
+          />
+        </div>
+
+        <div className="flex-1 relative z-10">
           {children}
         </div>
         <footer className="py-4 bg-card border-t mt-auto">
