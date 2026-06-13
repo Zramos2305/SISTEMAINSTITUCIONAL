@@ -300,12 +300,60 @@ export default function RegistroPublicoPage() {
       };
 
       await setDoc(doc(db, "afiliados", finalId), dataToSave);
-      toast.success("Tu solicitud ha sido enviada con éxito.");
-      setIsSuccess(true);
+      
+      toast.info("Generando pasarela de pago seguro...");
+
+      // ==========================================
+      // INTEGRACIÓN PAYU: Redirección al registrar
+      // ==========================================
+      const referenceCode = `${finalId}_${Date.now()}`;
+      const amount = "50000"; // Precio provisional
+      const currency = "COP";
+
+      const resSignature = await fetch('/api/payu/signature', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referenceCode, amount, currency })
+      });
+      const { signature, merchantId, accountId } = await resSignature.json();
+
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = "https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/";
+
+      const inputs = {
+        merchantId: merchantId,
+        accountId: accountId,
+        description: "Pago de Afiliación - Fundación Isla Cascajal",
+        referenceCode: referenceCode,
+        amount: amount,
+        tax: "0",
+        taxReturnBase: "0",
+        currency: currency,
+        signature: signature,
+        test: "1", // Sandbox
+        buyerEmail: formData.correo,
+        responseUrl: `${window.location.origin}/`, // Retorno a la página principal tras pagar
+        confirmationUrl: `${window.location.origin}/api/payu/webhook`, // Webhook notificador
+        extra1: finalId // Pasamos el ID para que el Webhook sepa a quién activar
+      };
+
+      for (const key in inputs) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = inputs[key];
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+
+      // No ponemos setIsSaving(false) ni isSuccess para que la pantalla se quede cargando
+      // mientras lo lanza a PayU.
     } catch (err) {
       console.error(err);
-      toast.error("Ocurrió un error al enviar tu solicitud. Intenta más tarde.");
-    } finally {
+      toast.error("Ocurrió un error al procesar tu afiliación. Intenta más tarde.");
       setIsSaving(false);
     }
   };
@@ -859,7 +907,7 @@ export default function RegistroPublicoPage() {
               onClick={handleGuardar}
               disabled={isSaving}
             >
-              {isSaving ? <><Spinner className="mr-3 h-6 w-6" /> Procesando...</> : "Enviar Solicitud"}
+              {isSaving ? <><Spinner className="mr-3 h-6 w-6" /> Conectando con PayU...</> : "Enviar y Pagar Afiliación"}
             </Button>
           </div>
 
