@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, limit } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -236,7 +236,7 @@ export default function RegistroPublicoPage() {
         });
       }
 
-      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
+      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula), limit(1));
       const snap = await getDocs(q);
       if (!snap.empty) {
         toast.error("Esta cédula ya se encuentra registrada en nuestro sistema.");
