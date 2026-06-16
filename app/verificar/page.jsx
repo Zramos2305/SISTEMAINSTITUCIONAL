@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,13 +72,13 @@ function VerificarContent() {
         // 3. Búsqueda profunda en Afiliados (por campos, puede fallar si no hay sesión por reglas de seguridad)
         if (!docData) {
           try {
-            const afiQ1 = query(collection(db, "afiliados"), where("codigo", "==", codigo));
+            const afiQ1 = query(collection(db, "afiliados"), where("codigo", "==", codigo), limit(1));
             const snap1 = await getDocs(afiQ1);
             if (!snap1.empty) {
               const afi = snap1.docs[0];
               docData = { codigo: afi.data().codigo || afi.data().codigoInstitucional || afi.id, tipo: "afiliado", ...afi.data() };
             } else {
-              const afiQ2 = query(collection(db, "afiliados"), where("codigoInstitucional", "==", codigo));
+              const afiQ2 = query(collection(db, "afiliados"), where("codigoInstitucional", "==", codigo), limit(1));
               const snap2 = await getDocs(afiQ2);
               if (!snap2.empty) {
                 const afi = snap2.docs[0];
@@ -92,11 +92,11 @@ function VerificarContent() {
         if (!docData) {
           try {
             let empSnap = null;
-            const empQueryUpper = query(collection(db, "empleados"), where("codigoInstitucional", "==", codigo));
+            const empQueryUpper = query(collection(db, "empleados"), where("codigoInstitucional", "==", codigo), limit(1));
             empSnap = await getDocs(empQueryUpper);
 
             if (empSnap.empty && codigoRaw) {
-              const empQueryRaw = query(collection(db, "empleados"), where("codigoInstitucional", "==", codigoRaw));
+              const empQueryRaw = query(collection(db, "empleados"), where("codigoInstitucional", "==", codigoRaw), limit(1));
               empSnap = await getDocs(empQueryRaw);
             }
 

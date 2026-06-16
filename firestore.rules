@@ -27,7 +27,8 @@ service cloud.firestore {
 
     match /empleados/{empId} {
       allow get: if true;
-      allow list, create, update, delete: if isLogged();
+      allow list: if isLogged() || request.query.limit <= 1;
+      allow create, update, delete: if isLogged();
     }
 
     /* ============================

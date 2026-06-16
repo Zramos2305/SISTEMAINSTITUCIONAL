@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,8 @@ export default function AfiliadoLoginPage() {
       const q = query(
         collection(db, "afiliados"),
         where("cedula", "==", cedulaLimpia),
-        where("codigoInstitucional", "==", codigoLimpio)
+        where("codigoInstitucional", "==", codigoLimpio),
+        limit(1)
       );
 
       const snap = await getDocs(q);

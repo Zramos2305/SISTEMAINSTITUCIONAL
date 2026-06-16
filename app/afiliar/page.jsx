@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
@@ -349,7 +349,7 @@ export default function AfiliarPage() {
       }
 
       // Buscar si ya existe
-      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula));
+      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula), limit(1));
       const snap = await getDocs(q);
 
       let finalId = formData.codigo;
