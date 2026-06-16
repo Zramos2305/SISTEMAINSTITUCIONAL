@@ -29,7 +29,8 @@ import { Button } from "@/components/ui/button";
 function VerificarContent() {
   const searchParams = useSearchParams();
   const codigoRaw = searchParams.get("doc")?.trim();
-  const codigo = codigoRaw?.toUpperCase();
+  // Limpieza estricta: Elimina cualquier barra diagonal, símbolo invisible o carácter que el iPhone pueda inyectar al escanear.
+  const codigo = codigoRaw?.replace(/[^a-zA-Z0-9-]/g, "").toUpperCase();
   const source = searchParams.get("source");
 
   const [estado, setEstado] = useState("loading");
