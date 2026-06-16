@@ -257,7 +257,7 @@ function GenerarContent() {
       // Cargar Membrete de fondo
       let membreteBase64 = null;
       try {
-        const response = await fetch('/membrete.png');
+        const response = await fetch('/MEMBRETE.png');
         if (response.ok) {
           const blob = await response.blob();
           const reader = new FileReader();
