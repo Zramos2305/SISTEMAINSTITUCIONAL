@@ -249,15 +249,22 @@ function GenerarContent() {
         width: 150, margin: 1, color: { dark: "#1e3a5f", light: "#ffffff" },
       });
 
-      // 2. Dibujar el PDF Oficial (Con compresión activada)
-      const docPdf = new jsPDF({ format: 'letter', unit: 'mm', compress: true });
+      // 2. Dibujar el PDF Oficial (Sin compress:true para evitar corrupción de PNGs)
+      const docPdf = new jsPDF({ format: 'letter', unit: 'mm' });
       const pageWidth = docPdf.internal.pageSize.getWidth();
       const pageHeight = docPdf.internal.pageSize.getHeight();
       
-      // Cargar Membrete de fondo
+      // Cargar Membrete de fondo (Buscando versión JPG externa más ligera)
       let membreteBase64 = null;
       try {
-        const response = await fetch('/MEMBRETE.png');
+        // Intentar primero con la versión JPG optimizada
+        let response = await fetch('/membrete.jpg');
+        
+        // Fallback al PNG original si no encuentran el JPG
+        if (!response.ok) {
+          response = await fetch('/MEMBRETE.png');
+        }
+
         if (response.ok) {
           const blob = await response.blob();
           const reader = new FileReader();
@@ -267,12 +274,13 @@ function GenerarContent() {
           });
         }
       } catch (e) {
-        console.warn("No se encontró membrete.png en public/");
+        console.warn("No se encontró membrete.jpg o MEMBRETE.png en public/", e);
       }
 
-      // Dibujar fondo si existe (forzando formato PNG para evitar fallos de renderizado)
+      // Dibujar fondo si existe (dejando que jsPDF detecte el formato automáticamente de la cadena base64)
       if (membreteBase64) {
-        docPdf.addImage(membreteBase64, "PNG", 0, 0, pageWidth, pageHeight, "membrete", "FAST");
+        // Al quitar el "PNG" o "JPEG", jsPDF lo deduce del base64 (data:image/jpeg;base64,...)
+        docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight);
       } else {
         docPdf.setFontSize(22);
         docPdf.setTextColor(30, 58, 95);
@@ -280,7 +288,7 @@ function GenerarContent() {
       }
 
       // Dibujar QR en el cuadro superior derecho
-      docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24, "qr", "FAST");
+      docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24);
 
       // Cuerpo Redactado Clásico (Texto Plano)
       docPdf.setFontSize(11);
