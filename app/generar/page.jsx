@@ -270,17 +270,17 @@ function GenerarContent() {
         console.warn("No se encontró membrete.png en public/");
       }
 
-      // Dibujar fondo si existe (dejamos que jsPDF autodetecte el formato)
+      // Dibujar fondo si existe (forzando formato PNG para evitar fallos de renderizado)
       if (membreteBase64) {
-        docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight, "membrete", "FAST");
+        docPdf.addImage(membreteBase64, "PNG", 0, 0, pageWidth, pageHeight, "membrete", "FAST");
       } else {
         docPdf.setFontSize(22);
         docPdf.setTextColor(30, 58, 95);
         docPdf.text("FUNDACIÓN ISLA CASCAJAL", pageWidth / 2, 30, { align: "center" });
       }
 
-      // Dibujar QR en el cuadro superior derecho (Cuarto ajuste: 3mm a la derecha)
-      docPdf.addImage(qrDataUrl, undefined, pageWidth - 52, 6, 24, 24, "qr", "FAST");
+      // Dibujar QR en el cuadro superior derecho
+      docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24, "qr", "FAST");
 
       // Cuerpo Redactado Clásico (Texto Plano)
       docPdf.setFontSize(11);
