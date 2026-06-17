@@ -23,7 +23,7 @@ import {
   User, IdCard, Phone, Mail, MapPin, Globe, Map, CheckCircle2,
   UploadCloud, FileText, AlertCircle, Users, Plus, Trash2,
   HeartPulse, GraduationCap, ShieldAlert, HeartHandshake, Info, PawPrint,
-  CreditCard, BadgeCheck
+  CreditCard, BadgeCheck, Upload
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,8 +34,8 @@ const ETNIAS = ["Afrodiaspórico (Negro)", "Afrodiaspórico (Afro)", "Afrodiasp�
 const TIPOS_VICTIMA = ["Desplazamiento", "Homicidio", "Amenazas", "Desaparición forzosa", "Pérdida de bienes", "Atentados", "Secuestros", "Delitos contra la libertad sexual", "Daños por explosivos", "Abandono o expulsión de tierras", "Torturas", "Reclutamiento de NNA"];
 const TIPOS_DISCRIMINACION = ["Raza", "Por país de origen", "Por lugar de nacimiento", "Lugar de origen/procedencia/destino", "Por género", "Por religión", "Por discapacidad", "Por identidad cultural", "Por identidad ideológica", "Por situación socioeconómica", "Por nivel académico", "Por edad", "Por situación de salud", "Por condición familiar", "Por aspecto físico"];
 const NIVELES_EDUCATIVOS = ["Ninguno", "Primaria", "Bachiller", "Técnico", "Tecnólogo", "Pregrado (Universitario)", "Especialización o posgrado", "Maestría", "Doctorado", "Posdoctorado"];
-const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Por establecer", "Otro"];
-const TIPOS_TRASTORNO = ["Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Por establecer", "Otro"];
+const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Otro"];
+const TIPOS_TRASTORNO = ["Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Otro"];
 const ENTERADO_MEDIOS = ["Voz a voz", "WhatsApp", "Telegram", "Instagram", "Facebook", "TikTok", "YouTube", "Radio", "TV", "Volantes", "Referido"];
 
 // Colores Institucionales
@@ -71,7 +71,7 @@ export default function RegistroPublicoPage() {
     discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
     comoEntero: "", referido: "", aceptaTerminos: false,
     deseaSerVoluntario: "",
-    emergenciaNombre: "", emergenciaNumero: "", emergenciaCorreo: "", emergenciaCedula: "", emergenciaDireccion: "",
+    emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
     foto: "", // Base64 de la foto comprimida
   });
 
@@ -207,7 +207,14 @@ export default function RegistroPublicoPage() {
 
     if (!soportes.cedula) return toast.error("Debe subir su documento de identidad.");
     if (formData.seleccionMembresias.educativa && !soportes.notas) return toast.error("Debe subir su certificado de notas para la membresía educativa.");
-    if (formData.seleccionMembresias.integral && formData.mascotas?.length > 0 && !soportes.vacunas) return toast.error("Debe subir el carnet de vacunación de sus mascotas.");
+    if (formData.seleccionMembresias.integral && formData.mascotas?.length > 0) {
+      const activePets = formData.mascotas.filter(m => m.nombre.trim() !== "");
+      for (let i = 0; i < activePets.length; i++) {
+        if (!soportes[`vacunas_${i}`]) {
+          return toast.error(`Debe subir el carnet de vacunación de la mascota ${i + 1} (${activePets[i].nombre}).`);
+        }
+      }
+    }
 
     setIsSaving(true);
     try {
@@ -302,8 +309,7 @@ export default function RegistroPublicoPage() {
         deseaSerVoluntario: formData.deseaSerVoluntario,
         emergenciaNombre: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNombre : "N/A",
         emergenciaNumero: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNumero : "N/A",
-        emergenciaCorreo: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaCorreo : "N/A",
-        emergenciaCedula: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaCedula : "N/A",
+        emergenciaWhatsapp: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaWhatsapp : "N/A",
         emergenciaDireccion: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaDireccion : "N/A",
         foto: formData.foto || null,
         linksSoportes: linksSoportes,
@@ -771,8 +777,7 @@ export default function RegistroPublicoPage() {
                   if (v === "No") {
                     handleInputChange("emergenciaNombre", "");
                     handleInputChange("emergenciaNumero", "");
-                    handleInputChange("emergenciaCorreo", "");
-                    handleInputChange("emergenciaCedula", "");
+                    handleInputChange("emergenciaWhatsapp", "");
                     handleInputChange("emergenciaDireccion", "");
                   }
                 }}>
@@ -784,29 +789,25 @@ export default function RegistroPublicoPage() {
               {formData.deseaSerVoluntario === "Sí" && (
                 <div className="border border-green-200 rounded-xl p-5 bg-white shadow-sm space-y-4">
                   <h3 className="font-bold text-slate-800 border-b pb-2">Contacto de Emergencia</h3>
-                  <p className="text-xs text-slate-500 mb-2">Por seguridad durante las actividades de voluntariado, requerimos un contacto de emergencia.</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field>
+                  <div className="flex flex-col md:flex-row gap-4 mb-4">
+                    <div className="flex-1 min-w-[200px]">
                       <FieldLabel>Nombre Completo <span className="text-red-500">*</span></FieldLabel>
                       <Input placeholder="Nombre del contacto" value={formData.emergenciaNombre} onChange={(e) => handleInputChange("emergenciaNombre", e.target.value)} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Número de Teléfono <span className="text-red-500">*</span></FieldLabel>
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
+                      <FieldLabel>Número Teléfono <span className="text-red-500">*</span></FieldLabel>
                       <Input placeholder="Celular" value={formData.emergenciaNumero} onChange={(e) => handleInputChange("emergenciaNumero", e.target.value)} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Correo Electrónico <span className="text-red-500">*</span></FieldLabel>
-                      <Input type="email" placeholder="correo@ejemplo.com" value={formData.emergenciaCorreo} onChange={(e) => handleInputChange("emergenciaCorreo", e.target.value)} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Cédula <span className="text-red-500">*</span></FieldLabel>
-                      <Input placeholder="CC" value={formData.emergenciaCedula} onChange={(e) => handleInputChange("emergenciaCedula", e.target.value)} />
-                    </Field>
-                    <Field className="md:col-span-2">
+                    </div>
+                  </div>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 min-w-[200px]">
+                      <FieldLabel>Número de WhatsApp <span className="text-red-500">*</span></FieldLabel>
+                      <Input placeholder="WhatsApp" value={formData.emergenciaWhatsapp} onChange={(e) => handleInputChange("emergenciaWhatsapp", e.target.value)} />
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
                       <FieldLabel>Dirección de Emergencia <span className="text-red-500">*</span></FieldLabel>
                       <Input placeholder="Dirección completa" value={formData.emergenciaDireccion} onChange={(e) => handleInputChange("emergenciaDireccion", e.target.value)} />
-                    </Field>
+                    </div>
                   </div>
                 </div>
               )}
@@ -973,12 +974,24 @@ export default function RegistroPublicoPage() {
                       <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('notas', e)} className="bg-white cursor-pointer" />
                     </div>
                   )}
-                  {formData.seleccionMembresias.integral && formData.mascotas?.length > 0 && (
-                    <div>
-                      <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><PawPrint className="h-4 w-4 text-slate-400"/> Carnet de Vacunación (Mascotas)</label>
-                      <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('vacunas', e)} className="bg-white cursor-pointer" />
+                  {formData.seleccionMembresias.integral && formData.mascotas?.filter(m => m.nombre.trim() !== "").map((mascota, idx) => (
+                    <div className="flex-1 min-w-[300px]" key={`mascota-soporte-${idx}`}>
+                      <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><PawPrint className="h-4 w-4 text-slate-400"/> Carnet Vacunación: {mascota.nombre}</label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => handleSoporteChange(`vacunas_${idx}`, e)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                          disabled={isSaving}
+                        />
+                        <Button type="button" variant="outline" className={`w-full justify-start font-normal ${soportes[`vacunas_${idx}`] ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200'}`} disabled={isSaving}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          {soportes[`vacunas_${idx}`] ? "Carnet adjuntado" : "Subir archivo (PDF/IMG)"}
+                        </Button>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             </CardContent>
