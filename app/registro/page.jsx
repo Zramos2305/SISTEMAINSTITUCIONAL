@@ -30,11 +30,11 @@ import Link from "next/link";
 const PAISES = ["Colombia", "Venezuela", "Ecuador", "Perú", "Chile", "Argentina", "Brasil", "Panamá", "México", "Estados Unidos", "España", "Otro"];
 const DEPARTAMENTOS_COLOMBIA = ["Amazonas", "Antioquia", "Arauca", "Atlántico", "Bolívar", "Boyacá", "Caldas", "Caquetá", "Casanare", "Cauca", "Cesar", "Chocó", "Córdoba", "Cundinamarca", "Guainía", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Nariño", "Norte de Santander", "Putumayo", "Quindío", "Risaralda", "San Andrés y Providencia", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupés", "Vichada"];
 
-const ETNIAS = ["Afrodiaspórico (Negro)", "Afrodiaspórico (Afro)", "Afrodiaspórico (Palenquero)", "Originario (Indígena)", "Mestizo", "ROM", "Caucásico (Blanco)"];
+const ETNIAS = ["Afrodiaspórico (Negro)", "Afrodiaspórico (Afro)", "Afrodiaspórico (Palenquero)", "Afrodiaspórico (Raizal)", "Originario (Indígena)", "Mestizo", "ROM", "Caucásico (Blanco)"];
 const TIPOS_VICTIMA = ["Desplazamiento", "Homicidio", "Amenazas", "Desaparición forzosa", "Pérdida de bienes", "Atentados", "Secuestros", "Delitos contra la libertad sexual", "Daños por explosivos", "Abandono o expulsión de tierras", "Torturas", "Reclutamiento de NNA"];
-const TIPOS_DISCRIMINACION = ["Raza", "Por país de origen", "Por lugar de nacimiento", "Por género", "Por religión", "Por discapacidad", "Por identidad cultural", "Por identidad ideológica", "Por situación socioeconómica", "Por nivel académico", "Por edad", "Por situación de salud", "Por condición familiar", "Por aspecto físico"];
-const NIVELES_EDUCATIVOS = ["Primaria", "Bachiller", "Técnico", "Tecnólogo", "Pregrado (Universitario)", "Especialización o posgrado", "Maestría", "Doctorado", "Posdoctorado"];
-const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Por establecer"];
+const TIPOS_DISCRIMINACION = ["Raza", "Por país de origen", "Por lugar de nacimiento", "Lugar de origen/procedencia/destino", "Por género", "Por religión", "Por discapacidad", "Por identidad cultural", "Por identidad ideológica", "Por situación socioeconómica", "Por nivel académico", "Por edad", "Por situación de salud", "Por condición familiar", "Por aspecto físico"];
+const NIVELES_EDUCATIVOS = ["Ninguno", "Primaria", "Bachiller", "Técnico", "Tecnólogo", "Pregrado (Universitario)", "Especialización o posgrado", "Maestría", "Doctorado", "Posdoctorado"];
+const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Por establecer", "Otro"];
 const TIPOS_TRASTORNO = ["Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Por establecer", "Otro"];
 const ENTERADO_MEDIOS = ["Voz a voz", "WhatsApp", "Telegram", "Instagram", "Facebook", "TikTok", "YouTube", "Radio", "TV", "Volantes", "Referido"];
 
@@ -64,12 +64,14 @@ export default function RegistroPublicoPage() {
     seleccionMembresias: { educativa: true, integral: false },
     // Nuevos Campos Perfil
     sexo: "", orientacionSexual: "", orientacionOtro: "", estrato: "", etnia: "",
-    sisben: "", victimaConflicto: "", victimaTipo: "", victimaInscrito: "",
+    sisben: "", sisbenPuntaje: "", victimaConflicto: "", victimaTipo: "", victimaInscrito: "",
     discriminacion: "", discriminacionTipo: "",
     educacionNivel: "", educacionEstudio: "", educacionSemestre: "", educacionPlantel: "",
     eps: "", arl: "", enfermedad: "", enfermedadCual: "", alergia: "", alergiaCual: "",
-    discapacidad: "", discapacidadTipo: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
+    discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
     comoEntero: "", referido: "", aceptaTerminos: false,
+    deseaSerVoluntario: "",
+    emergenciaNombre: "", emergenciaNumero: "", emergenciaCorreo: "", emergenciaCedula: "", emergenciaDireccion: "",
     foto: "", // Base64 de la foto comprimida
   });
 
@@ -275,15 +277,16 @@ export default function RegistroPublicoPage() {
         estrato: formData.estrato,
         etnia: formData.etnia,
         sisben: formData.sisben,
+        sisbenPuntaje: formData.sisben === "Sí" ? formData.sisbenPuntaje : "N/A",
         victimaConflicto: formData.victimaConflicto,
         victimaTipo: formData.victimaConflicto === "Sí" ? formData.victimaTipo : "N/A",
         victimaInscrito: formData.victimaConflicto === "Sí" ? formData.victimaInscrito : "N/A",
         discriminacion: formData.discriminacion,
         discriminacionTipo: formData.discriminacion === "Sí" ? formData.discriminacionTipo : "N/A",
         educacionNivel: formData.educacionNivel,
-        educacionEstudio: formData.educacionEstudio || "N/A",
-        educacionSemestre: formData.educacionSemestre || "N/A",
-        educacionPlantel: formData.educacionPlantel || "N/A",
+        educacionEstudio: formData.educacionNivel === "Ninguno" ? "N/A" : (formData.educacionEstudio || "N/A"),
+        educacionSemestre: formData.educacionNivel === "Ninguno" ? "N/A" : (formData.educacionSemestre || "N/A"),
+        educacionPlantel: formData.educacionNivel === "Ninguno" ? "N/A" : (formData.educacionPlantel || "N/A"),
         eps: formData.eps,
         arl: formData.arl,
         enfermedad: formData.enfermedad,
@@ -291,11 +294,17 @@ export default function RegistroPublicoPage() {
         alergia: formData.alergia,
         alergiaCual: formData.alergia === "Sí" ? formData.alergiaCual : "N/A",
         discapacidad: formData.discapacidad,
-        discapacidadTipo: formData.discapacidad === "Sí" ? formData.discapacidadTipo : "N/A",
+        discapacidadTipo: formData.discapacidad === "Sí" ? (formData.discapacidadTipo === "Otro" ? formData.discapacidadOtro : formData.discapacidadTipo) : "N/A",
         trastorno: formData.trastorno,
         trastornoTipo: formData.trastorno === "Sí" ? (formData.trastornoTipo === "Otro" ? formData.trastornoOtro : formData.trastornoTipo) : "N/A",
         comoEntero: formData.comoEntero,
         referido: formData.comoEntero === "Referido" ? formData.referido : "N/A",
+        deseaSerVoluntario: formData.deseaSerVoluntario,
+        emergenciaNombre: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNombre : "N/A",
+        emergenciaNumero: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNumero : "N/A",
+        emergenciaCorreo: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaCorreo : "N/A",
+        emergenciaCedula: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaCedula : "N/A",
+        emergenciaDireccion: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaDireccion : "N/A",
         foto: formData.foto || null,
         linksSoportes: linksSoportes,
       };
@@ -526,13 +535,21 @@ export default function RegistroPublicoPage() {
               <h2 className="text-xl font-bold" style={{ color: "#ca8a04" }}>3. Contexto Social y Vulnerabilidad</h2>
             </div>
             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Field>
-                <FieldLabel>¿Tiene Sisbén? <span className="text-red-500">*</span></FieldLabel>
-                <Select value={formData.sisben} onValueChange={(v) => handleInputChange("sisben", v)}>
-                  <SelectTrigger className="border-yellow-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
-                  <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
-                </Select>
-              </Field>
+              <div className="space-y-4">
+                <Field>
+                  <FieldLabel>¿Tiene Sisbén? <span className="text-red-500">*</span></FieldLabel>
+                  <Select value={formData.sisben} onValueChange={(v) => { handleInputChange("sisben", v); if(v==="No") handleInputChange("sisbenPuntaje", ""); }}>
+                    <SelectTrigger className="border-yellow-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                    <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                  </Select>
+                </Field>
+                {formData.sisben === "Sí" && (
+                  <Field>
+                    <FieldLabel>Puntaje / Categoría <span className="text-red-500">*</span></FieldLabel>
+                    <Input placeholder="Ej. A1, B2, 45.3" value={formData.sisbenPuntaje} onChange={(e) => handleInputChange("sisbenPuntaje", e.target.value)} className="border-yellow-200" />
+                  </Field>
+                )}
+              </div>
               
               <Field className="md:col-span-2 border-t pt-4 border-yellow-100">
                 <FieldLabel>¿Es víctima del conflicto armado? <span className="text-red-500">*</span></FieldLabel>
@@ -594,29 +611,40 @@ export default function RegistroPublicoPage() {
             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
               <Field>
                 <FieldLabel>Nivel Educativo Actual o Alcanzado <span className="text-red-500">*</span></FieldLabel>
-                <Select value={formData.educacionNivel} onValueChange={(v) => handleInputChange("educacionNivel", v)}>
+                <Select value={formData.educacionNivel} onValueChange={(v) => {
+                  handleInputChange("educacionNivel", v);
+                  if (v === "Ninguno") {
+                    handleInputChange("educacionEstudio", "");
+                    handleInputChange("educacionSemestre", "");
+                    handleInputChange("educacionPlantel", "");
+                  }
+                }}>
                   <SelectTrigger className="border-blue-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                   <SelectContent>{NIVELES_EDUCATIVOS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <Field>
-                <FieldLabel>¿Qué estudia o qué estudió?</FieldLabel>
-                <Input placeholder="Ej. Ingeniería de Sistemas" value={formData.educacionEstudio} onChange={(e) => handleInputChange("educacionEstudio", e.target.value)} className="border-blue-200" />
-              </Field>
-              <Field>
-                <FieldLabel>Año, Nivel o Semestre</FieldLabel>
-                <Select value={formData.educacionSemestre} onValueChange={(v) => handleInputChange("educacionSemestre", v)}>
-                  <SelectTrigger className="border-blue-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
-                  <SelectContent>
-                    {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(s => <SelectItem key={s} value={`Semestre ${s}`}>Semestre {s}</SelectItem>)}
-                    <SelectItem value="Egresado/Graduado">Egresado / Graduado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel>Nombre del Plantel Educativo</FieldLabel>
-                <Input placeholder="Colegio o Universidad" value={formData.educacionPlantel} onChange={(e) => handleInputChange("educacionPlantel", e.target.value)} className="border-blue-200" />
-              </Field>
+              {formData.educacionNivel !== "Ninguno" && (
+                <>
+                  <Field>
+                    <FieldLabel>¿Qué estudia o qué estudió?</FieldLabel>
+                    <Input placeholder="Ej. Ingeniería de Sistemas" value={formData.educacionEstudio} onChange={(e) => handleInputChange("educacionEstudio", e.target.value)} className="border-blue-200" />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Año, Nivel o Semestre</FieldLabel>
+                    <Select value={formData.educacionSemestre} onValueChange={(v) => handleInputChange("educacionSemestre", v)}>
+                      <SelectTrigger className="border-blue-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                      <SelectContent>
+                        {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(s => <SelectItem key={s} value={`Semestre ${s}`}>Semestre {s}</SelectItem>)}
+                        <SelectItem value="Egresado/Graduado">Egresado / Graduado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Nombre del Plantel Educativo</FieldLabel>
+                    <Input placeholder="Colegio o Universidad" value={formData.educacionPlantel} onChange={(e) => handleInputChange("educacionPlantel", e.target.value)} className="border-blue-200" />
+                  </Field>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -684,13 +712,18 @@ export default function RegistroPublicoPage() {
                   {formData.discapacidad === "Sí" && (
                     <Field>
                       <FieldLabel>¿Qué tipo de discapacidad? <span className="text-red-500">*</span></FieldLabel>
-                      <Select value={formData.discapacidadTipo} onValueChange={(v) => handleInputChange("discapacidadTipo", v)}>
-                        <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ninguna">Ninguna</SelectItem>
-                          {TIPOS_DISCAPACIDAD.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-2">
+                        <Select value={formData.discapacidadTipo} onValueChange={(v) => handleInputChange("discapacidadTipo", v)}>
+                          <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Ninguna">Ninguna</SelectItem>
+                            {TIPOS_DISCAPACIDAD.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {formData.discapacidadTipo === "Otro" && (
+                          <Input placeholder="¿Cuál discapacidad?" value={formData.discapacidadOtro} onChange={(e) => handleInputChange("discapacidadOtro", e.target.value)} className="border-red-200" />
+                        )}
+                      </div>
                     </Field>
                   )}
                 </div>
@@ -721,6 +754,62 @@ export default function RegistroPublicoPage() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* SECCIÓN EXTRA: VOLUNTARIADO Y EMERGENCIA */}
+          <Card className="shadow-lg border-0 overflow-hidden border-t-4" style={{ borderTopColor: COLORS.verde }}>
+            <div className="bg-green-50/50 p-4 border-b flex items-center gap-3">
+              <HeartHandshake className="h-6 w-6 text-green-600" />
+              <h2 className="text-xl font-bold text-green-800">Compromiso y Voluntariado</h2>
+            </div>
+            <CardContent className="pt-6 space-y-6">
+              <Field>
+                <FieldLabel>¿Desea ser voluntario en futuras campañas de la fundación? <span className="text-red-500">*</span></FieldLabel>
+                <Select value={formData.deseaSerVoluntario} onValueChange={(v) => {
+                  handleInputChange("deseaSerVoluntario", v);
+                  if (v === "No") {
+                    handleInputChange("emergenciaNombre", "");
+                    handleInputChange("emergenciaNumero", "");
+                    handleInputChange("emergenciaCorreo", "");
+                    handleInputChange("emergenciaCedula", "");
+                    handleInputChange("emergenciaDireccion", "");
+                  }
+                }}>
+                  <SelectTrigger className="border-green-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                  <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                </Select>
+              </Field>
+
+              {formData.deseaSerVoluntario === "Sí" && (
+                <div className="border border-green-200 rounded-xl p-5 bg-white shadow-sm space-y-4">
+                  <h3 className="font-bold text-slate-800 border-b pb-2">Contacto de Emergencia</h3>
+                  <p className="text-xs text-slate-500 mb-2">Por seguridad durante las actividades de voluntariado, requerimos un contacto de emergencia.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel>Nombre Completo <span className="text-red-500">*</span></FieldLabel>
+                      <Input placeholder="Nombre del contacto" value={formData.emergenciaNombre} onChange={(e) => handleInputChange("emergenciaNombre", e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Número de Teléfono <span className="text-red-500">*</span></FieldLabel>
+                      <Input placeholder="Celular" value={formData.emergenciaNumero} onChange={(e) => handleInputChange("emergenciaNumero", e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Correo Electrónico <span className="text-red-500">*</span></FieldLabel>
+                      <Input type="email" placeholder="correo@ejemplo.com" value={formData.emergenciaCorreo} onChange={(e) => handleInputChange("emergenciaCorreo", e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>Cédula <span className="text-red-500">*</span></FieldLabel>
+                      <Input placeholder="CC" value={formData.emergenciaCedula} onChange={(e) => handleInputChange("emergenciaCedula", e.target.value)} />
+                    </Field>
+                    <Field className="md:col-span-2">
+                      <FieldLabel>Dirección de Emergencia <span className="text-red-500">*</span></FieldLabel>
+                      <Input placeholder="Dirección completa" value={formData.emergenciaDireccion} onChange={(e) => handleInputChange("emergenciaDireccion", e.target.value)} />
+                    </Field>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
