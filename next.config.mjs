@@ -16,4 +16,5 @@ const nextConfig = {
   turbopack: {}, // 👈 ESTO EVITA EL ERROR
 };
 
-export default withPWA(nextConfig);
+// export default withPWA(nextConfig);
+export default nextConfig;
