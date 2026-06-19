@@ -134,18 +134,19 @@ export default function RegistroPublicoPage() {
     setIsVerifyingReferidor(true);
     setReferidorNombre(null);
     try {
-      const res = await fetch("/api/public/verificar-referidor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigoReferidor: formData.codigoReferidor })
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        setReferidorNombre(data.nombre);
+      const q = query(
+        collection(db, "afiliados"),
+        where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const referrerDoc = querySnapshot.docs[0].data();
+        setReferidorNombre(referrerDoc.nombre);
         toast.success("¡Código válido!");
       } else {
-        toast.error(data.error || "Código no encontrado. Verifica si está bien escrito.");
+        toast.error("Código no encontrado. Verifica si está bien escrito.");
       }
     } catch (error) {
       console.error(error);
@@ -309,17 +310,13 @@ export default function RegistroPublicoPage() {
         });
       }
 
-      // Validar Cédula única usando API route para evitar error de permisos en Firebase rules
-      const resCedula = await fetch("/api/public/verificar-cedula", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cedula: formData.cedula })
-      });
-      const dataCedula = await resCedula.json();
-      if (dataCedula.exists) {
-        toast.error("Esta cédula ya se encuentra registrada en nuestro sistema.");
+      // Validar Cédula única directamente (sin API) usando query con limit(1)
+      const qCedula = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula), limit(1));
+      const cedulaSnap = await getDocs(qCedula);
+      
+      if (!cedulaSnap.empty) {
         setIsSaving(false);
-        return;
+        return toast.error("Esta cédula ya se encuentra registrada en el sistema.");
       }
 
       let finalId = formData.codigo;
@@ -391,20 +388,27 @@ export default function RegistroPublicoPage() {
 
       await setDoc(doc(db, "afiliados", finalId), dataToSave);
       
-      // Si es referido, actualizar al referidor por API route para evitar error de permisos
+      // Si es referido, actualizar al referidor directamente para evitar el API de Vercel (Error 500)
       if (formData.comoEntero === "Referido" && formData.codigoReferidor.trim() !== "") {
         try {
-          await fetch("/api/public/actualizar-referidor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              codigoReferidor: formData.codigoReferidor,
-              afiliadoNuevo: {
+          const q = query(
+            collection(db, "afiliados"),
+            where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()),
+            limit(1)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const referrerDoc = querySnapshot.docs[0];
+            await updateDoc(referrerDoc.ref, {
+              referidosExitosos: increment(1),
+              listaReferidos: arrayUnion({
                 nombre: formData.nombre.trim(),
-                cedula: formData.cedula.trim()
-              }
-            })
-          });
+                cedula: formData.cedula.trim(),
+                fecha: new Date().toISOString()
+              })
+            });
+          }
         } catch (e) {
           console.error("Error actualizando referidor", e);
         }
