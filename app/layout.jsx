@@ -25,12 +25,12 @@ export const metadata = {
   },
 
   icons: {
-  icon: [
-    { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }, // 👈 CLAVE
-    { url: '/icon-512.png', sizes: '512x512', type: 'image/png' }, // 👈 CLAVE
-  ],
-  apple: '/apple-icon.png',
-},
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }, // 👈 CLAVE
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' }, // 👈 CLAVE
+    ],
+    apple: '/apple-icon.png',
+  },
 }
 export const viewport = {
   themeColor: '#1e3a5f',
@@ -46,20 +46,20 @@ export default function RootLayout({ children }) {
       <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen relative`}>
         {/* MARCA DE AGUA FLOTANTE (CORTADA A LA DERECHA) */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-[9999]">
-          <img 
-            src="/logo.png" 
-            alt="Marca de Agua" 
-            className="absolute object-contain grayscale opacity-[0.06]" 
-            style={{ 
+          <img
+            src="/logo.png"
+            alt="Marca de Agua"
+            className="absolute object-contain grayscale opacity-[0.06]"
+            style={{
               top: '50%',
               right: '-35vw', /* Mueve la imagen a la derecha la mitad de su ancho */
               transform: 'translateY(-50%)',
-              width: '70vw', 
+              width: '70vw',
               height: '70vw',
               minWidth: '800px',
               minHeight: '800px',
               maxWidth: 'none'
-            }} 
+            }}
           />
         </div>
 
@@ -69,7 +69,7 @@ export default function RootLayout({ children }) {
         <footer className="py-4 bg-card border-t mt-auto">
           <div className="container mx-auto px-4 text-left space-y-0.5">
             <p className="text-[10px] font-medium text-foreground/60 uppercase tracking-wider">
-              Aplicación desarrollada por Zayra Ramos
+              Aplicación desarrollada por Ingeniera Zayra Ramos
             </p>
             <p className="text-[10px] text-muted-foreground/80">
               para Fundación Isla Cascajal

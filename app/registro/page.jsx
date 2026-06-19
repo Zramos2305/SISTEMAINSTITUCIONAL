@@ -68,7 +68,7 @@ export default function RegistroPublicoPage() {
     discriminacion: "", discriminacionTipo: "",
     educacionNivel: "", educacionEstudio: "", educacionSemestre: "", educacionPlantel: "",
     eps: "", arl: "", enfermedad: "", enfermedadCual: "", alergia: "", alergiaCual: "",
-    discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
+    discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "", condicionEspecial: "", condicionEspecialCual: "",
     comoEntero: "", referido: "", codigoReferidor: "", aceptaTerminos: false,
     deseaSerVoluntario: "",
     emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
@@ -208,7 +208,7 @@ export default function RegistroPublicoPage() {
 
   const handleGuardar = async () => {
     const camposBasicos = ["nombre", "cedula", "rh", "telefono", "correo", "direccion", "ciudad"];
-    const camposEncuesta = ["sexo", "orientacionSexual", "estrato", "etnia", "sisben", "victimaConflicto", "discriminacion", "educacionNivel", "eps", "arl", "enfermedad", "alergia", "discapacidad", "trastorno", "comoEntero"];
+    const camposEncuesta = ["sexo", "orientacionSexual", "estrato", "etnia", "sisben", "victimaConflicto", "discriminacion", "educacionNivel", "eps", "arl", "enfermedad", "alergia", "discapacidad", "trastorno", "condicionEspecial", "comoEntero"];
     
     // Validar Básicos
     for(const campo of camposBasicos) {
@@ -231,6 +231,7 @@ export default function RegistroPublicoPage() {
     if (formData.discapacidad === "Sí" && !formData.discapacidadTipo) return toast.error("Especifique la discapacidad");
     if (formData.trastorno === "Sí" && !formData.trastornoTipo) return toast.error("Especifique el trastorno");
     if (formData.trastornoTipo === "Otro" && !formData.trastornoOtro) return toast.error("Especifique el otro trastorno");
+    if (formData.condicionEspecial === "Sí" && !formData.condicionEspecialCual) return toast.error("Especifique la condición especial");
     if (formData.comoEntero === "Referido" && !formData.codigoReferidor) return toast.error("Especifique el código de quien lo refiere");
 
     if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
@@ -341,6 +342,8 @@ export default function RegistroPublicoPage() {
         discapacidadTipo: formData.discapacidad === "Sí" ? (formData.discapacidadTipo === "Otro" ? formData.discapacidadOtro : formData.discapacidadTipo) : "N/A",
         trastorno: formData.trastorno,
         trastornoTipo: formData.trastorno === "Sí" ? (formData.trastornoTipo === "Otro" ? formData.trastornoOtro : formData.trastornoTipo) : "N/A",
+        condicionEspecial: formData.condicionEspecial,
+        condicionEspecialCual: formData.condicionEspecial === "Sí" ? formData.condicionEspecialCual : "N/A",
         comoEntero: formData.comoEntero,
         referido: formData.comoEntero === "Referido" ? formData.referido : "N/A",
         codigoReferidor: formData.comoEntero === "Referido" ? formData.codigoReferidor : "N/A",
@@ -727,6 +730,21 @@ export default function RegistroPublicoPage() {
                   </Field>
                 </>
               )}
+              <div className="space-y-4">
+                <Field>
+                  <FieldLabel>¿Presenta alguna condición especial? <span className="text-red-500">*</span></FieldLabel>
+                  <Select value={formData.condicionEspecial} onValueChange={(v) => { handleInputChange("condicionEspecial", v); if(v==="No") handleInputChange("condicionEspecialCual", ""); }}>
+                    <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                    <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                  </Select>
+                </Field>
+                {formData.condicionEspecial === "Sí" && (
+                  <Field>
+                    <FieldLabel>¿Cuál es su condición especial? <span className="text-red-500">*</span></FieldLabel>
+                    <Input placeholder="Descríbala brevemente..." value={formData.condicionEspecialCual} onChange={(e) => handleInputChange("condicionEspecialCual", e.target.value)} className="border-red-200" />
+                  </Field>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -751,7 +769,7 @@ export default function RegistroPublicoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t pt-5 border-red-100">
                 <div className="space-y-4">
                   <Field>
-                    <FieldLabel>¿Padece alguna enfermedad? <span className="text-red-500">*</span></FieldLabel>
+                    <FieldLabel>¿Presenta alguna enfermedad? <span className="text-red-500">*</span></FieldLabel>
                     <Select value={formData.enfermedad} onValueChange={(v) => { handleInputChange("enfermedad", v); if(v==="No") handleInputChange("enfermedadCual", ""); }}>
                       <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                       <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
@@ -759,7 +777,7 @@ export default function RegistroPublicoPage() {
                   </Field>
                   {formData.enfermedad === "Sí" && (
                     <Field>
-                      <FieldLabel>¿Qué tipo de enfermedad padece? <span className="text-red-500">*</span></FieldLabel>
+                      <FieldLabel>¿Qué tipo de enfermedad presenta? <span className="text-red-500">*</span></FieldLabel>
                       <Input placeholder="Especifique" value={formData.enfermedadCual} onChange={(e) => handleInputChange("enfermedadCual", e.target.value)} className="border-red-200" />
                     </Field>
                   )}
@@ -767,7 +785,7 @@ export default function RegistroPublicoPage() {
 
                 <div className="space-y-4">
                   <Field>
-                    <FieldLabel>¿Padece algún tipo de alergia? <span className="text-red-500">*</span></FieldLabel>
+                    <FieldLabel>¿Presenta algún tipo de alergia? <span className="text-red-500">*</span></FieldLabel>
                     <Select value={formData.alergia} onValueChange={(v) => { handleInputChange("alergia", v); if(v==="No") handleInputChange("alergiaCual", ""); }}>
                       <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                       <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
@@ -775,7 +793,7 @@ export default function RegistroPublicoPage() {
                   </Field>
                   {formData.alergia === "Sí" && (
                     <Field>
-                      <FieldLabel>¿Qué tipo de alergia padece? <span className="text-red-500">*</span></FieldLabel>
+                      <FieldLabel>¿Qué tipo de alergia presenta? <span className="text-red-500">*</span></FieldLabel>
                       <Input placeholder="Especifique" value={formData.alergiaCual} onChange={(e) => handleInputChange("alergiaCual", e.target.value)} className="border-red-200" />
                     </Field>
                   )}
@@ -785,7 +803,7 @@ export default function RegistroPublicoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t pt-5 border-red-100">
                 <div className="space-y-4">
                   <Field>
-                    <FieldLabel>¿Padece algún tipo de discapacidad? <span className="text-red-500">*</span></FieldLabel>
+                    <FieldLabel>¿Presenta algún tipo de discapacidad? <span className="text-red-500">*</span></FieldLabel>
                     <Select value={formData.discapacidad} onValueChange={(v) => { handleInputChange("discapacidad", v); if(v==="No") handleInputChange("discapacidadTipo", ""); }}>
                       <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                       <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
@@ -812,7 +830,7 @@ export default function RegistroPublicoPage() {
 
                 <div className="space-y-4">
                   <Field>
-                    <FieldLabel>¿Padece algún tipo de trastorno? <span className="text-red-500">*</span></FieldLabel>
+                    <FieldLabel>¿Presenta algún tipo de trastorno? <span className="text-red-500">*</span></FieldLabel>
                     <Select value={formData.trastorno} onValueChange={(v) => { handleInputChange("trastorno", v); if(v==="No") { handleInputChange("trastornoTipo", ""); handleInputChange("trastornoOtro", ""); } }}>
                       <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                       <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>

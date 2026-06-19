@@ -128,7 +128,7 @@ export default function AfiliarPage() {
     discriminacion: "", discriminacionTipo: "",
     educacionNivel: "", educacionEstudio: "", educacionSemestre: "", educacionPlantel: "",
     eps: "", arl: "", enfermedad: "", enfermedadCual: "", alergia: "", alergiaCual: "",
-    discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
+    discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "", condicionEspecial: "", condicionEspecialCual: "",
     comoEntero: "", referido: "", codigoReferidor: "",
     deseaSerVoluntario: "",
     emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
@@ -343,6 +343,7 @@ export default function AfiliarPage() {
     if (formData.discapacidad === "Sí" && !formData.discapacidadTipo) return toast.error("Especifique la discapacidad");
     if (formData.trastorno === "Sí" && !formData.trastornoTipo) return toast.error("Especifique el trastorno");
     if (formData.trastornoTipo === "Otro" && !formData.trastornoOtro) return toast.error("Especifique el otro trastorno");
+    if (formData.condicionEspecial === "Sí" && !formData.condicionEspecialCual) return toast.error("Especifique la condición especial");
 
     if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
       toast.error("Seleccione al menos un tipo de membresía");
@@ -437,6 +438,8 @@ export default function AfiliarPage() {
         discapacidadTipo: formData.discapacidad === "Sí" ? (formData.discapacidadTipo === "Otro" ? formData.discapacidadOtro : formData.discapacidadTipo) : "N/A",
         trastorno: formData.trastorno,
         trastornoTipo: formData.trastorno === "Sí" ? (formData.trastornoTipo === "Otro" ? formData.trastornoOtro : formData.trastornoTipo) : "N/A",
+        condicionEspecial: formData.condicionEspecial,
+        condicionEspecialCual: formData.condicionEspecial === "Sí" ? formData.condicionEspecialCual : "N/A",
         comoEntero: formData.comoEntero,
         referido: formData.comoEntero === "Referido" ? formData.referido : "N/A",
         codigoReferidor: formData.comoEntero === "Referido" ? formData.codigoReferidor : "N/A",
@@ -1256,7 +1259,7 @@ export default function AfiliarPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 border-red-100">
                             <div className="space-y-3">
                               <Field>
-                                <FieldLabel>¿Padece enfermedad? <span className="text-red-500">*</span></FieldLabel>
+                                <FieldLabel>¿Presenta alguna enfermedad? <span className="text-red-500">*</span></FieldLabel>
                                 <Select value={formData.enfermedad} onValueChange={(v) => { handleInputChange("enfermedad", v); if (v === "No") handleInputChange("enfermedadCual", ""); }}>
                                   <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                                   <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
@@ -1271,7 +1274,7 @@ export default function AfiliarPage() {
                             </div>
                             <div className="space-y-3">
                               <Field>
-                                <FieldLabel>¿Padece alergia? <span className="text-red-500">*</span></FieldLabel>
+                                <FieldLabel>¿Presenta algún tipo de alergia? <span className="text-red-500">*</span></FieldLabel>
                                 <Select value={formData.alergia} onValueChange={(v) => { handleInputChange("alergia", v); if (v === "No") handleInputChange("alergiaCual", ""); }}>
                                   <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                                   <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
@@ -1338,6 +1341,21 @@ export default function AfiliarPage() {
                                 </Field>
                               )}
                             </div>
+                          </div>
+                          <div className="space-y-3 mt-4">
+                            <Field>
+                              <FieldLabel>¿Presenta alguna condición especial? <span className="text-red-500">*</span></FieldLabel>
+                              <Select value={formData.condicionEspecial} onValueChange={(v) => { handleInputChange("condicionEspecial", v); if(v==="No") handleInputChange("condicionEspecialCual", ""); }}>
+                                <SelectTrigger className="border-red-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                              </Select>
+                            </Field>
+                            {formData.condicionEspecial === "Sí" && (
+                              <Field>
+                                <FieldLabel>¿Cuál es su condición especial? <span className="text-red-500">*</span></FieldLabel>
+                                <Input placeholder="Descríbala brevemente..." value={formData.condicionEspecialCual} onChange={(e) => handleInputChange("condicionEspecialCual", e.target.value)} className="border-red-200" />
+                              </Field>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
