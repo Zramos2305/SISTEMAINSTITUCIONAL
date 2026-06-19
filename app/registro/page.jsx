@@ -134,14 +134,18 @@ export default function RegistroPublicoPage() {
     setIsVerifyingReferidor(true);
     setReferidorNombre(null);
     try {
-      const refQ = query(collection(db, "afiliados"), where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()), limit(1));
-      const refSnap = await getDocs(refQ);
+      const res = await fetch("/api/public/verificar-referidor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigoReferidor: formData.codigoReferidor })
+      });
+      const data = await res.json();
       
-      if (!refSnap.empty) {
-        setReferidorNombre(refSnap.docs[0].data().nombre);
+      if (res.ok && data.success) {
+        setReferidorNombre(data.nombre);
         toast.success("¡Código válido!");
       } else {
-        toast.error("Código no encontrado. Verifica si está bien escrito.");
+        toast.error(data.error || "Código no encontrado. Verifica si está bien escrito.");
       }
     } catch (error) {
       console.error(error);
@@ -305,10 +309,14 @@ export default function RegistroPublicoPage() {
         });
       }
 
-      // Validar Cédula única
-      const q = query(collection(db, "afiliados"), where("cedula", "==", formData.cedula), limit(1));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
+      // Validar Cédula única usando API route para evitar error de permisos en Firebase rules
+      const resCedula = await fetch("/api/public/verificar-cedula", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cedula: formData.cedula })
+      });
+      const dataCedula = await resCedula.json();
+      if (dataCedula.exists) {
         toast.error("Esta cédula ya se encuentra registrada en nuestro sistema.");
         setIsSaving(false);
         return;
@@ -383,22 +391,20 @@ export default function RegistroPublicoPage() {
 
       await setDoc(doc(db, "afiliados", finalId), dataToSave);
       
-      // Si es referido, actualizar al referidor
+      // Si es referido, actualizar al referidor por API route para evitar error de permisos
       if (formData.comoEntero === "Referido" && formData.codigoReferidor.trim() !== "") {
         try {
-          const refQ = query(collection(db, "afiliados"), where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()), limit(1));
-          const refSnap = await getDocs(refQ);
-          if (!refSnap.empty) {
-            const referrerDoc = refSnap.docs[0];
-            await updateDoc(doc(db, "afiliados", referrerDoc.id), {
-              referidosExitosos: increment(1),
-              listaReferidos: arrayUnion({
+          await fetch("/api/public/actualizar-referidor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              codigoReferidor: formData.codigoReferidor,
+              afiliadoNuevo: {
                 nombre: formData.nombre.trim(),
-                cedula: formData.cedula.trim(),
-                fecha: new Date().toISOString()
-              })
-            });
-          }
+                cedula: formData.cedula.trim()
+              }
+            })
+          });
         } catch (e) {
           console.error("Error actualizando referidor", e);
         }
