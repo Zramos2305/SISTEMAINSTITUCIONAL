@@ -109,7 +109,7 @@ export default function RegistroPublicoPage() {
           if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
             age--;
           }
-          newData.edad = age >= 0 ? age.toString() : "";
+          newData.edad = age >= 0 ? `${age} Años` : "";
         } else {
           newData.edad = "";
         }
