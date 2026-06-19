@@ -1,10 +1,9 @@
 "use server";
 
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
-
 export async function crearUsuarioInstitucional(data) {
   try {
+    const { adminAuth, adminDb } = await import("@/lib/firebase-admin");
+    const { FieldValue } = await import("firebase-admin/firestore");
     const {
       correo, password, nombre, rol, cargo, creadoPorUid,
       foto, documento, telefono, direccion, rh, tipoPersonal,
@@ -119,6 +118,7 @@ export async function crearUsuarioInstitucional(data) {
 export async function eliminarUsuarioInstitucional(uid, empleadoId) {
   try {
     console.log("==> Eliminando usuario institucional:", uid);
+    const { adminAuth, adminDb } = await import("@/lib/firebase-admin");
 
     // 1. Eliminar de Firebase Auth
     try {

@@ -39,9 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { setDoc } from "firebase/firestore";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import QRCode from "qrcode";
+
 
 const COLORS = {
   azul: "#3f7384",
@@ -319,7 +317,8 @@ function DashboardContent() {
   const { documentos, isLoading, eliminarDocumento, actualizarEstado } = useDocumentos();
 
   const esSuperAdmin = userData?.rol === "superadmin";
-  const puedeVerAsistenciasYPersonal = esSuperAdmin;
+  const esRRHH = userData?.rol === "rrhh" || userData?.rol === "recursos_humanos";
+  const puedeVerAsistenciasYPersonal = esSuperAdmin || esRRHH;
 
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -693,6 +692,10 @@ function DashboardContent() {
       const templateId = membresia.tipo === "educativa" ? "hidden-cert-edu" : "hidden-cert-integral";
       const element = document.getElementById(templateId);
       if (!element) throw new Error("Template no encontrado");
+
+      const { jsPDF } = await import("jspdf");
+      const html2canvas = (await import("html2canvas")).default;
+      const QRCode = (await import("qrcode")).default;
 
       const canvas = await html2canvas(element, {
         scale: 2,

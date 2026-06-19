@@ -17,9 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { LogOut, Download, AlertCircle, FileText, BadgeCheck, User, Users, MapPin, Calendar, HeartPulse, ShieldAlert, CreditCard } from "lucide-react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import QRCode from "qrcode";
+
 
 const COLORS = {
   azul: "#3f7384",
@@ -193,6 +191,10 @@ export default function AfiliadoDashboard() {
       const element = ref.current;
       element.style.display = "block";
       
+      const { jsPDF } = await import("jspdf");
+      const html2canvas = (await import("html2canvas")).default;
+      const QRCode = (await import("qrcode")).default;
+
       const canvas = await html2canvas(element, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
       
