@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { LogOut, Download, AlertCircle, FileText, BadgeCheck, User, MapPin, Calendar, HeartPulse, ShieldAlert, CreditCard } from "lucide-react";
+import { LogOut, Download, AlertCircle, FileText, BadgeCheck, User, Users, MapPin, Calendar, HeartPulse, ShieldAlert, CreditCard } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import QRCode from "qrcode";
@@ -104,6 +104,48 @@ export default function AfiliadoDashboard() {
     sessionStorage.removeItem("afiliado_sesion");
     router.push("/afiliado");
   };
+
+  // --- LÓGICA DINÁMICA DE RENOVACIÓN Y PRECIOS ---
+  let isVencido = false;
+  let precioRenovacion = 0;
+  let labelPrecio = "";
+  let aporteText = "";
+  let usaPlanReferidos = false;
+  let cantidadMembresias = 1;
+  
+  if (afiliado && afiliado.membresias) {
+    const hoy = new Date();
+    cantidadMembresias = afiliado.membresias.length || 1;
+    const referidos = afiliado.referidosExitosos || 0;
+    const tieneEdu = afiliado.membresias.some(m => m.tipo === "educativa");
+    
+    afiliado.membresias.forEach(m => {
+      if (m.fechaExpiracion) {
+        const expiracion = new Date(m.fechaExpiracion);
+        if (m.tipo === "educativa") {
+          expiracion.setMonth(expiracion.getMonth() + 6);
+        } else {
+          expiracion.setFullYear(expiracion.getFullYear() + 1);
+        }
+        if (hoy > expiracion) isVencido = true;
+      }
+    });
+
+    if (isVencido) {
+      labelPrecio = cantidadMembresias === 2 ? "Afiliación Nueva (Ambas)" : (tieneEdu ? "Afiliación Nueva (Educativa)" : "Afiliación Nueva (Integral)");
+      aporteText = "Aporte (Beca) del 55% al 35% aplicado.";
+      precioRenovacion = cantidadMembresias === 2 ? 159999 : (tieneEdu ? 79999 : 116999);
+    } else if (referidos >= 5) {
+      usaPlanReferidos = true;
+      labelPrecio = cantidadMembresias === 2 ? "Plan Referidos (Ambas)" : (tieneEdu ? "Plan Referidos (Educativa)" : "Plan Referidos (Integral)");
+      aporteText = "Aporte Especial por Referidos aplicado (del 55% al 90%).";
+      precioRenovacion = cantidadMembresias === 2 ? 106999 : (tieneEdu ? 17999 : 34999);
+    } else {
+      labelPrecio = cantidadMembresias === 2 ? "Renovación (Ambas)" : (tieneEdu ? "Renovación Normal (Educativa)" : "Renovación Normal (Integral)");
+      aporteText = "Aporte (Beca) de Renovación aplicado (del 55% al 70%).";
+      precioRenovacion = cantidadMembresias === 2 ? 149999 : (tieneEdu ? 49999 : 79999);
+    }
+  }
 
   const getPeriodoEducativo = (fechaISO) => {
     if (!fechaISO) return "Actual";
@@ -261,8 +303,7 @@ export default function AfiliadoDashboard() {
       // 2. Pedir firma criptográfica al servidor local
       const referenceCode = `${afiliado.codigoInstitucional}_${Date.now()}`;
       
-      const cantidadMembresias = afiliado?.membresias?.length || 1;
-      const amount = cantidadMembresias === 2 ? "246662" : "122657"; 
+      const amount = precioRenovacion.toString(); 
       
       const currency = "COP";
 
@@ -292,7 +333,8 @@ export default function AfiliadoDashboard() {
         buyerEmail: datosRenovacion.correo,
         responseUrl: `${window.location.origin}/afiliado/dashboard`, // Retorno del cliente
         confirmationUrl: `${window.location.origin}/api/payu/webhook`, // URL del guardia nocturno (Webhook)
-        extra1: afiliado.id // Pasamos el ID del afiliado escondido para que el webhook sepa a quién activar
+        extra1: afiliado.id, // Pasamos el ID del afiliado escondido para que el webhook sepa a quién activar
+        extra2: usaPlanReferidos ? 'referido_aplicado' : 'no'
       };
 
       for (const key in inputs) {
@@ -364,6 +406,10 @@ export default function AfiliadoDashboard() {
             <h1 className="font-bold text-slate-800 hidden sm:block">Fundación Isla Cascajal</h1>
           </div>
           <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200" title="Personas que se han afiliado usando tu código">
+              <User className="h-3 w-3" />
+              {afiliado.referidosExitosos || 0} Referidos
+            </div>
             <span className="text-sm font-semibold text-slate-600 uppercase">
               {afiliado.nombre.split(' ')[0]} {afiliado.nombre.split(' ')[1] || ''}
             </span>
@@ -682,6 +728,48 @@ export default function AfiliadoDashboard() {
             </CardContent>
           </Card>
 
+          {/* Red de Referidos */}
+          <Card className="shadow-md border-t-4" style={{ borderTopColor: COLORS.amarillo }}>
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5 text-amber-500" /> Mi Red de Referidos
+              </h3>
+              
+              {(!afiliado.listaReferidos || afiliado.listaReferidos.length === 0) ? (
+                <div className="p-6 text-center text-slate-500 bg-amber-50 rounded-xl border border-dashed border-amber-200">
+                  <p className="font-semibold text-amber-700 mb-1">Aún no has invitado a nadie.</p>
+                  <p className="text-sm">Comparte tu código <strong>{afiliado.codigoInstitucional}</strong> para obtener el plan especial de renovación.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b">
+                      <tr>
+                        <th className="px-4 py-3">Fecha de Afiliación</th>
+                        <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">Documento</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {[...afiliado.listaReferidos].reverse().map((refItem, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-slate-500 font-medium">
+                            {new Date(refItem.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </td>
+                          <td className="px-4 py-3 text-slate-800 font-bold">{refItem.nombre}</td>
+                          <td className="px-4 py-3 text-xs text-slate-500 font-mono">{refItem.cedula}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="p-3 bg-amber-50 text-xs text-amber-800 text-center font-semibold border-t border-amber-100">
+                    Acumulados para tu próximo descuento: {afiliado.referidosExitosos || 0}/5
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
         </div>
       </main>
 
@@ -729,17 +817,17 @@ export default function AfiliadoDashboard() {
           <div className="bg-slate-50 p-4 border rounded-xl flex flex-col mb-4">
             <div className="flex justify-between items-center mb-2">
               <div>
-                <p className="font-bold text-slate-800">Costo de Renovación</p>
+                <p className="font-bold text-slate-800">Costo a Pagar</p>
                 <p className="text-xs text-slate-500">
-                  {afiliado?.membresias?.length === 2 ? "Para ambas membresías (Educativa e Integral)" : "Para tu membresía activa"}
+                  {labelPrecio}
                 </p>
               </div>
               <div className="text-xl font-black text-green-600 text-right">
-                ${afiliado?.membresias?.length === 2 ? "246.662" : "122.657"} <span className="text-xs font-normal text-slate-500">COP</span>
+                ${new Intl.NumberFormat('es-CO').format(precioRenovacion)} <span className="text-xs font-normal text-slate-500">COP</span>
               </div>
             </div>
             <div className="bg-green-100 text-green-800 text-xs font-bold p-2 rounded text-center border border-green-200 mt-1 shadow-sm">
-              ✨ El valor ya incluye el Aporte (Beca) del 25% por parte de la Fundación.
+              ✨ {aporteText}
             </div>
           </div>
 

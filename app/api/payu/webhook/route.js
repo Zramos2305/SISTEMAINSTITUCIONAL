@@ -9,6 +9,7 @@ export async function POST(request) {
     
     const state_pol = formData.get('state_pol');
     const extra1 = formData.get('extra1'); // Aquí nos llega el ID de Firebase oculto
+    const extra2 = formData.get('extra2'); // Bandera para saber si usó plan de referidos
     const email_buyer = formData.get('email_buyer');
 
     // state_pol === '4' significa "Aprobada" en el lenguaje de PayU
@@ -57,12 +58,23 @@ export async function POST(request) {
         };
         const historialPagosActualizado = data.historialPagos ? [...data.historialPagos, nuevoPago] : [nuevoPago];
 
+        const referidosExitososFinal = extra2 === 'referido_aplicado' 
+          ? Math.max((data.referidosExitosos || 0) - 5, 0) 
+          : data.referidosExitosos;
+
+        let listaReferidosFinal = data.listaReferidos || [];
+        if (extra2 === 'referido_aplicado') {
+          listaReferidosFinal = listaReferidosFinal.slice(5); // Remueve los 5 más antiguos
+        }
+
         // 3. Guardar en Firebase
         await setDoc(afiliadoRef, {
           estado: "activo",
           membresias: membresiasActualizadas,
           historialPagos: historialPagosActualizado,
-          fechaUltimoPago: new Date().toISOString()
+          fechaUltimoPago: new Date().toISOString(),
+          referidosExitosos: referidosExitososFinal,
+          listaReferidos: listaReferidosFinal
         }, { merge: true });
 
         // 4. Enviar Correo Automático vía Resend

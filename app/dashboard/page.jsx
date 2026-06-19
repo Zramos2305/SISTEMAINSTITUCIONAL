@@ -1600,7 +1600,7 @@ function DashboardContent() {
                     <div className="space-y-2">
                       <p className="text-sm"><strong>Fecha Emisión:</strong> {formatearFecha(infoDoc?.fechaCreacion || infoDoc?.fechaIngreso)}</p>
                       <p className="text-sm"><strong>RH:</strong> {infoDoc?.rh || "-"}</p>
-                      <p className="text-sm"><strong>Referido por:</strong> {infoDoc?.referido || "-"} ({infoDoc?.comoEntero || "-"})</p>
+                      <p className="text-sm"><strong>Referido por:</strong> {infoDoc?.codigoReferidor || infoDoc?.referido || "-"} ({infoDoc?.comoEntero || "-"})</p>
                     </div>
                   </div>
                 </div>

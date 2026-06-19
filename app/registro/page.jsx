@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { collection, doc, setDoc, query, where, getDocs, limit } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, limit, updateDoc, increment, arrayUnion } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -64,12 +64,12 @@ export default function RegistroPublicoPage() {
     seleccionMembresias: { educativa: true, integral: false },
     // Nuevos Campos Perfil
     sexo: "", orientacionSexual: "", orientacionOtro: "", estrato: "", etnia: "",
-    sisben: "", sisbenPuntaje: "", victimaConflicto: "", victimaTipo: "", victimaInscrito: "",
+    sisben: "", sisbenPuntaje: "", asesoriaSisben: "", victimaConflicto: "", victimaTipo: "", victimaInscrito: "",
     discriminacion: "", discriminacionTipo: "",
     educacionNivel: "", educacionEstudio: "", educacionSemestre: "", educacionPlantel: "",
     eps: "", arl: "", enfermedad: "", enfermedadCual: "", alergia: "", alergiaCual: "",
     discapacidad: "", discapacidadTipo: "", discapacidadOtro: "", trastorno: "", trastornoTipo: "", trastornoOtro: "",
-    comoEntero: "", referido: "", aceptaTerminos: false,
+    comoEntero: "", referido: "", codigoReferidor: "", aceptaTerminos: false,
     deseaSerVoluntario: "",
     emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
     foto: "", // Base64 de la foto comprimida
@@ -80,7 +80,10 @@ export default function RegistroPublicoPage() {
     setSoportes(prev => ({ ...prev, [tipo]: e.target.files?.[0] || null }));
   };
 
+  const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isVerifyingReferidor, setIsVerifyingReferidor] = useState(false);
+  const [referidorNombre, setReferidorNombre] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleInputChange = (field, value) => {
@@ -92,6 +95,37 @@ export default function RegistroPublicoPage() {
       }
       return { ...prev, [field]: finalValue };
     });
+
+    if (field === "comoEntero" && value !== "Referido") {
+      setReferidorNombre(null);
+      setFormData(prev => ({ ...prev, codigoReferidor: "" }));
+    }
+    if (field === "codigoReferidor") {
+      setReferidorNombre(null);
+    }
+  };
+
+  const verificarReferidor = async () => {
+    if (!formData.codigoReferidor.trim()) {
+      return toast.error("Por favor, ingresa un código primero.");
+    }
+    setIsVerifyingReferidor(true);
+    setReferidorNombre(null);
+    try {
+      const refQ = query(collection(db, "afiliados"), where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()));
+      const refSnap = await getDocs(refQ);
+      if (!refSnap.empty) {
+        setReferidorNombre(refSnap.docs[0].data().nombre);
+        toast.success("¡Código válido!");
+      } else {
+        toast.error("Código no encontrado. Verifica si está bien escrito.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al verificar el código.");
+    } finally {
+      setIsVerifyingReferidor(false);
+    }
   };
 
   const handleAddBeneficiario = () => {
@@ -188,6 +222,8 @@ export default function RegistroPublicoPage() {
 
     // Validar Condicionales
     if (formData.orientacionSexual === "Otro" && !formData.orientacionOtro) return toast.error("Especifique su orientación sexual");
+    if (formData.sisben === "Sí" && !formData.sisbenPuntaje) return toast.error("Complete su puntaje de Sisbén");
+    if (formData.sisben === "No" && !formData.asesoriaSisben) return toast.error("Indique si desea asesoría para el Sisbén");
     if (formData.victimaConflicto === "Sí" && (!formData.victimaTipo || !formData.victimaInscrito)) return toast.error("Complete los datos de víctima del conflicto");
     if (formData.discriminacion === "Sí" && !formData.discriminacionTipo) return toast.error("Especifique el tipo de discriminación");
     if (formData.enfermedad === "Sí" && !formData.enfermedadCual) return toast.error("Especifique la enfermedad");
@@ -195,7 +231,7 @@ export default function RegistroPublicoPage() {
     if (formData.discapacidad === "Sí" && !formData.discapacidadTipo) return toast.error("Especifique la discapacidad");
     if (formData.trastorno === "Sí" && !formData.trastornoTipo) return toast.error("Especifique el trastorno");
     if (formData.trastornoTipo === "Otro" && !formData.trastornoOtro) return toast.error("Especifique el otro trastorno");
-    if (formData.comoEntero === "Referido" && !formData.referido) return toast.error("Especifique quién lo refiere");
+    if (formData.comoEntero === "Referido" && !formData.codigoReferidor) return toast.error("Especifique el código de quien lo refiere");
 
     if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
       return toast.error("Selecciona al menos un tipo de membresía a la cual aplicar.");
@@ -285,6 +321,7 @@ export default function RegistroPublicoPage() {
         etnia: formData.etnia,
         sisben: formData.sisben,
         sisbenPuntaje: formData.sisben === "Sí" ? formData.sisbenPuntaje : "N/A",
+        asesoriaSisben: formData.sisben === "No" ? formData.asesoriaSisben : "N/A",
         victimaConflicto: formData.victimaConflicto,
         victimaTipo: formData.victimaConflicto === "Sí" ? formData.victimaTipo : "N/A",
         victimaInscrito: formData.victimaConflicto === "Sí" ? formData.victimaInscrito : "N/A",
@@ -306,6 +343,7 @@ export default function RegistroPublicoPage() {
         trastornoTipo: formData.trastorno === "Sí" ? (formData.trastornoTipo === "Otro" ? formData.trastornoOtro : formData.trastornoTipo) : "N/A",
         comoEntero: formData.comoEntero,
         referido: formData.comoEntero === "Referido" ? formData.referido : "N/A",
+        codigoReferidor: formData.comoEntero === "Referido" ? formData.codigoReferidor : "N/A",
         deseaSerVoluntario: formData.deseaSerVoluntario,
         emergenciaNombre: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNombre : "N/A",
         emergenciaNumero: formData.deseaSerVoluntario === "Sí" ? formData.emergenciaNumero : "N/A",
@@ -317,6 +355,27 @@ export default function RegistroPublicoPage() {
 
       await setDoc(doc(db, "afiliados", finalId), dataToSave);
       
+      // Lógica de Plan Referidos: Incrementar el contador del referidor si existe
+      if (formData.comoEntero === "Referido" && formData.codigoReferidor.trim() !== "") {
+        try {
+          const refQ = query(collection(db, "afiliados"), where("codigoInstitucional", "==", formData.codigoReferidor.trim().toUpperCase()));
+          const refSnap = await getDocs(refQ);
+          if (!refSnap.empty) {
+            const referrerDoc = refSnap.docs[0];
+            await updateDoc(doc(db, "afiliados", referrerDoc.id), {
+              referidosExitosos: increment(1),
+              listaReferidos: arrayUnion({
+                nombre: formData.nombre,
+                cedula: formData.cedula,
+                fecha: new Date().toISOString()
+              })
+            });
+          }
+        } catch (error) {
+          console.error("Error actualizando referido:", error);
+        }
+      }
+
       toast.info("Generando pasarela de pago seguro...");
 
       // ==========================================
@@ -324,13 +383,17 @@ export default function RegistroPublicoPage() {
       // ==========================================
       const referenceCode = `${finalId}_${Date.now()}`;
       
-      // Cálculo inteligente del precio final a pagar
-      let cantidadMembresias = 0;
-      if (formData.seleccionMembresias.educativa) cantidadMembresias++;
-      if (formData.seleccionMembresias.integral) cantidadMembresias++;
+      // Cálculo inteligente del precio final a pagar (Precios Afiliación Nueva)
+      let amountStr = "0";
+      if (formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) {
+        amountStr = "159999";
+      } else if (formData.seleccionMembresias.integral) {
+        amountStr = "116999";
+      } else if (formData.seleccionMembresias.educativa) {
+        amountStr = "79999";
+      }
       
-      // Valores con el descuento ya aplicado
-      const amount = cantidadMembresias === 2 ? "246662" : "122657"; 
+      const amount = amountStr; 
       const currency = "COP";
 
       const resSignature = await fetch('/api/payu/signature', {
@@ -544,7 +607,11 @@ export default function RegistroPublicoPage() {
               <div className="space-y-4">
                 <Field>
                   <FieldLabel>¿Tiene Sisbén? <span className="text-red-500">*</span></FieldLabel>
-                  <Select value={formData.sisben} onValueChange={(v) => { handleInputChange("sisben", v); if(v==="No") handleInputChange("sisbenPuntaje", ""); }}>
+                  <Select value={formData.sisben} onValueChange={(v) => { 
+                    handleInputChange("sisben", v); 
+                    if(v==="No") handleInputChange("sisbenPuntaje", ""); 
+                    if(v==="Sí") handleInputChange("asesoriaSisben", "");
+                  }}>
                     <SelectTrigger className="border-yellow-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                     <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
                   </Select>
@@ -553,6 +620,15 @@ export default function RegistroPublicoPage() {
                   <Field>
                     <FieldLabel>Puntaje / Categoría <span className="text-red-500">*</span></FieldLabel>
                     <Input placeholder="Ej. A1, B2, 45.3" value={formData.sisbenPuntaje} onChange={(e) => handleInputChange("sisbenPuntaje", e.target.value)} className="border-yellow-200" />
+                  </Field>
+                )}
+                {formData.sisben === "No" && (
+                  <Field>
+                    <FieldLabel>¿Desea recibir asesoría para encuesta e inscripción al SISBEN? <span className="text-red-500">*</span></FieldLabel>
+                    <Select value={formData.asesoriaSisben} onValueChange={(v) => handleInputChange("asesoriaSisben", v)}>
+                      <SelectTrigger className="border-yellow-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                      <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                    </Select>
                   </Field>
                 )}
               </div>
@@ -913,19 +989,34 @@ export default function RegistroPublicoPage() {
                   <Info className="h-5 w-5 text-blue-600" />
                   <h3 className="font-bold text-slate-800">Ayúdanos a mejorar</h3>
                 </div>
-                <Field>
-                  <FieldLabel>¿Cómo te enteraste de nosotros? <span className="text-red-500">*</span></FieldLabel>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <FieldLabel>¿Cómo se enteró de nosotros? <span className="text-red-500">*</span></FieldLabel>
                   <Select value={formData.comoEntero} onValueChange={(v) => handleInputChange("comoEntero", v)}>
-                    <SelectTrigger><SelectValue placeholder="Seleccione una opción" /></SelectTrigger>
-                    <SelectContent>{ENTERADO_MEDIOS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectContent>
+                      {ENTERADO_MEDIOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
                   </Select>
-                </Field>
+                </div>
+                
                 {formData.comoEntero === "Referido" && (
-                  <Field>
-                    <FieldLabel>¿Quién te refiere? <span className="text-red-500">*</span></FieldLabel>
-                    <Input value={formData.referido} onChange={(e) => handleInputChange("referido", e.target.value)} placeholder="Nombre de la persona" />
-                  </Field>
+                  <div className="flex-1 min-w-[200px]">
+                    <FieldLabel>Código Institucional del Referidor <span className="text-red-500">*</span></FieldLabel>
+                    <div className="flex gap-2">
+                      <Input placeholder="Ej. Zram050302" value={formData.codigoReferidor} onChange={(e) => handleInputChange("codigoReferidor", e.target.value)} />
+                      <Button type="button" variant="outline" onClick={verificarReferidor} disabled={isVerifyingReferidor}>
+                        {isVerifyingReferidor ? "Buscando..." : "Verificar"}
+                      </Button>
+                    </div>
+                    {referidorNombre ? (
+                      <p className="text-sm text-green-600 font-semibold mt-1">✓ Referido por: {referidorNombre}</p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1">Escribe el código y presiona Verificar.</p>
+                    )}
+                  </div>
                 )}
+              </div>
               </div>
 
               <div className="bg-slate-50 p-5 rounded-xl border border-slate-300">
