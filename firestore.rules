@@ -47,7 +47,8 @@ service cloud.firestore {
     ============================ */
 
     match /afiliados/{id} {
-      allow get, create, update: if true;
+      allow get, create: if true;
+      allow update: if isLogged();
       allow list: if isLogged() || request.query.limit <= 1;
       allow delete: if isLogged();
     }
