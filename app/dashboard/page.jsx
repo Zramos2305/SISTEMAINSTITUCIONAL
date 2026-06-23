@@ -485,7 +485,9 @@ function DashboardContent() {
   // Hook useMemo para filtrar documentos de acuerdo a las opciones de búsqueda y tipo seleccionadas. 
   // Esto previene que se re-genere si cambian otras cosas.
   const documentosFiltrados = useMemo(() => {
-    let resultado = documentos;
+    // Excluir los afiliados ya que tienen su propio CRM
+    let resultado = documentos.filter(d => d.tipo !== "afiliado" && d.tipo !== "afiliacion_individual");
+    
     if (busqueda) {
       const termino = busqueda.toLowerCase();
       resultado = resultado.filter(
@@ -751,31 +753,38 @@ function DashboardContent() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="w-full px-4 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
             <div>
-              <h1 className="font-semibold text-foreground">Panel de Control</h1>
-              <p className="text-xs text-muted-foreground">Fundación Isla Cascajal</p>
+              <h1 className="font-black text-slate-800 flex items-center gap-2" style={{ color: COLORS.verde }}>
+                Panel de Control
+              </h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Fundación Isla Cascajal</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{user.displayName || user.email}</span>
             </div>
-            <Button variant="outline" size="sm" onClick={logout}>
+            <Button variant="outline" size="sm" onClick={logout} className="text-slate-600 hover:bg-slate-50">
               <LogOut className="h-4 w-4 mr-2" />
               Salir
             </Button>
           </div>
         </div>
+        <div className="h-1 w-full flex">
+          <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
+        </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="w-full px-4 lg:px-8 py-6">
 
         <Tabs defaultValue="documentos">
           {/* Pestañas de Navegación */}
@@ -790,6 +799,10 @@ function DashboardContent() {
                 <span className="hidden sm:inline">Asistencia</span>
               </TabsTrigger>
             )}
+            <TabsTrigger value="afiliados" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Afiliados (CRM)</span>
+            </TabsTrigger>
             {(esSuperAdmin || esRRHH) && (
               <TabsTrigger value="personal" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Briefcase className="h-4 w-4" />
@@ -909,7 +922,6 @@ function DashboardContent() {
                       <SelectContent>
                         <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="certificado">Certificados</SelectItem>
-                        <SelectItem value="afiliado">Afiliados</SelectItem>
                         <SelectItem value="documento">Documentos</SelectItem>
                       </SelectContent>
                     </Select>
@@ -919,12 +931,6 @@ function DashboardContent() {
                     <Button variant="outline" onClick={() => setShowCalendar(true)}>
                       <CalendarIcon className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Calendario</span>
-                    </Button>
-                    <Button asChild variant="outline" className="border-info text-info hover:bg-info/10">
-                      <Link href="/afiliar">
-                        <Users className="h-4 w-4 mr-2" />
-                        Afiliar
-                      </Link>
                     </Button>
                     <Button asChild>
                       <Link href="/generar">
@@ -1422,6 +1428,42 @@ function DashboardContent() {
             </TabsContent>
           )}
 
+          <TabsContent value="afiliados">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Gestión Avanzada de Afiliados
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Panel CRM exclusivo para la búsqueda, filtrado y contacto con los afiliados de la fundación.
+                </p>
+              </div>
+
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        CRM de Afiliados
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Accede al nuevo módulo para encontrar personas rápidamente y comunicarte directamente por WhatsApp.
+                      </p>
+                    </div>
+                    <Button asChild size="lg" className="shrink-0">
+                      <Link href="/dashboard/afiliados">
+                        <Users className="h-4 w-4 mr-2" />
+                        Abrir CRM
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
         </Tabs>
 
       </main>
@@ -1714,16 +1756,16 @@ function DashboardContent() {
                         >
                           {/* Decoración Superior */}
                           <div style={{ width: '100%', height: '20px', display: 'flex', flexShrink: 0 }}>
-                            <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
-                            <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
-                            <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
-                            <div style={{ flex: 1, backgroundColor: '#05318a' }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
                           </div>
 
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '8px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '8px', position: 'relative' }}>
                             <img src="/logo.png" alt="Logo" crossOrigin="anonymous" style={{ width: '115px', height: '115px', borderRadius: '50%', objectFit: 'contain', backgroundColor: 'white' }} />
                             
-                            <h2 style={{ color: '#0e6235', fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
+                            <h2 style={{ color: COLORS.verde, fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
                             <p style={{ color: '#ea580c', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', margin: 0, marginTop: '-2px', letterSpacing: '1px' }}>Fundación</p>
 
                             <div style={{ marginTop: '12px', width: '100px', height: '110px', borderRadius: '12px', backgroundColor: '#f1f5f9', border: '2px solid #e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -1737,7 +1779,7 @@ function DashboardContent() {
                             </div>
 
                             <div style={{ marginTop: '12px', width: '100%', textAlign: 'center' }}>
-                              <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: '#0e6235', margin: 0 }}>
+                              <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: COLORS.verde, margin: 0 }}>
                                 {infoDoc?.nombre || "NOMBRE COMPLETO"}
                               </h3>
                               <p style={{ fontWeight: 900, fontSize: '14px', color: '#ea580c', margin: 0, marginTop: '2px' }}>
@@ -1749,16 +1791,16 @@ function DashboardContent() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 <div style={{ display: 'flex', gap: '24px' }}>
                                   <div>
-                                    <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>CÓD. INSTITUCIONAL</p>
+                                    <p style={{ fontSize: '11px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>CÓD. INSTITUCIONAL</p>
                                     <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{infoDoc?.codigo}</p>
                                   </div>
                                   <div>
-                                    <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>RH</p>
+                                    <p style={{ fontSize: '11px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>RH</p>
                                     <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{infoDoc?.rh || "A+"}</p>
                                   </div>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#0e6235', margin: 0 }}>PAÍS</p>
+                                  <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: COLORS.verde, margin: 0 }}>PAÍS</p>
                                   <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#ea580c', margin: 0 }}>{infoDoc?.pais || "COLOMBIA"}</p>
                                 </div>
                                 <div style={{ marginTop: '4px' }}>
@@ -1780,15 +1822,15 @@ function DashboardContent() {
                             </div>
 
                             <div style={{ position: 'absolute', bottom: '8px', right: '16px' }}>
-                              <p style={{ fontSize: '12px', fontWeight: 900, color: '#05318a', margin: 0 }}>@fundacionislacascajal</p>
+                              <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
                             </div>
                           </div>
 
                           <div style={{ width: '100%', height: '20px', display: 'flex', marginTop: 'auto', flexShrink: 0 }}>
-                            <div style={{ flex: 1, backgroundColor: '#05318a' }} />
-                            <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
-                            <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
-                            <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                            <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
                           </div>
                         </div>
 

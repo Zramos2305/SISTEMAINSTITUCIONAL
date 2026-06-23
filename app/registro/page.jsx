@@ -26,6 +26,7 @@ import {
   CreditCard, BadgeCheck, Upload
 } from "lucide-react";
 import Link from "next/link";
+import Script from "next/script";
 
 const PAISES = ["Colombia", "Venezuela", "Ecuador", "Perú", "Chile", "Argentina", "Brasil", "Panamá", "México", "Estados Unidos", "España", "Otro"];
 const DEPARTAMENTOS_COLOMBIA = ["Amazonas", "Antioquia", "Arauca", "Atlántico", "Bolívar", "Boyacá", "Caldas", "Caquetá", "Casanare", "Cauca", "Cesar", "Chocó", "Córdoba", "Cundinamarca", "Guainía", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Nariño", "Norte de Santander", "Putumayo", "Quindío", "Risaralda", "San Andrés y Providencia", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupés", "Vichada"];
@@ -412,9 +413,9 @@ export default function RegistroPublicoPage() {
       toast.info("Generando pasarela de pago seguro...");
 
       // ==========================================
-      // INTEGRACIÓN PAYU: Redirección al registrar
+      // INTEGRACIÓN WOMPI: Widget Checkout
       // ==========================================
-      const referenceCode = `${finalId}_${Date.now()}`;
+      const reference = `${finalId}_${Date.now()}`;
       
       // Cálculo inteligente del precio final a pagar (Precios Afiliación Nueva)
       let amountStr = "0";
@@ -426,50 +427,36 @@ export default function RegistroPublicoPage() {
         amountStr = "79999";
       }
       
-      const amount = amountStr; 
+      const amountInCents = parseInt(amountStr) * 100;
       const currency = "COP";
 
-      const resSignature = await fetch('/api/payu/signature', {
+      const resSignature = await fetch('/api/wompi/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referenceCode, amount, currency })
+        body: JSON.stringify({ reference, amountInCents, currency })
       });
-      const { signature, merchantId, accountId } = await resSignature.json();
+      const { signature } = await resSignature.json();
 
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = "https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/";
-
-      const inputs = {
-        merchantId: merchantId,
-        accountId: accountId,
-        description: "Pago de Afiliación - Fundación Isla Cascajal",
-        referenceCode: referenceCode,
-        amount: amount,
-        tax: "0",
-        taxReturnBase: "0",
+      const checkout = new window.WidgetCheckout({
         currency: currency,
-        signature: signature,
-        test: "1", // Sandbox
-        buyerEmail: formData.correo,
-        responseUrl: `${window.location.origin}/`, // Retorno a la página principal tras pagar
-        confirmationUrl: `${window.location.origin}/api/payu/webhook`, // Webhook notificador
-        extra1: finalId // Pasamos el ID para que el Webhook sepa a quién activar
-      };
+        amountInCents: amountInCents,
+        reference: reference,
+        publicKey: 'pub_test_BhrIxCHRMvQUYQJIGaukv9MhHm3KiKuM',
+        signature: { integrity: signature }
+        // No pasamos redirectUrl para que se mantenga en la misma página (experiencia Modal)
+      });
 
-      for (const key in inputs) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = inputs[key];
-        form.appendChild(input);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
-
-      // No ponemos setIsSaving(false) ni isSuccess para que la pantalla se quede cargando
-      // mientras lo lanza a PayU.
+      checkout.open((result) => {
+        const transaction = result.transaction;
+        if (transaction.status === "APPROVED") {
+          toast.success("¡Pago Aprobado con éxito!");
+          setIsSuccess(true);
+          setIsSaving(false);
+        } else {
+          toast.error("El pago no fue aprobado. Estado: " + transaction.status);
+          setIsSaving(false);
+        }
+      });
     } catch (err) {
       console.error(err);
       toast.error("Ocurrió un error al procesar tu afiliación. Intenta más tarde.");
@@ -1233,12 +1220,15 @@ export default function RegistroPublicoPage() {
               onClick={handleGuardar}
               disabled={isSaving}
             >
-              {isSaving ? <><Spinner className="mr-3 h-6 w-6" /> Conectando con PayU...</> : "Enviar y Pagar Afiliación"}
+              {isSaving ? <><Spinner className="mr-3 h-6 w-6" /> Conectando con Wompi...</> : "Enviar y Pagar Afiliación"}
             </Button>
           </div>
 
         </div>
       </div>
+      
+      {/* Script oficial de Wompi Widget */}
+      <Script src="https://checkout.wompi.co/widget.js" strategy="lazyOnload" />
     </div>
   );
 }

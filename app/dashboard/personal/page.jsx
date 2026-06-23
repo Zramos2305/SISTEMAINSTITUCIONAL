@@ -743,11 +743,12 @@ function PersonalContent() {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1 items-start">
-                                <Badge variant="outline" className={
+                                <Badge variant="outline" className={`uppercase text-[10px] tracking-wider ${
                                   u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
                                     u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
-                                      'bg-muted'
-                                }>
+                                      u.rol === 'lider_comercial' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}>
                                   {u.rol}
                                 </Badge>
                                 {Array.isArray(personal?.memorandos) && personal.memorandos.filter(m => typeof m === 'string' && m.trim() !== "").length > 0 && (
@@ -983,6 +984,7 @@ function PersonalContent() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="empleado">Empleado</SelectItem>
+                              <SelectItem value="lider_comercial">Líder Comercial</SelectItem>
                               <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
                               {esSuperAdmin && <SelectItem value="superadmin">Súper Administrador</SelectItem>}
                             </SelectContent>

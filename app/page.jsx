@@ -23,8 +23,10 @@ export default function HomePage() {
         router.push("/asistencia");
       } else if (userData.rol === "recursos_humanos" || userData.rol === "personal") {
         router.push("/dashboard/personal");
-      } else if (userData.rol === "superadmin") {
+      } else if (userData.rol === "superadmin" || userData.rol === "admin") {
         router.push("/dashboard");
+      } else if (userData.rol === "lider_comercial") {
+        router.push("/dashboard/afiliados");
       } else {
         router.push("/unauthorized");
       }
@@ -35,24 +37,30 @@ export default function HomePage() {
   }, [user, userData, loading, router]);
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col items-center justify-center">
-      <div className="text-center">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center relative">
+      <div className="absolute top-0 w-full h-2 flex">
+        <div style={{ flex: 1, backgroundColor: "#3f7384" }} />
+        <div style={{ flex: 1, backgroundColor: "#606f3a" }} />
+        <div style={{ flex: 1, backgroundColor: "#f4b958" }} />
+        <div style={{ flex: 1, backgroundColor: "#cd7243" }} />
+      </div>
+      <div className="text-center z-10">
         <Image
           src="/logo.png"
           alt="Logo Fundación Isla Cascajal"
           width={120}
           height={120}
-          className="mx-auto mb-6 rounded-full"
+          className="mx-auto mb-6 rounded-full shadow-lg"
           loading="eager"
           priority
         />
-        <h1 className="text-2xl font-bold text-primary-foreground mb-2">
+        <h1 className="text-2xl font-black mb-2" style={{ color: "#606f3a" }}>
           Fundación Isla Cascajal
         </h1>
-        <p className="text-primary-foreground/70 mb-8">
+        <p className="text-slate-500 font-bold uppercase tracking-widest mb-8 text-sm">
           Sistema Institucional
         </p>
-        <Spinner className="mx-auto text-primary-foreground" />
+        <Spinner className="mx-auto text-blue-600" />
       </div>
     </div>
   );

@@ -17,21 +17,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { LogOut, Download, AlertCircle, FileText, BadgeCheck, User, Users, MapPin, Calendar, HeartPulse, ShieldAlert, CreditCard } from "lucide-react";
-
-
-const COLORS = {
+import Script from "next/script";const COLORS = {
   azul: "#3f7384",
   verde: "#606f3a",
   amarillo: "#f4b958",
   rojo: "#cd7243"
 };
 
-const CARNET_COLORS = {
-  azul: "#05318a",
-  verde: "#0e6235",
-  amarillo: "#f3de4d",
-  rojo: "#ce181b"
-};
+
 
 export default function AfiliadoDashboard() {
   const router = useRouter();
@@ -300,57 +293,42 @@ export default function AfiliadoDashboard() {
         direccion: datosRenovacion.direccion
       }, { merge: true });
       
-      toast.info("Conectando con la pasarela segura de PayU...");
+      toast.info("Conectando con la pasarela segura de Wompi...");
 
       // 2. Pedir firma criptográfica al servidor local
-      const referenceCode = `${afiliado.codigoInstitucional}_${Date.now()}`;
+      const reference = `${afiliado.codigoInstitucional}_${Date.now()}`;
       
-      const amount = precioRenovacion.toString(); 
-      
+      const amountInCents = parseInt(precioRenovacion) * 100;
       const currency = "COP";
 
-      const res = await fetch('/api/payu/signature', {
+      const res = await fetch('/api/wompi/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referenceCode, amount, currency })
+        body: JSON.stringify({ reference, amountInCents, currency })
       });
-      const { signature, merchantId, accountId } = await res.json();
+      const { signature } = await res.json();
 
-      // 3. Construir formulario invisible y enviarlo al Sandbox de PayU
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = "https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/";
-
-      const inputs = {
-        merchantId: merchantId,
-        accountId: accountId,
-        description: "Renovación de Membresía Fundación Isla Cascajal",
-        referenceCode: referenceCode,
-        amount: amount,
-        tax: "0",
-        taxReturnBase: "0",
+      // 3. Abrir Widget flotante de Wompi
+      const checkout = new window.WidgetCheckout({
         currency: currency,
-        signature: signature,
-        test: "1", // Modo Sandbox activado
-        buyerEmail: datosRenovacion.correo,
-        responseUrl: `${window.location.origin}/afiliado/dashboard`, // Retorno del cliente
-        confirmationUrl: `${window.location.origin}/api/payu/webhook`, // URL del guardia nocturno (Webhook)
-        extra1: afiliado.id, // Pasamos el ID del afiliado escondido para que el webhook sepa a quién activar
-        extra2: usaPlanReferidos ? 'referido_aplicado' : 'no'
-      };
+        amountInCents: amountInCents,
+        reference: reference,
+        publicKey: 'pub_test_BhrIxCHRMvQUYQJIGaukv9MhHm3KiKuM',
+        signature: { integrity: signature }
+      });
 
-      for (const key in inputs) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = inputs[key];
-        form.appendChild(input);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
-      
-      // No hacemos setIsSavingDatos(false) para que el loader siga mientras redirige
+      checkout.open((result) => {
+        const transaction = result.transaction;
+        if (transaction.status === "APPROVED") {
+          toast.success("¡Renovación aprobada con éxito!");
+          setIsRenovarOpen(false);
+          // Refrescar los datos para ver la membresía activa
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          toast.error("El pago no fue aprobado. Estado: " + transaction.status);
+          setIsSavingDatos(false);
+        }
+      });
     } catch (error) {
       console.error(error);
       toast.error("Error conectando con la pasarela de pagos.");
@@ -474,16 +452,16 @@ export default function AfiliadoDashboard() {
               style={{ overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
             >
               <div style={{ width: '100%', height: '20px', display: 'flex', flexShrink: 0 }}>
-                <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
-                <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
-                <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
-                <div style={{ flex: 1, backgroundColor: '#05318a' }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '8px', paddingLeft: '24px', paddingRight: '24px', paddingBottom: '8px', position: 'relative' }}>
                 <img src="/logo.png" alt="Logo" crossOrigin="anonymous" style={{ width: '115px', height: '115px', borderRadius: '50%', objectFit: 'contain', backgroundColor: 'white' }} />
                 
-                <h2 style={{ color: '#0e6235', fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
+                <h2 style={{ color: COLORS.verde, fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
                 <p style={{ color: '#ea580c', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', margin: 0, marginTop: '-2px', letterSpacing: '1px' }}>Fundación</p>
 
                 <div style={{ marginTop: '12px', width: '100px', height: '110px', borderRadius: '12px', backgroundColor: '#f1f5f9', border: '2px solid #e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -497,7 +475,7 @@ export default function AfiliadoDashboard() {
                 </div>
 
                 <div style={{ marginTop: '12px', width: '100%', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: '#0e6235', margin: 0 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: COLORS.verde, margin: 0 }}>
                     {afiliado.nombre || "NOMBRE COMPLETO"}
                   </h3>
                   <p style={{ fontWeight: 900, fontSize: '14px', color: '#ea580c', margin: 0, marginTop: '2px' }}>
@@ -509,16 +487,16 @@ export default function AfiliadoDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'flex', gap: '24px' }}>
                       <div>
-                        <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>CÓD. INSTITUCIONAL</p>
+                        <p style={{ fontSize: '11px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>CÓD. INSTITUCIONAL</p>
                         <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{afiliado.codigoInstitucional || "---"}</p>
                       </div>
                       <div>
-                        <p style={{ fontSize: '11px', fontWeight: 900, color: '#0e6235', margin: 0 }}>RH</p>
+                        <p style={{ fontSize: '11px', fontWeight: 900, color: COLORS.verde, margin: 0 }}>RH</p>
                         <p style={{ fontSize: '14px', fontWeight: 900, color: '#ea580c', margin: 0 }}>{afiliado.rh || "A+"}</p>
                       </div>
                     </div>
                     <div>
-                      <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#0e6235', margin: 0 }}>PAÍS</p>
+                      <p style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: COLORS.verde, margin: 0 }}>PAÍS</p>
                       <p style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: '#ea580c', margin: 0 }}>{afiliado.pais || "COLOMBIA"}</p>
                     </div>
                     <div style={{ marginTop: '4px' }}>
@@ -547,15 +525,15 @@ export default function AfiliadoDashboard() {
                 </div>
 
                 <div style={{ position: 'absolute', bottom: '8px', right: '16px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 900, color: '#05318a', margin: 0 }}>@fundacionislacascajal</p>
+                  <p style={{ fontSize: '12px', fontWeight: 900, color: COLORS.azul, margin: 0 }}>@fundacionislacascajal</p>
                 </div>
               </div>
 
               <div style={{ width: '100%', height: '20px', display: 'flex', marginTop: 'auto', flexShrink: 0 }}>
-                <div style={{ flex: 1, backgroundColor: '#05318a' }} />
-                <div style={{ flex: 1, backgroundColor: '#0e6235' }} />
-                <div style={{ flex: 1, backgroundColor: '#f3de4d' }} />
-                <div style={{ flex: 1, backgroundColor: '#ce181b' }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+                <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
               </div>
             </div>
           </div>
@@ -857,10 +835,10 @@ export default function AfiliadoDashboard() {
             ref={certEduRef}
             style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${CARNET_COLORS.azul}`, paddingBottom: "15px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
               <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
               <div style={{ textAlign: "right" }}>
-                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: CARNET_COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
                 <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
               </div>
             </div>
@@ -906,10 +884,10 @@ export default function AfiliadoDashboard() {
             ref={certIntRef}
             style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${CARNET_COLORS.azul}`, paddingBottom: "15px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
               <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
               <div style={{ textAlign: "right" }}>
-                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: CARNET_COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
                 <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
               </div>
             </div>
@@ -973,7 +951,8 @@ export default function AfiliadoDashboard() {
           </div>
         )}
       </div>
-
+      {/* Script oficial de Wompi Widget */}
+      <Script src="https://checkout.wompi.co/widget.js" strategy="lazyOnload" />
     </div>
   );
 }

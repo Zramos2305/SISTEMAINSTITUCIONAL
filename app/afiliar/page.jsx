@@ -65,7 +65,7 @@ const TIPOS_DISCRIMINACION = ["Raza", "Por país de origen", "Por lugar de nacim
 const NIVELES_EDUCATIVOS = ["Ninguno", "Primaria", "Bachiller", "Técnico", "Tecnólogo", "Pregrado (Universitario)", "Especialización o posgrado", "Maestría", "Doctorado", "Posdoctorado"];
 const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Otro"];
 const TIPOS_TRASTORNO = ["Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Otro"];
-
+const ENTERADO_MEDIOS = ["Voz a voz", "WhatsApp", "Telegram", "Instagram", "Facebook", "TikTok", "YouTube", "Radio", "TV", "Volantes", "Referido"];
 // Colores Institucionales
 const COLORS = {
   azul: "#3f7384",
@@ -663,21 +663,31 @@ export default function AfiliarPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-10">
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="h-5 w-5" />
+    <div className="min-h-screen bg-slate-50 pb-12">
+      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="w-full px-4 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/afiliados">
+              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-800">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
             </Link>
-          </Button>
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
-            <div>
-              <h1 className="font-semibold text-foreground">Nueva Afiliación</h1>
-              <p className="text-xs text-muted-foreground">Sistema Institucional de Afiliados</p>
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
+              <div>
+                <h1 className="font-black text-slate-800 flex items-center gap-2" style={{ color: COLORS.verde }}>
+                  Nueva Afiliación
+                </h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sistema Institucional</p>
+              </div>
             </div>
           </div>
+        </div>
+        <div className="h-1 w-full flex">
+          <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.verde }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.amarillo }} />
+          <div style={{ flex: 1, backgroundColor: COLORS.rojo }} />
         </div>
       </header>
 
