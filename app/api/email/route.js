@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Inicialización segura para que no falle el build de Vercel si la variable aún no está puesta
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_para_build");
 const CORREO_REMITENTE = "Fundación Isla Cascajal <info@islacascajal.org>";
 const CORREOS_SISBEN = ["sisbencali@cali.gov.co", "sisben-coordinacionpuntos@admon.uniajc.edu.co"];
 
