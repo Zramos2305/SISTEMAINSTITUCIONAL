@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { collection, doc, setDoc, query, where, getDocs, limit, updateDoc, increment, arrayUnion } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,8 @@ import {
   ShieldAlert,
   HeartPulse,
   GraduationCap,
-  HeartHandshake
+  HeartHandshake,
+  PawPrint
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -136,6 +138,63 @@ export default function AfiliarPage() {
     deseaSerVoluntario: "",
     emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
   });
+
+  const llenarDatosDePrueba = () => {
+    setFormData(prev => ({
+      ...prev,
+      nombre: "Usuario de Prueba",
+      cedula: "1.234.567.890",
+      fechaNacimiento: "1990-01-01",
+      lugarNacimiento: "Bogotá",
+      edad: "36 Años",
+      rh: "O+",
+      telefono: "3001234567",
+      correo: "prueba@example.com",
+      direccion: "Calle 123 # 45-67",
+      estado: "activo",
+      cargo: "Afiliado",
+      oficina: "Sede Principal",
+      dependencia: "Administración",
+      pais: "Colombia",
+      departamento: "Valle del Cauca",
+      ciudad: "Cali",
+      sexo: "Masculino",
+      orientacionSexual: "Heterosexual",
+      estrato: "3",
+      etnia: "Ninguna",
+      sisben: "No",
+      asesoriaSisben: "Sí",
+      victimaConflicto: "No",
+      discriminacion: "No",
+      educacionNivel: "Profesional",
+      educacionEstudio: "Ingeniería",
+      educacionSemestre: "10",
+      educacionPlantel: "Universidad de Cali",
+      eps: "Sura",
+      arl: "Sura",
+      enfermedad: "No",
+      alergia: "No",
+      discapacidad: "No",
+      trastorno: "No",
+      condicionEspecial: "No",
+      comoEntero: "Redes Sociales",
+      deseaSerVoluntario: "Sí",
+      emergenciaNombre: "Contacto Prueba",
+      emergenciaNumero: "3007654321",
+      emergenciaWhatsapp: "Sí",
+      emergenciaDireccion: "Carrera 45 # 12-34",
+      seleccionMembresias: {
+        educativa: true,
+        integral: true,
+      }
+    }));
+    toast.success("Datos de prueba rellenados automáticamente");
+  };
+
+  const [soportes, setSoportes] = useState({ cedula: null, notas: null, vacunas: null });
+  const handleSoporteChange = (tipo, e) => {
+    setSoportes(prev => ({ ...prev, [tipo]: e.target.files?.[0] || null }));
+  };
 
   const [showExtraInfo, setShowExtraInfo] = useState(false);
 
@@ -371,6 +430,24 @@ export default function AfiliarPage() {
       return;
     }
 
+    if (!soportes.cedula) {
+      toast.error("Debe subir el documento de identidad.");
+      return;
+    }
+    if (formData.seleccionMembresias.educativa && !soportes.notas) {
+      toast.error("Debe subir el certificado de notas para la membresía educativa.");
+      return;
+    }
+    if (formData.seleccionMembresias.integral && formData.mascotas?.length > 0) {
+      const activePets = formData.mascotas.filter(m => m.nombre.trim() !== "");
+      for (let i = 0; i < activePets.length; i++) {
+        if (!soportes[`vacunas_${i}`]) {
+          toast.error(`Debe subir el carnet de vacunación de la mascota ${i + 1} (${activePets[i].nombre}).`);
+          return;
+        }
+      }
+    }
+
     setIsSaving(true);
     try {
       const fIngreso = new Date(formData.fechaIngreso + "T12:00:00");
@@ -413,11 +490,27 @@ export default function AfiliarPage() {
       const snap = await getDocs(q);
 
       let finalId = formData.codigo;
+      if (!snap.empty) {
+        finalId = snap.docs[0].id;
+      }
+
+      toast.info("Subiendo documentos, por favor espere...");
+      let linksSoportes = { cedula: null, notas: null, vacunas: null };
+      for (const tipo of ['cedula', 'notas', 'vacunas']) {
+        if (soportes[tipo]) {
+          const extension = soportes[tipo].name.split('.').pop();
+          const storageRef = ref(storage, `soportes/${finalId}/${tipo}.${extension}`);
+          await uploadBytes(storageRef, soportes[tipo]);
+          linksSoportes[tipo] = await getDownloadURL(storageRef);
+        }
+      }
+
       let dataToSave = {
         nombre: formData.nombre.trim(), cedula: formData.cedula.trim(), telefono: formData.telefono,
         correo: formData.correo, direccion: formData.direccion, rh: formData.rh,
         fechaNacimiento: formData.fechaNacimiento, lugarNacimiento: formData.lugarNacimiento, edad: formData.edad,
         foto: formData.foto,
+        linksSoportes: linksSoportes,
         pais: formData.pais === "Otro" ? formData.otroPais : formData.pais,
         departamento: formData.pais === "Colombia" ? formData.departamento : "",
         ciudad: formData.ciudad,
@@ -478,6 +571,30 @@ export default function AfiliarPage() {
         dataToSave.fechaCreacion = new Date().toISOString();
         dataToSave.creadoPor = user.uid;
         await setDoc(doc(db, "afiliados", finalId), dataToSave);
+      }
+
+      // ==========================================
+      // ENVÍO DE CORREOS
+      // ==========================================
+      try {
+        if (dataToSave.correo) {
+          await fetch("/api/email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo: "bienvenida", formData: dataToSave })
+          });
+        }
+        
+        const isCali = dataToSave.ciudad?.toLowerCase().includes("cali");
+        if (dataToSave.sisben === "No" && dataToSave.asesoriaSisben === "Sí" && isCali) {
+          await fetch("/api/email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo: "sisben", formData: dataToSave })
+          });
+        }
+      } catch (e) {
+        console.error("Error enviando correos", e);
       }
 
       // Lógica de Plan Referidos: Incrementar el contador del referidor si existe
@@ -682,6 +799,9 @@ export default function AfiliarPage() {
               </div>
             </div>
           </div>
+          <Button variant="outline" size="sm" onClick={llenarDatosDePrueba} className="border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 hidden md:flex font-bold">
+            Rellenar Datos de Prueba
+          </Button>
         </div>
         <div className="h-1 w-full flex">
           <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
@@ -831,7 +951,7 @@ export default function AfiliarPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field>
-                    <FieldLabel>País</FieldLabel>
+                    <FieldLabel>País de Residencia</FieldLabel>
                     <div className="space-y-2">
                       <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)} disabled={isSaving}>
                         <SelectTrigger className="pl-10 relative">
@@ -855,7 +975,7 @@ export default function AfiliarPage() {
 
                   {formData.pais === "Colombia" && (
                     <Field>
-                      <FieldLabel>Departamento</FieldLabel>
+                      <FieldLabel>Departamento de Residencia</FieldLabel>
                       <Select value={formData.departamento} onValueChange={(v) => handleInputChange("departamento", v)} disabled={isSaving}>
                         <SelectTrigger className="pl-10 relative">
                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -869,7 +989,7 @@ export default function AfiliarPage() {
                   )}
 
                   <Field>
-                    <FieldLabel>Ciudad / Municipio</FieldLabel>
+                    <FieldLabel>Ciudad / Municipio de Residencia</FieldLabel>
                     <div className="relative">
                       <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -899,7 +1019,7 @@ export default function AfiliarPage() {
                     </div>
                   </Field>
                   <Field>
-                    <FieldLabel>Dirección</FieldLabel>
+                    <FieldLabel>Dirección de Residencia</FieldLabel>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -1528,6 +1648,42 @@ export default function AfiliarPage() {
                     </div>
                   </div>
                 </Field>
+
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-300 mt-6 mb-6">
+                  <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><FileTextIcon className="h-5 w-5" /> Soportes Documentales</h3>
+                  <p className="text-xs text-slate-500 mb-4">Por favor suba los documentos requeridos en formato PDF o Imagen.</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><IdCard className="h-4 w-4 text-slate-400"/> Documento de Identidad (Obligatorio)</label>
+                      <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('cedula', e)} className="bg-white cursor-pointer" disabled={isSaving} />
+                    </div>
+                    {formData.seleccionMembresias.educativa && (
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><FileTextIcon className="h-4 w-4 text-slate-400"/> Certificado de Notas (Estudiantes)</label>
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('notas', e)} className="bg-white cursor-pointer" disabled={isSaving} />
+                      </div>
+                    )}
+                    {formData.seleccionMembresias.integral && formData.mascotas?.filter(m => m.nombre.trim() !== "").map((mascota, idx) => (
+                      <div className="flex-1 min-w-[300px]" key={`mascota-soporte-${idx}`}>
+                        <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><PawPrint className="h-4 w-4 text-slate-400"/> Carnet Vacunación: {mascota.nombre}</label>
+                        <div className="relative mt-1">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleSoporteChange(`vacunas_${idx}`, e)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                            disabled={isSaving}
+                          />
+                          <Button type="button" variant="outline" className={`w-full justify-start font-normal ${soportes[`vacunas_${idx}`] ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200'}`} disabled={isSaving}>
+                            <User className="mr-2 h-4 w-4" />
+                            {soportes[`vacunas_${idx}`] ? "Carnet adjuntado" : "Subir archivo (PDF/IMG)"}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <Button
                   className="w-full h-12 text-base font-bold shadow-md shadow-primary/20"

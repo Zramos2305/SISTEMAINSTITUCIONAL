@@ -81,6 +81,55 @@ export default function RegistroPublicoPage() {
     foto: "", // Base64 de la foto comprimida
   });
 
+  const llenarDatosDePrueba = () => {
+    setFormData(prev => ({
+      ...prev,
+      nombre: "Usuario Público",
+      cedula: "1.234.567.890",
+      fechaNacimiento: "1990-01-01",
+      lugarNacimiento: "Bogotá",
+      edad: "36 Años",
+      rh: "O+",
+      telefono: "3001234567",
+      correo: "prueba@example.com",
+      direccion: "Calle 123 # 45-67",
+      pais: "Colombia",
+      departamento: "Valle del Cauca",
+      ciudad: "Cali",
+      sexo: "Masculino",
+      orientacionSexual: "Heterosexual",
+      estrato: "3",
+      etnia: "Ninguna",
+      sisben: "No",
+      asesoriaSisben: "Sí",
+      victimaConflicto: "No",
+      discriminacion: "No",
+      educacionNivel: "Profesional",
+      educacionEstudio: "Ingeniería",
+      educacionSemestre: "10",
+      educacionPlantel: "Universidad de Cali",
+      eps: "Sura",
+      arl: "Sura",
+      enfermedad: "No",
+      alergia: "No",
+      discapacidad: "No",
+      trastorno: "No",
+      condicionEspecial: "No",
+      comoEntero: "Redes Sociales",
+      deseaSerVoluntario: "Sí",
+      emergenciaNombre: "Contacto Prueba",
+      emergenciaNumero: "3007654321",
+      emergenciaWhatsapp: "Sí",
+      emergenciaDireccion: "Carrera 45 # 12-34",
+      aceptaTerminos: true,
+      seleccionMembresias: {
+        educativa: true,
+        integral: true,
+      }
+    }));
+    toast.success("Datos de prueba rellenados automáticamente");
+  };
+
   const [soportes, setSoportes] = useState({ cedula: null, notas: null, vacunas: null });
   const handleSoporteChange = (tipo, e) => {
     setSoportes(prev => ({ ...prev, [tipo]: e.target.files?.[0] || null }));
@@ -391,6 +440,30 @@ export default function RegistroPublicoPage() {
 
       await setDoc(doc(db, "afiliados", finalId), dataToSave);
       
+      // ==========================================
+      // ENVÍO DE CORREOS
+      // ==========================================
+      try {
+        if (dataToSave.correo) {
+          await fetch("/api/email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo: "bienvenida", formData: dataToSave })
+          });
+        }
+        
+        const isCali = dataToSave.ciudad?.toLowerCase().includes("cali");
+        if (dataToSave.sisben === "No" && dataToSave.asesoriaSisben === "Sí" && isCali) {
+          await fetch("/api/email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo: "sisben", formData: dataToSave })
+          });
+        }
+      } catch (e) {
+        console.error("Error enviando correos", e);
+      }
+
       // Si es referido, actualizar al referidor por API route para evitar error de permisos
       if (formData.comoEntero === "Referido" && formData.codigoReferidor.trim() !== "") {
         try {
@@ -507,6 +580,11 @@ export default function RegistroPublicoPage() {
           <p className="text-slate-600 mt-3 max-w-2xl mx-auto text-sm md:text-base">
             Complete el siguiente formulario con su información verídica para iniciar su proceso de vinculación a la Fundación Isla Cascajal.
           </p>
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" size="sm" onClick={llenarDatosDePrueba} className="border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 hidden md:flex font-bold">
+              Rellenar Datos de Prueba
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -558,7 +636,7 @@ export default function RegistroPublicoPage() {
                 <Input value={formData.direccion} onChange={(e) => handleInputChange("direccion", e.target.value)} className="border-blue-200 focus-visible:ring-blue-500" disabled={isSaving} />
               </Field>
               <Field>
-                <FieldLabel>País <span className="text-red-500">*</span></FieldLabel>
+                <FieldLabel>País de Residencia <span className="text-red-500">*</span></FieldLabel>
                 <div className="space-y-2">
                   <Select value={formData.pais} onValueChange={(v) => handleInputChange("pais", v)}>
                     <SelectTrigger className="border-blue-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
@@ -569,7 +647,7 @@ export default function RegistroPublicoPage() {
               </Field>
               {formData.pais === "Colombia" && (
                 <Field>
-                  <FieldLabel>Departamento <span className="text-red-500">*</span></FieldLabel>
+                  <FieldLabel>Departamento de Residencia <span className="text-red-500">*</span></FieldLabel>
                   <Select value={formData.departamento} onValueChange={(v) => handleInputChange("departamento", v)}>
                     <SelectTrigger className="border-blue-200"><SelectValue placeholder="Seleccione" /></SelectTrigger>
                     <SelectContent>{DEPARTAMENTOS_COLOMBIA.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
@@ -577,7 +655,7 @@ export default function RegistroPublicoPage() {
                 </Field>
               )}
               <Field>
-                <FieldLabel>Ciudad / Municipio <span className="text-red-500">*</span></FieldLabel>
+                <FieldLabel>Ciudad / Municipio de Residencia <span className="text-red-500">*</span></FieldLabel>
                 <Input value={formData.ciudad} onChange={(e) => handleInputChange("ciudad", e.target.value)} className="border-blue-200 focus-visible:ring-blue-500" disabled={isSaving} />
               </Field>
             </CardContent>

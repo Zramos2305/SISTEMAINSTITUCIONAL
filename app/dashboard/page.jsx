@@ -324,6 +324,9 @@ function DashboardContent() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [codigoAEliminar, setCodigoAEliminar] = useState(null);
+  
+  // Paginación Dashboard (Registros de 5 en 5)
+  const [visibleCount, setVisibleCount] = useState(5);
   const [infoDoc, setInfoDoc] = useState(null);
   const [confirmarInactivacion, setConfirmarInactivacion] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -502,6 +505,11 @@ function DashboardContent() {
     }
     return resultado;
   }, [documentos, busqueda, filtroTipo]);
+
+  // Resetear paginación si se cambia la búsqueda o filtros
+  useEffect(() => {
+    setVisibleCount(5);
+  }, [busqueda, filtroTipo]);
 
   // useMemo para calcular las estadísticas globales (total, cantidad de certificados, etc.)
   const stats = useMemo(() => {
@@ -976,7 +984,7 @@ function DashboardContent() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {documentosFiltrados.map((doc) => {
+                        {documentosFiltrados.slice(0, visibleCount).map((doc) => {
                           const isExpired = doc.tipo === "afiliado" && doc.fechaExpiracion && new Date() > new Date(doc.fechaExpiracion);
                           const esActivo = doc.estado === "activo" && !isExpired;
                           const cargando = updatingStatus === doc.codigo;
@@ -1097,6 +1105,20 @@ function DashboardContent() {
                         })}
                       </TableBody>
                     </Table>
+                  </div>
+                )}
+
+                {/* Botón "Ver Más" de a 5 */}
+                {!isLoading && documentosFiltrados.length > visibleCount && (
+                  <div className="flex justify-center mt-6 mb-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setVisibleCount(prev => prev + 5)}
+                      className="rounded-full shadow-sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Cargar 5 más ({documentosFiltrados.length - visibleCount} restantes)
+                    </Button>
                   </div>
                 )}
               </CardContent>

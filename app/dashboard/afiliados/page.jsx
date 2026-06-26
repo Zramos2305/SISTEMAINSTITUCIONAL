@@ -710,6 +710,35 @@ export default function CRM_Afiliados() {
                             </div>
                           </CardContent>
                         </Card>
+
+                        <Card className="shadow-sm border-0">
+                          <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-slate-500">Documentos Anexos</CardTitle></CardHeader>
+                          <CardContent className="space-y-2">
+                            {selectedAfiliado.linksSoportes ? (
+                              <div className="flex flex-col gap-2">
+                                {selectedAfiliado.linksSoportes.cedula && (
+                                  <a href={selectedAfiliado.linksSoportes.cedula} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md border border-blue-100 font-semibold">
+                                    <FileText className="h-4 w-4" /> Documento de Identidad
+                                  </a>
+                                )}
+                                {selectedAfiliado.linksSoportes.notas && (
+                                  <a href={selectedAfiliado.linksSoportes.notas} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-md border border-blue-100 font-semibold">
+                                    <FileText className="h-4 w-4" /> Certificado de Notas
+                                  </a>
+                                )}
+                                {Object.keys(selectedAfiliado.linksSoportes)
+                                  .filter(k => k.startsWith('vacunas_') && selectedAfiliado.linksSoportes[k])
+                                  .map((key, index) => (
+                                  <a key={key} href={selectedAfiliado.linksSoportes[key]} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-green-600 hover:text-green-800 bg-green-50 p-2 rounded-md border border-green-100 font-semibold">
+                                    <PawPrint className="h-4 w-4" /> Carnet de Vacunación Mascotas
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-400 italic">No hay documentos anexos.</p>
+                            )}
+                          </CardContent>
+                        </Card>
                         
                         <Card className="shadow-sm border-0">
                           <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-slate-500">Descargas</CardTitle></CardHeader>
