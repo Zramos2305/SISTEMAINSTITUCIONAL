@@ -43,7 +43,8 @@ import {
   HeartPulse,
   GraduationCap,
   HeartHandshake,
-  PawPrint
+  PawPrint,
+  Info
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -105,6 +106,8 @@ export default function AfiliarPage() {
     nombre: "",
     cedula: "",
     fechaNacimiento: "",
+    paisNacimiento: "Colombia",
+    otroPaisNacimiento: "",
     lugarNacimiento: "",
     edad: "",
     rh: "",
@@ -145,6 +148,8 @@ export default function AfiliarPage() {
       nombre: "Usuario de Prueba",
       cedula: "1.234.567.890",
       fechaNacimiento: "1990-01-01",
+      paisNacimiento: "Colombia",
+      otroPaisNacimiento: "",
       lugarNacimiento: "Bogotá",
       edad: "36 Años",
       rh: "O+",
@@ -395,13 +400,12 @@ export default function AfiliarPage() {
 
   const handleGuardar = async () => {
     // Validar Básicos
-    const camposBasicos = ["nombre", "cedula", "fechaNacimiento", "lugarNacimiento", "rh", "telefono", "correo", "direccion", "ciudad"];
-    for (const campo of camposBasicos) {
-      if (!formData[campo]) {
-        toast.error("Por favor completa los campos básicos obligatorios");
-        return;
-      }
+    const camposBasicos = ["nombre", "cedula", "fechaNacimiento", "paisNacimiento", "lugarNacimiento", "rh", "telefono", "correo", "direccion", "ciudad"];
+    if (camposBasicos.some(k => !formData[k])) {
+      return toast.error("Complete todos los campos básicos obligatorios");
     }
+    if (formData.pais === "Otro" && !formData.otroPais) return toast.error("Especifique su país de residencia");
+    if (formData.paisNacimiento === "Otro" && !formData.otroPaisNacimiento) return toast.error("Especifique su país de nacimiento");
 
     // Validar Encuesta Extendida Obligatoria
     const camposEncuesta = ["sexo", "orientacionSexual", "estrato", "etnia", "sisben", "victimaConflicto", "discriminacion", "educacionNivel", "eps", "arl", "enfermedad", "alergia", "discapacidad", "trastorno"];
@@ -415,7 +419,8 @@ export default function AfiliarPage() {
     // Validar Condicionales de la Encuesta
     if (formData.orientacionSexual === "Otro" && !formData.orientacionOtro) return toast.error("Especifique su orientación sexual");
     if (formData.sisben === "Sí" && !formData.sisbenPuntaje) return toast.error("Complete su puntaje de Sisbén");
-    if (formData.sisben === "No" && !formData.asesoriaSisben) return toast.error("Indique si desea asesoría para el Sisbén");
+    const aplicaAsesoria = formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali");
+    if (aplicaAsesoria && !formData.asesoriaSisben) return toast.error("Indique si desea asesoría para el Sisbén");
     if (formData.victimaConflicto === "Sí" && (!formData.victimaTipo || !formData.victimaInscrito)) return toast.error("Complete los datos de víctima del conflicto");
     if (formData.discriminacion === "Sí" && !formData.discriminacionTipo) return toast.error("Especifique el tipo de discriminación");
     if (formData.enfermedad === "Sí" && !formData.enfermedadCual) return toast.error("Especifique la enfermedad");
@@ -508,7 +513,10 @@ export default function AfiliarPage() {
       let dataToSave = {
         nombre: formData.nombre.trim(), cedula: formData.cedula.trim(), telefono: formData.telefono,
         correo: formData.correo, direccion: formData.direccion, rh: formData.rh,
-        fechaNacimiento: formData.fechaNacimiento, lugarNacimiento: formData.lugarNacimiento, edad: formData.edad,
+        fechaNacimiento: formData.fechaNacimiento, 
+        paisNacimiento: formData.paisNacimiento === "Otro" ? formData.otroPaisNacimiento : formData.paisNacimiento,
+        lugarNacimiento: formData.lugarNacimiento, 
+        edad: formData.edad,
         foto: formData.foto,
         linksSoportes: linksSoportes,
         pais: formData.pais === "Otro" ? formData.otroPais : formData.pais,
@@ -530,7 +538,7 @@ export default function AfiliarPage() {
         etnia: formData.etnia,
         sisben: formData.sisben,
         sisbenPuntaje: formData.sisben === "Sí" ? formData.sisbenPuntaje : "N/A",
-        asesoriaSisben: formData.sisben === "No" ? formData.asesoriaSisben : "N/A",
+        asesoriaSisben: (formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali")) ? formData.asesoriaSisben : "N/A",
         victimaConflicto: formData.victimaConflicto,
         victimaTipo: formData.victimaConflicto === "Sí" ? formData.victimaTipo : "N/A",
         victimaInscrito: formData.victimaConflicto === "Sí" ? formData.victimaInscrito : "N/A",
@@ -654,6 +662,8 @@ export default function AfiliarPage() {
       dependencia: "",
       pais: "Colombia",
       otroPais: "",
+      paisNacimiento: "Colombia",
+      otroPaisNacimiento: "",
       departamento: "",
       ciudad: "",
       beneficiarios: [],
@@ -880,6 +890,27 @@ export default function AfiliarPage() {
                         onChange={(e) => handleInputChange("fechaNacimiento", e.target.value)}
                         disabled={isSaving}
                       />
+                    </div>
+                  </Field>
+                  <Field>
+                    <FieldLabel>País de Nacimiento <span className="text-red-500">*</span></FieldLabel>
+                    <div className="space-y-2">
+                      <Select value={formData.paisNacimiento} onValueChange={(v) => handleInputChange("paisNacimiento", v)} disabled={isSaving}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione país" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PAISES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {formData.paisNacimiento === "Otro" && (
+                        <Input
+                          placeholder="Escriba el nombre del país"
+                          value={formData.otroPaisNacimiento}
+                          onChange={(e) => handleInputChange("otroPaisNacimiento", e.target.value)}
+                          disabled={isSaving}
+                        />
+                      )}
                     </div>
                   </Field>
                   <Field>
@@ -1312,7 +1343,7 @@ export default function AfiliarPage() {
                                 <Input placeholder="Ej. A1, B2" value={formData.sisbenPuntaje} onChange={(e) => handleInputChange("sisbenPuntaje", e.target.value)} className="border-yellow-200" />
                               </Field>
                             )}
-                            {formData.sisben === "No" && (
+                            {formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali") && (
                               <Field>
                                 <FieldLabel>¿Desea recibir asesoría para encuesta e inscripción al SISBEN? <span className="text-red-500">*</span></FieldLabel>
                                 <Select value={formData.asesoriaSisben} onValueChange={(v) => handleInputChange("asesoriaSisben", v)}>
@@ -1542,6 +1573,44 @@ export default function AfiliarPage() {
                         </CardContent>
                       </Card>
 
+                      {/* SECCIÓN: CÓMO SE ENTERÓ */}
+                      <Card className="shadow-md border-0 overflow-hidden border-t-4" style={{ borderTopColor: COLORS.secundario }}>
+                        <div className="bg-blue-50/50 p-3 border-b flex items-center gap-3">
+                          <Info className="h-5 w-5 text-blue-600" />
+                          <h2 className="text-lg font-bold text-blue-800">Información de Vinculación</h2>
+                        </div>
+                        <CardContent className="pt-4 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex-1 min-w-[200px]">
+                              <FieldLabel>¿Cómo se enteró? <span className="text-red-500">*</span></FieldLabel>
+                              <Select value={formData.comoEntero} onValueChange={(v) => handleInputChange("comoEntero", v)}>
+                                <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                <SelectContent>
+                                  {ENTERADO_MEDIOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {formData.comoEntero === "Referido" && (
+                              <div className="flex-1 min-w-[200px]">
+                                <FieldLabel>Código Institucional del Referidor <span className="text-red-500">*</span></FieldLabel>
+                                <div className="flex gap-2">
+                                  <Input placeholder="Ej. Zram050302" value={formData.codigoReferidor} onChange={(e) => handleInputChange("codigoReferidor", e.target.value)} />
+                                  <Button type="button" variant="outline" onClick={verificarReferidor} disabled={isVerifyingReferidor}>
+                                    {isVerifyingReferidor ? "Buscando..." : "Verificar"}
+                                  </Button>
+                                </div>
+                                {referidorNombre ? (
+                                  <p className="text-sm text-green-600 font-semibold mt-1">✓ Referido por: {referidorNombre}</p>
+                                ) : (
+                                  <p className="text-xs text-slate-500 mt-1">Escribe el código y presiona Verificar.</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
                       {/* SECCIÓN EXTRA: VOLUNTARIADO Y EMERGENCIA */}
                       <Card className="shadow-md border-0 overflow-hidden border-t-4" style={{ borderTopColor: COLORS.verde }}>
                         <div className="bg-green-50/50 p-3 border-b flex items-center gap-3">
@@ -1564,35 +1633,6 @@ export default function AfiliarPage() {
                               <SelectContent><SelectItem value="Sí">Sí</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
                             </Select>
                           </Field>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="flex-1 min-w-[200px]">
-                                <FieldLabel>¿Cómo se enteró? <span className="text-red-500">*</span></FieldLabel>
-                                <Select value={formData.comoEntero} onValueChange={(v) => handleInputChange("comoEntero", v)}>
-                                  <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                  <SelectContent>
-                                    {ENTERADO_MEDIOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              {formData.comoEntero === "Referido" && (
-                                <div className="flex-1 min-w-[200px]">
-                                  <FieldLabel>Código Institucional del Referidor <span className="text-red-500">*</span></FieldLabel>
-                                  <div className="flex gap-2">
-                                    <Input placeholder="Ej. Zram050302" value={formData.codigoReferidor} onChange={(e) => handleInputChange("codigoReferidor", e.target.value)} />
-                                    <Button type="button" variant="outline" onClick={verificarReferidor} disabled={isVerifyingReferidor}>
-                                      {isVerifyingReferidor ? "Buscando..." : "Verificar"}
-                                    </Button>
-                                  </div>
-                                  {referidorNombre ? (
-                                    <p className="text-sm text-green-600 font-semibold mt-1">✓ Referido por: {referidorNombre}</p>
-                                  ) : (
-                                    <p className="text-xs text-slate-500 mt-1">Escribe el código y presiona Verificar.</p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
 
                           {formData.deseaSerVoluntario === "Sí" && (
                             <div className="border border-green-200 rounded-xl p-4 bg-white shadow-sm space-y-3">

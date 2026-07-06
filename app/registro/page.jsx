@@ -62,6 +62,8 @@ export default function RegistroPublicoPage() {
     nombre: "",
     cedula: "",
     fechaNacimiento: "",
+    paisNacimiento: "Colombia",
+    otroPaisNacimiento: "",
     lugarNacimiento: "",
     edad: "",
     rh: "", fechaIngreso: new Date().toISOString().split("T")[0],
@@ -87,6 +89,8 @@ export default function RegistroPublicoPage() {
       nombre: "Usuario Público",
       cedula: "1.234.567.890",
       fechaNacimiento: "1990-01-01",
+      paisNacimiento: "Colombia",
+      otroPaisNacimiento: "",
       lugarNacimiento: "Bogotá",
       edad: "36 Años",
       rh: "O+",
@@ -284,7 +288,7 @@ export default function RegistroPublicoPage() {
   };
 
   const handleGuardar = async () => {
-    const camposBasicos = ["nombre", "cedula", "fechaNacimiento", "lugarNacimiento", "rh", "telefono", "correo", "direccion", "ciudad"];
+    const camposBasicos = ["nombre", "cedula", "fechaNacimiento", "paisNacimiento", "lugarNacimiento", "rh", "telefono", "correo", "direccion", "ciudad"];
     const camposEncuesta = ["sexo", "orientacionSexual", "estrato", "etnia", "sisben", "victimaConflicto", "discriminacion", "educacionNivel", "eps", "arl", "enfermedad", "alergia", "discapacidad", "trastorno", "condicionEspecial", "comoEntero"];
     
     // Validar Básicos
@@ -300,7 +304,8 @@ export default function RegistroPublicoPage() {
     // Validar Condicionales
     if (formData.orientacionSexual === "Otro" && !formData.orientacionOtro) return toast.error("Especifique su orientación sexual");
     if (formData.sisben === "Sí" && !formData.sisbenPuntaje) return toast.error("Complete su puntaje de Sisbén");
-    if (formData.sisben === "No" && !formData.asesoriaSisben) return toast.error("Indique si desea asesoría para el Sisbén");
+    const aplicaAsesoria = formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali");
+    if (aplicaAsesoria && !formData.asesoriaSisben) return toast.error("Indique si desea asesoría para el Sisbén");
     if (formData.victimaConflicto === "Sí" && (!formData.victimaTipo || !formData.victimaInscrito)) return toast.error("Complete los datos de víctima del conflicto");
     if (formData.discriminacion === "Sí" && !formData.discriminacionTipo) return toast.error("Especifique el tipo de discriminación");
     if (formData.enfermedad === "Sí" && !formData.enfermedadCual) return toast.error("Especifique la enfermedad");
@@ -310,6 +315,8 @@ export default function RegistroPublicoPage() {
     if (formData.trastornoTipo === "Otro" && !formData.trastornoOtro) return toast.error("Especifique el otro trastorno");
     if (formData.condicionEspecial === "Sí" && !formData.condicionEspecialCual) return toast.error("Especifique la condición especial");
     if (formData.comoEntero === "Referido" && !formData.codigoReferidor) return toast.error("Especifique el código de quien lo refiere");
+    if (formData.pais === "Otro" && !formData.otroPais) return toast.error("Especifique su país de residencia");
+    if (formData.paisNacimiento === "Otro" && !formData.otroPaisNacimiento) return toast.error("Especifique su país de nacimiento");
 
     if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
       return toast.error("Selecciona al menos un tipo de membresía a la cual aplicar.");
@@ -387,7 +394,10 @@ export default function RegistroPublicoPage() {
       let dataToSave = {
         nombre: formData.nombre.trim(), cedula: formData.cedula.trim(), telefono: formData.telefono,
         correo: formData.correo, direccion: formData.direccion, rh: formData.rh,
-        fechaNacimiento: formData.fechaNacimiento, lugarNacimiento: formData.lugarNacimiento, edad: formData.edad,
+        fechaNacimiento: formData.fechaNacimiento, 
+        paisNacimiento: formData.paisNacimiento === "Otro" ? formData.otroPaisNacimiento : formData.paisNacimiento,
+        lugarNacimiento: formData.lugarNacimiento, 
+        edad: formData.edad,
         pais: formData.pais === "Otro" ? formData.otroPais : formData.pais,
         departamento: formData.pais === "Colombia" ? formData.departamento : "",
         ciudad: formData.ciudad,
@@ -404,7 +414,7 @@ export default function RegistroPublicoPage() {
         etnia: formData.etnia,
         sisben: formData.sisben,
         sisbenPuntaje: formData.sisben === "Sí" ? formData.sisbenPuntaje : "N/A",
-        asesoriaSisben: formData.sisben === "No" ? formData.asesoriaSisben : "N/A",
+        asesoriaSisben: (formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali")) ? formData.asesoriaSisben : "N/A",
         victimaConflicto: formData.victimaConflicto,
         victimaTipo: formData.victimaConflicto === "Sí" ? formData.victimaTipo : "N/A",
         victimaInscrito: formData.victimaConflicto === "Sí" ? formData.victimaInscrito : "N/A",
@@ -609,6 +619,16 @@ export default function RegistroPublicoPage() {
                 <Input type="date" value={formData.fechaNacimiento} onChange={(e) => handleInputChange("fechaNacimiento", e.target.value)} className="border-blue-200 focus-visible:ring-blue-500" disabled={isSaving} />
               </Field>
               <Field>
+                <FieldLabel>País de Nacimiento <span className="text-red-500">*</span></FieldLabel>
+                <div className="space-y-2">
+                  <Select value={formData.paisNacimiento} onValueChange={(v) => handleInputChange("paisNacimiento", v)}>
+                    <SelectTrigger className="border-blue-200 focus-visible:ring-blue-500"><SelectValue placeholder="Seleccione país" /></SelectTrigger>
+                    <SelectContent>{PAISES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                  {formData.paisNacimiento === "Otro" && <Input placeholder="Escriba su país de nacimiento" value={formData.otroPaisNacimiento} onChange={(e) => handleInputChange("otroPaisNacimiento", e.target.value)} className="border-blue-200 focus-visible:ring-blue-500" />}
+                </div>
+              </Field>
+              <Field>
                 <FieldLabel>Lugar de Nacimiento <span className="text-red-500">*</span></FieldLabel>
                 <Input placeholder="Ej. Cali, Valle del Cauca" value={formData.lugarNacimiento} onChange={(e) => handleInputChange("lugarNacimiento", e.target.value)} className="border-blue-200 focus-visible:ring-blue-500" disabled={isSaving} />
               </Field>
@@ -732,7 +752,7 @@ export default function RegistroPublicoPage() {
                     <Input placeholder="Ej. A1, B2, 45.3" value={formData.sisbenPuntaje} onChange={(e) => handleInputChange("sisbenPuntaje", e.target.value)} className="border-yellow-200" />
                   </Field>
                 )}
-                {formData.sisben === "No" && (
+                {formData.sisben === "No" && formData.pais === "Colombia" && formData.ciudad?.toLowerCase().includes("cali") && (
                   <Field>
                     <FieldLabel>¿Desea recibir asesoría para encuesta e inscripción al SISBEN? <span className="text-red-500">*</span></FieldLabel>
                     <Select value={formData.asesoriaSisben} onValueChange={(v) => handleInputChange("asesoriaSisben", v)}>
