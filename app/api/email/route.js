@@ -3,7 +3,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_para_build");
 const CORREO_REMITENTE = "Fundación Isla Cascajal <info@islacascajal.org>";
-const CORREOS_SISBEN = ["zayraramos124@gmail.com"]; // TODO: Volver a poner los de la alcaldía después de la prueba
+const CORREOS_SISBEN = ["sisbencali@cali.gov.co", "sisben-coordinacionpuntos@admon.uniajc.edu.co"];
 const PORTAL_URL = "https://fundacion.islacascajal.org/afiliado";
 const BANNER_URL = "https://fundacion.islacascajal.org/banner.png";
 const LOGO_URL = "https://fundacion.islacascajal.org/logo.png";
