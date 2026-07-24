@@ -60,6 +60,8 @@ export async function POST(request) {
               const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
                 ? `https://${process.env.VERCEL_URL}`
                 : "https://islacascajal.org";
+                
+              // 1. Correo al Usuario
               await fetch(`${baseUrl}/api/email`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -74,9 +76,26 @@ export async function POST(request) {
                   }
                 })
               });
-              console.log(`Correo de activación enviado a: ${afiliadoData.correo}`);
+              
+              // 2. Alerta Administrativa al equipo
+              await fetch(`${baseUrl}/api/email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  tipo: "alerta_admin_activacion",
+                  formData: {
+                    nombre: afiliadoData.nombre,
+                    cedula: afiliadoData.cedula,
+                    codigo: afiliadoData.codigo,
+                    codigoInstitucional: afiliadoData.codigoInstitucional,
+                    montoPagado: amount_in_cents / 100
+                  }
+                })
+              });
+              
+              console.log(`Correos de activación y alerta admin enviados para: ${afiliadoData.correo}`);
             } catch (emailError) {
-              console.error("Error enviando correo de activación:", emailError);
+              console.error("Error enviando correos post-pago:", emailError);
             }
           }
         }

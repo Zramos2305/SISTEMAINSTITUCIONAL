@@ -4,6 +4,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_para_build");
 const CORREO_REMITENTE = "Fundación Isla Cascajal <info@islacascajal.org>";
 const CORREOS_SISBEN = ["sisbencali@cali.gov.co", "sisben-coordinacionpuntos@admon.uniajc.edu.co"];
+const CORREO_ADMIN = "afiliaciones@islacascajal.org";
 const PORTAL_URL = "https://fundacion.islacascajal.org/afiliado";
 const BANNER_URL = "https://fundacion.islacascajal.org/banner.png";
 const LOGO_URL = "https://fundacion.islacascajal.org/logo.png";
@@ -383,6 +384,104 @@ export async function POST(req) {
         from: CORREO_REMITENTE,
         to: CORREOS_SISBEN,
         subject: `Alerta Sisbén: ${formData.nombre} requiere asesoría (Cali)`,
+        html,
+      });
+
+      return NextResponse.json({ success: true, data });
+    }
+
+    // ==========================================
+    // 4. CORREO DE ALERTA ADMINISTRATIVA (NUEVA AFILIACIÓN)
+    // ==========================================
+    if (tipo === "alerta_admin_activacion") {
+      const html = emailHeader("Notificación Administrativa", "#1e3a8a") + `
+
+          <!-- SEPARADOR -->
+          <tr><td style="height:8px; background:#f8fafc;"></td></tr>
+
+          <!-- SALUDO Y MENSAJE PRINCIPAL -->
+          <tr>
+            <td style="padding: 36px 48px 0 48px;">
+              <p style="margin:0 0 6px 0; font-size:12px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:600;">Reporte de Sistema</p>
+              <h2 style="margin:0 0 20px 0; color:#1e293b; font-size:26px; font-weight:300; line-height:1.3; letter-spacing:-0.5px;">Nueva Afiliación Activa</h2>
+              <div style="width:40px; height:3px; background:#1e3a8a; margin-bottom:24px;"></div>
+              <p style="margin:0; font-size:15px; color:#475569; line-height:1.8;">
+                El sistema de pagos ha confirmado una nueva transacción exitosa. 
+                El siguiente usuario ahora se encuentra con estado <strong style="color:#16a34a; font-weight:600;">Activo</strong> en la plataforma.
+              </p>
+            </td>
+          </tr>
+
+          <!-- DATOS DEL PAGO Y USUARIO -->
+          <tr>
+            <td style="padding: 28px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                <tr>
+                  <td colspan="2" style="padding:16px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                    <p style="margin:0; font-size:10px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Detalles de la Afiliación</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9; width:45%;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Afiliado</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:600;">${formData.nombre}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Cédula</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;">${formData.cedula}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Código Institucional</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e3a8a; font-weight:700; font-family: 'Courier New', monospace;">${formData.codigoInstitucional || formData.codigo || "N/A"}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Método de Pago</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;">Wompi</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; background:#f0fdf4;">
+                    <p style="margin:0; font-size:12px; color:#166534; font-weight:600;">Monto Aprobado</p>
+                  </td>
+                  <td style="padding:16px 24px; background:#f0fdf4;">
+                    <p style="margin:0; font-size:16px; color:#166534; font-weight:700;">$ ${formData.montoPagado || '---'} COP</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- NOTA INSTITUCIONAL -->
+          <tr>
+            <td style="padding: 0 48px 36px 48px;">
+              <div style="border-left: 2px solid #1e3a8a; padding-left: 16px;">
+                <p style="margin:0; font-size:12px; color:#64748b; line-height:1.6;">
+                  Esta notificación es generada automáticamente por el módulo de pagos de la Fundación Isla Cascajal. No es necesario realizar ninguna acción manual para este usuario.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+      ` + emailFooter();
+
+      const data = await resend.emails.send({
+        from: CORREO_REMITENTE,
+        to: CORREO_ADMIN,
+        subject: `Alerta: Nueva Afiliación Activa - ${formData.nombre}`,
         html,
       });
 

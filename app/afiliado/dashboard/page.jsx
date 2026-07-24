@@ -35,12 +35,16 @@ export default function AfiliadoDashboard() {
   
   // Referencias para Avales
   const certEduRef = useRef(null);
+  const certEduIntRef = useRef(null);
   const certIntRef = useRef(null);
+  const certCasRef = useRef(null);
   
   // Estados de carga para botones
   const [isDownloadingCarnet, setIsDownloadingCarnet] = useState(false);
   const [isDownloadingEdu, setIsDownloadingEdu] = useState(false);
+  const [isDownloadingEduInt, setIsDownloadingEduInt] = useState(false);
   const [isDownloadingInt, setIsDownloadingInt] = useState(false);
+  const [isDownloadingCas, setIsDownloadingCas] = useState(false);
 
   // Estados Renovación
   const [modalRenovacion, setModalRenovacion] = useState(false);
@@ -173,12 +177,13 @@ export default function AfiliadoDashboard() {
   };
 
   const descargarAval = async (tipo) => {
-    const ref = tipo === 'edu' ? certEduRef : certIntRef;
-    const setLoader = tipo === 'edu' ? setIsDownloadingEdu : setIsDownloadingInt;
+    const ref = tipo === 'edu' ? certEduRef : tipo === 'eduInt' ? certEduIntRef : tipo === 'int' ? certIntRef : certCasRef;
+    const setLoader = tipo === 'edu' ? setIsDownloadingEdu : tipo === 'eduInt' ? setIsDownloadingEduInt : tipo === 'int' ? setIsDownloadingInt : setIsDownloadingCas;
+    const tipoNombre = tipo === 'edu' ? 'Educativo' : tipo === 'eduInt' ? 'Educativo_Internacional' : tipo === 'int' ? 'Integral' : 'Casino';
     
     if (!ref.current) return;
     setLoader(true);
-    toast.info(`Generando Aval ${tipo === 'edu' ? 'Educativo' : 'Integral'} en PDF...`, { duration: 3000 });
+    toast.info(`Generando Certificado ${tipoNombre} en PDF...`, { duration: 3000 });
 
     try {
       const element = ref.current;
@@ -196,7 +201,7 @@ export default function AfiliadoDashboard() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Aval_${tipo === 'edu' ? 'Educativo' : 'Integral'}_${afiliado.cedula}.pdf`);
+      pdf.save(`Certificado_${tipoNombre}_${afiliado.cedula}.pdf`);
       
       element.style.display = "none";
       toast.success("¡Aval descargado!");
@@ -346,9 +351,11 @@ export default function AfiliadoDashboard() {
 
   if (!afiliado) return null;
 
-  // Analizar Membresías
+  // Extracción de Membresías y Estado
   const membresiaEducativa = afiliado.membresias?.find(m => m.tipo === "educativa");
+  const membresiaEducativaInt = afiliado.membresias?.find(m => m.tipo === "educativa_internacional");
   const membresiaIntegral = afiliado.membresias?.find(m => m.tipo === "integral");
+  const membresiaCasino = afiliado.membresias?.find(m => m.tipo === "casino");
 
   const formatearFecha = (fechaISO) => {
     if(!fechaISO) return "N/A";
@@ -369,11 +376,13 @@ export default function AfiliadoDashboard() {
   };
 
   const estadoEdu = determinarEstado(membresiaEducativa);
+  const estadoEduInt = determinarEstado(membresiaEducativaInt);
   const estadoInt = determinarEstado(membresiaIntegral);
+  const estadoCas = determinarEstado(membresiaCasino);
 
   // Verificar si TODO está vencido o el usuario está inactivo
   const estaInactivoGlobal = afiliado.estado === "inactivo" || afiliado.estado === "rechazado";
-  const todoVencido = (!estadoEdu || estadoEdu.vencida) && (!estadoInt || estadoInt.vencida);
+  const todoVencido = (!estadoEdu || estadoEdu.vencida) && (!estadoEduInt || estadoEduInt.vencida) && (!estadoInt || estadoInt.vencida);
   const bloqueadoPorVencimiento = estaInactivoGlobal || todoVencido;
 
   return (
@@ -507,9 +516,19 @@ export default function AfiliadoDashboard() {
                             EDUCATIVA
                           </span>
                         )}
+                        {membresiaEducativaInt && !estadoEduInt?.vencida && (
+                          <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#6b21a8', backgroundColor: '#f3e8ff', padding: '4px 12px', borderRadius: '12px', border: `1px solid #d8b4fe` }}>
+                            EDU. INTERNACIONAL
+                          </span>
+                        )}
                         {membresiaIntegral && !estadoInt?.vencida && (
                           <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#15803d', backgroundColor: '#dcfce3', padding: '4px 12px', borderRadius: '12px', border: `1px solid #86efac` }}>
                             INTEGRAL
+                          </span>
+                        )}
+                        {membresiaCasino && !estadoCas?.vencida && (
+                          <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#b45309', backgroundColor: '#fef3c7', padding: '4px 12px', borderRadius: '12px', border: `1px solid #fcd34d` }}>
+                            CASINO
                           </span>
                         )}
                       </div>
@@ -580,6 +599,23 @@ export default function AfiliadoDashboard() {
                   </div>
                 )}
 
+                {membresiaEducativaInt && (
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4 ${estadoEduInt?.vencida ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div>
+                      <h4 className="font-bold text-purple-800 flex items-center gap-2">Membresía Educativa Internacional</h4>
+                      <p className="text-sm text-slate-500 mt-1">Vence: {formatearFecha(membresiaEducativaInt.fechaExpiracion)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`px-3 py-1 text-xs font-bold uppercase rounded-full border ${estadoEduInt?.color}`}>
+                        {estadoEduInt?.texto}
+                      </span>
+                      {(estadoEduInt?.vencida || estadoEduInt?.porVencer) && !bloqueadoPorVencimiento && (
+                        <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 w-full sm:w-auto pointer-events-auto" onClick={() => setModalRenovacion(true)}>Renovar Ahora</Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {membresiaIntegral && (
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4 ${estadoInt?.vencida ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
                     <div>
@@ -636,6 +672,27 @@ export default function AfiliadoDashboard() {
                   </div>
                 )}
 
+                {/* Aval Educativo Internacional */}
+                {membresiaEducativaInt && (
+                  <div className={`border rounded-xl p-5 flex flex-col justify-between ${estadoEduInt?.vencida ? 'opacity-50 border-slate-200 bg-slate-50' : 'border-slate-200 hover:border-purple-300 transition-colors'}`}>
+                    <div>
+                      <h4 className="font-bold text-slate-700 mb-1">Aval Educ. Internacional</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                        Documento oficial que te permite acceder a programas académicos 100% virtuales en universidades extranjeras.
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                      onClick={() => descargarAval('eduInt')}
+                      disabled={isDownloadingEduInt || estadoEduInt?.vencida}
+                    >
+                      {isDownloadingEduInt ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                      Descargar PDF
+                    </Button>
+                  </div>
+                )}
+
                 {/* Aval Integral */}
                 {membresiaIntegral && (
                   <div className={`border rounded-xl p-5 flex flex-col justify-between ${estadoInt?.vencida ? 'opacity-50 border-slate-200 bg-slate-50' : 'border-slate-200 hover:border-green-300 transition-colors'}`}>
@@ -657,7 +714,28 @@ export default function AfiliadoDashboard() {
                   </div>
                 )}
                 
-                {!membresiaEducativa && !membresiaIntegral && (
+                {/* Aval Casino */}
+                {membresiaCasino && (
+                  <div className={`border rounded-xl p-5 flex flex-col justify-between ${estadoCas?.vencida ? 'opacity-50 border-slate-200 bg-slate-50' : 'border-slate-200 hover:border-amber-300 transition-colors'}`}>
+                    <div>
+                      <h4 className="font-bold text-slate-700 mb-1">Aval Casino</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                        Documento oficial que certifica tu acceso a los servicios de recreación y casino de la Fundación.
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                      onClick={() => descargarAval('cas')}
+                      disabled={isDownloadingCas || estadoCas?.vencida}
+                    >
+                      {isDownloadingCas ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                      Descargar PDF
+                    </Button>
+                  </div>
+                )}
+                
+                {!membresiaEducativa && !membresiaEducativaInt && !membresiaIntegral && !membresiaCasino && (
                   <p className="col-span-full text-center text-slate-500 py-4 text-sm">No hay avales disponibles para descargar.</p>
                 )}
               </div>
@@ -857,7 +935,56 @@ export default function AfiliadoDashboard() {
               </p>
 
               <p>
-                Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico {getPeriodoEducativo(membresiaEducativa.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+                Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento <strong>{membresiaEducativa.institucion ? `(${membresiaEducativa.institucion})` : ""}</strong>, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para el programa académico de <strong>{membresiaEducativa.programa || "elección del afiliado"}</strong> {membresiaEducativa.modalidad ? `en modalidad ${membresiaEducativa.modalidad}` : ""} y demás servicios educativos para el período académico {getPeriodoEducativo(membresiaEducativa.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+              </p>
+            </div>
+
+            <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
+                <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+              </div>
+            </div>
+            {qrDataUrl && (
+              <div style={{ position: "absolute", top: "75px", left: "350px", opacity: 0.8 }}>
+                <img src={qrDataUrl} alt="QR Validación" crossOrigin="anonymous" style={{ width: "90px", height: "90px", border: `2px solid ${COLORS.amarillo}`, padding: "4px", borderRadius: "8px" }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Template Aval Educativo Internacional */}
+        {membresiaEducativaInt && (
+          <div
+            ref={certEduIntRef}
+            style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
+              <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
+              <div style={{ textAlign: "right" }}>
+                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO INTERNACIONAL</h2>
+            </div>
+
+            <div style={{ fontSize: "14px", textAlign: "justify" }}>
+              <p>
+                La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{afiliado.nombre}</strong> con NUIP. <strong>{afiliado.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos de carácter internacional.
+              </p>
+
+              <p>
+                Esta membresía fue realizada el día {formatearFecha(afiliado.fechaActivacion || afiliado.fechaIngreso)}, bajo el código institucional <strong>{afiliado.codigoInstitucional}</strong> y tiene validez y cobertura exclusiva para programas internacionales 100% virtuales y le permite acceder a los beneficios y descuentos ofertados por la red de universidades y aliados estratégicos en el exterior.
+              </p>
+
+              <p>
+                Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento <strong>{membresiaEducativaInt.institucion ? `(${membresiaEducativaInt.institucion})` : ""}</strong>, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para el programa académico de <strong>{membresiaEducativaInt.programa || "elección del afiliado"}</strong> en la modalidad de estudio <strong>{membresiaEducativaInt.modalidad || "Virtual"}</strong> para el período académico {getPeriodoEducativo(membresiaEducativaInt.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
               </p>
             </div>
 
@@ -941,6 +1068,53 @@ export default function AfiliadoDashboard() {
                 <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
                 <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
                 <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+              </div>
+            </div>
+            {qrDataUrl && (
+              <div style={{ position: "absolute", top: "75px", left: "350px", opacity: 0.8 }}>
+                <img src={qrDataUrl} alt="QR Validación" crossOrigin="anonymous" style={{ width: "90px", height: "90px", border: `2px solid ${COLORS.amarillo}`, padding: "4px", borderRadius: "8px" }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CERTIFICADO CASINO (Oculto) */}
+        {membresiaCasino && (
+          <div id="certificado-casino" ref={certCasRef} style={{ display: "none", width: "210mm", minHeight: "297mm", padding: "40px", backgroundColor: "white", position: "relative", fontFamily: "'Arial', sans-serif", color: "#333" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", borderBottom: "2px solid #ea580c", paddingBottom: "15px" }}>
+              <img src="/logo.png" alt="Logo FICong" crossOrigin="anonymous" style={{ width: "80px", height: "80px", objectFit: "contain" }} onError={(e) => e.target.style.display = 'none'} />
+              <div style={{ textAlign: "right" }}>
+                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0, color: "#b45309" }}>CERTIFICADO DE MEMBRESÍA CASINO</h2>
+            </div>
+
+            <div style={{ fontSize: "14px", textAlign: "justify", lineHeight: "1.6" }}>
+              <p>
+                La FUNDACIÓN ISLA CASCAJAL “FICong”, certifica que <strong>{afiliado.nombre}</strong> identificado(a) con NUIP. <strong>{afiliado.cedula}</strong> y código institucional <strong>{afiliado.codigoInstitucional}</strong>, se encuentra afiliado(a) bajo la <strong>Membresía Casino</strong>.
+              </p>
+
+              <p>
+                Esta membresía de carácter especial y de acceso restringido le permite al titular disfrutar de los beneficios institucionales, descuentos y acceso exclusivo a las instalaciones y eventos de Casino organizados y avalados por la Fundación Isla Cascajal, de acuerdo a los términos y condiciones del programa.
+              </p>
+              
+              <p>
+                El estado de esta membresía se encuentra <strong>ACTIVO</strong> y tiene validez hasta las 11:59 p.m. del día {formatearFecha(membresiaCasino.fechaExpiracion)}.
+              </p>
+            </div>
+
+            <div style={{ marginTop: "40px", paddingBottom: "10px" }}>
+              <p style={{ margin: 0, fontSize: "12px", marginBottom: "30px" }}>El presente certificado se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
+                <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable.</p>
               </div>
             </div>
             {qrDataUrl && (

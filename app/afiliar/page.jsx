@@ -69,6 +69,292 @@ const NIVELES_EDUCATIVOS = ["Ninguno", "Primaria", "Bachiller", "Técnico", "Tec
 const TIPOS_DISCAPACIDAD = ["Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Otro"];
 const TIPOS_TRASTORNO = ["Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Otro"];
 const ENTERADO_MEDIOS = ["Voz a voz", "WhatsApp", "Telegram", "Instagram", "Facebook", "TikTok", "YouTube", "Radio", "TV", "Volantes", "Referido"];
+
+const INSTITUCIONES_VIRTUALES = {
+  "FICong": [
+    "Bachillerato para Adultos",
+    "Pruebas Saber Pro"
+  ],
+  "Instituto Técnico AVANZU": [
+    "Técnico Laboral en Atención Integral a la Primera Infancia",
+    "Técnico Laboral en Atención Integral al Adulto Mayor",
+    "Técnico Laboral en Atención Integral en Seguridad y Salud en el Trabajo",
+    "Técnico Laboral en Joyería",
+    "Técnico Laboral en Transporte y Logística",
+    "Técnico Laboral en Alta Cocina e Industria Alimenticia",
+    "Técnico Laboral en Auxiliar Veterinaria",
+    "Técnico Laboral en Peluquería, Barbería y Estética",
+    "Técnico Laboral en Operación en Maquinaria Pesada y Amarilla",
+    "Técnico Laboral en Transporte y Logística Empresarial",
+    "Técnico Laboral en Producción y Asistencia Agropecuaria"
+  ],
+  "U de Colombia": [
+    "Pregrado en Contaduría Pública",
+    "Pregrado en Administración Financiera",
+    "Pregrado en Comunicación y Diseño en Ambientes Digitales",
+    "Pregrado en Mercadeo e Innovación Comercial",
+    "Pregrado en Seguridad y Salud en el Trabajo",
+    "Pregrado en Licenciatura en Educación Física",
+    "Pregrado en Sistemas de Información",
+    "Pregrado en Psicología",
+    "Pregrado en Derecho",
+    "Pregrado en Licenciatura en Educación Básica",
+    "Pregrado en Negocios Internacionales",
+    "Especialización en Análisis de Datos",
+    "Especialización en Derecho Informático",
+    "Especialización en Derecho de Daños",
+    "Especialización en Estándares Internacionales NIIF-NIC",
+    "Especialización en Legislación y Gestión Tributaria",
+    "Especialización en Finanzas y Banca",
+    "Especialización en Contratación Estatal",
+    "Especialización en Psicopedagogía y Docencia",
+    "Especialización en Relaciones Laborales y Seguridad Social"
+  ],
+  "Universidad Santiago de Cali": [
+    "Pregrado en Administración de Empresas",
+    "Pregrado en Contaduría Pública",
+    "Pregrado en Ingeniería en Sistemas",
+    "Pregrado en Derecho",
+    "Especialización en Marketing Digital",
+    "Especialización en Derecho Penal",
+    "Especialización en Contratación Estatal",
+    "Especialización en Derecho de Familia",
+    "Especialización en Gerencia de Logística Integral",
+    "Especialización en Gestión Ambiental Empresarial",
+    "Maestría en Educación Ambiental y Desarrollo Sostenible",
+    "Maestría en Educación"
+  ]
+};
+
+const INSTITUCIONES_PRESENCIALES = {
+  "INTENALCO - Matrícula cero": [
+    "Técnico Laboral por Competencias en Auxiliar en Educación para la Primera Infancia",
+    "Técnico Laboral por Competencias en Tránsito y Transporte",
+    "Técnico Laboral por Competencias en Auxiliar Administrativo en Salud",
+    "Técnico Laboral por Competencias en Auxiliar de Enfermería",
+    "Técnico Laboral por Competencias en Auxiliar en Salud Pública",
+    "Técnico Laboral por Competencias en Auxiliar en Salud Oral",
+    "Técnico Laboral por Competencias en Servicios Farmacéuticos",
+    "Técnico Profesional en Procesos de Mercadeo",
+    "Técnico Profesional en Operaciones de Comercio Exterior",
+    "Técnico Profesional en Costos y Contabilidad",
+    "Técnico Profesional en Procesos Administrativos",
+    "Técnico Profesional en Procesos Administrativos de Seguridad y Salud en el Trabajo",
+    "Tecnólogo en Gestión de Mercadeo",
+    "Tecnólogo en Gestión de Comercio Exterior",
+    "Tecnólogo en Gestión Contable y Tributaria",
+    "Tecnólogo en Gestión Empresarial"
+  ],
+  "UNIVERSIDAD SANTIAGO DE CALI": [
+    "Diplomados",
+    "Técnico Laboral - Peluquero Estilista",
+    "Técnico Laboral - Maquillaje Artístico",
+    "Técnico Laboral - Asistente Veterinaria",
+    "Técnico Laboral - Auxiliar de Mercadeo",
+    "Técnico Laboral - Auxiliar en Salud Oral",
+    "Técnico Laboral - Auxiliar Administrativo",
+    "Técnico Laboral - Agente de Viajes y Turismo",
+    "Técnico Laboral - Auxiliar Contable y Financiero",
+    "Técnico Laboral - Auxiliar de Moda y Confección",
+    "Técnico Laboral - Auxiliar de Sistemas Informáticos",
+    "Técnico Laboral - Cocinero de Cocina Internacional",
+    "Técnico Laboral - Auxiliar en Saneamiento Ambiental",
+    "Técnico Laboral - Cuidado Estético de Manos y Pies",
+    "Técnico Laboral - Asistente en Atención a la Primera Infancia",
+    "Técnico Laboral - Operario de Corte y Preparación Industrial de Carnes y Aves",
+    "Pregrado en Administración de Empresas",
+    "Pregrado en Mercadeo",
+    "Pregrado en Economía",
+    "Pregrado en Contaduría Pública",
+    "Pregrado en Mercadeo y Publicidad",
+    "Pregrado en Finanzas y Negocios Internacionales",
+    "Pregrado en Ingeniería Industrial",
+    "Pregrado en Bioingeniería",
+    "Pregrado en Ingeniería Civil",
+    "Pregrado en Ingeniería Electrónica",
+    "Pregrado en Ingeniería en Energías",
+    "Pregrado en Ingeniería Química",
+    "Pregrado en Ingeniería en Sistemas",
+    "Pregrado en Tecnología en Desarrollo de Sistemas de Información y Software",
+    "Pregrado en Tecnología en Gestión de Procesos Industriales",
+    "Pregrado en Ingeniería en Desarrollo de Videojuegos",
+    "Pregrado en Microbiología",
+    "Pregrado en Química Farmacéutica",
+    "Pregrado en Química",
+    "Pregrado en Comunicación Social",
+    "Pregrado en Publicidad",
+    "Pregrado en Trabajo Social",
+    "Pregrado en Tecnología en Producción Transmedia",
+    "Pregrado en Derecho",
+    "Pregrado en Ciencia Política",
+    "Pregrado en Licenciatura en Educación Infantil",
+    "Pregrado en Licenciatura en Educación Física y Deportes",
+    "Pregrado en Licenciatura en Lenguas Extranjeras con Énfasis en Ingles-Frances",
+    "Especialización en Pedagogía Infantil",
+    "Especialización en Gestión Tributaria",
+    "Especialización en Gerencia Financiera",
+    "Especialización en Revisoría Fiscal y Auditoría",
+    "Especialización en Desarrollo Humano y Organizacional",
+    "Especialización en Derecho Disciplinario",
+    "Especialización en Derecho Laboral y Seguridad Social",
+    "Especialización en Derecho Constitucional",
+    "Especialización en Derecho Constitucional - Palmira",
+    "Especialización en Derecho Administrativo",
+    "Especialización en Derecho Administrativo - Palmira",
+    "Especialización en Derecho Penal",
+    "Especialización en Derechos Humanos y DIH",
+    "Especialización en Derecho de Familia",
+    "Especialización en Control de la Contaminación Ambiental",
+    "Especialización en Aplicación y Tecnología de Drones",
+    "Especialización en Gerencia de Operaciones",
+    "Especialización en Sistemas de Información Geográfica",
+    "Especialización en Gerencia de Logística Integral",
+    "Especialización en Gerencia Estratégica de Tecnología en Informática",
+    "Especialización en Gerencia Ambiental y Desarrollo Sostenible Empresarial",
+    "Maestría en Educación Ambiental y Desarrollo Sostenible",
+    "Maestría en Química Industrial",
+    "Maestría en Gestión Pública",
+    "Maestría en Dirección Empresarial",
+    "Maestría en Derecho Médico",
+    "Maestría en Derecho",
+    "Maestría en Comunicación Estratégica"
+  ]
+};
+
+const INSTITUCIONES_INTERNACIONALES = {
+  "CESUMA": [
+    "Diplomado en Proyecto de Vida y Gestión del Talento",
+    "Diplomado en Creatividad y Educación",
+    "Diplomado en Introducción a la Teología",
+    "Diplomado en Teología y Evangelización",
+    "Pregrado en Educación",
+    "Pregrado en Pedagogía",
+    "Pregrado en Psicopedagogía",
+    "Pregrado en Ciencias Políticas y Administración Pública",
+    "Pregrado en Criminología y Criminalística",
+    "Pregrado en Derecho",
+    "Pregrado en Administración de Recursos Humanos",
+    "Pregrado en Desarrollo Organizacional y Gestión del Talento",
+    "Pregrado en Administración y Dirección de Empresas",
+    "Pregrado en Contaduría Pública",
+    "Pregrado en Economía y Finanzas",
+    "Pregrado en Finanzas",
+    "Pregrado en Desarrollo Sustentable y Ecoturismo",
+    "Pregrado en Turismo",
+    "Pregrado en Ingeniería Industrial y Administración",
+    "Pregrado en Ingeniería Industrial",
+    "Pregrado en Ingeniería Electrónica",
+    "Pregrado en Ingeniería en Energías Renovables",
+    "Pregrado en Negocios Internacionales",
+    "Pregrado en Relaciones Internacionales",
+    "Pregrado en Comunicación",
+    "Pregrado en Diseño Gráfico"
+  ],
+  "CEUPE": [
+    "Maestría en Ciberseguridad",
+    "Maestría en Sistemas Integrados de Gestión",
+    "Maestría en Administración y Dirección de Empresas - MBA",
+    "Maestría en Neuropedagogía en el Ámbito Educativo",
+    "Maestría en Gestión Medioambiental",
+    "Maestría en Dirección y Gestión de Proyectos (PROJECT MANAGEMENT)",
+    "Maestría en Dirección y Gestión de Tecnologías de la Información (TI)",
+    "Maestría en Logística, Transporte y Distribución Internacional",
+    "Maestría en Turismo y Hotelería",
+    "Maestría en Inteligencia Artificial",
+    "Maestría en Marketing y Comunicación Digital",
+    "Maestría en Logopedia en el Ámbito Educativo (FONOAUDIOLOGÍA)",
+    "Maestría en Relaciones Públicas y Gestión de Eventos",
+    "Maestría en Programación Neurolingüística e Inteligencia Emocional",
+    "Maestría en Negocios Internacionales y Comercio Exterior",
+    "Maestría en Dirección y Gestión Financiera",
+    "Maestría en Comunicación Política y Marketing",
+    "Maestría en Energías Renovables y Proyectos Energéticos",
+    "Maestría en Dirección y Gestión de Recursos Humanos",
+    "Maestría en Cumplimiento Normativo y Protección de Datos (CORPORATE COMPLIANCE)",
+    "Maestría en Calidad y Seguridad Alimentaria",
+    "Maestría en Arquitectura Sostenible",
+    "Maestría en Ingeniería y Diseño Industrial",
+    "Maestría en Revenue Management y Marketing Turístico",
+    "Maestría en Administración y Políticas Públicas",
+    "Maestría en Coordinación de ONGs para el Desarrollo",
+    "Maestría en Gestión Pública y Políticas Gubernamentales",
+    "Maestría en Diseño y Comunicación Visual",
+    "Maestría en Videojuegos para e-Sports",
+    "Maestría en Dirección y Gestión de Instituciones Sanitarias",
+    "Maestría en Ciencia de Datos para Negocios (BIG DATA & BUSINESS ANALYTICS)",
+    "Maestría en Prevención de Riesgos Laborales",
+    "Maestría en Energías Renovables y Sostenibilidad Energética",
+    "Maestría en Criminología y Criminalística",
+    "Maestría en Derechos Humanos y Derecho Internacional Humanitario",
+    "Maestría en Derecho Corporativo",
+    "Maestría en Derecho Fiscal",
+    "Maestría en Ingeniería Civil",
+    "Maestría en Ingeniería de Software",
+    "Maestría en Emprendimiento e Innovación Empresarial",
+    "Maestría en Derecho Laboral y Seguridad Social",
+    "Maestría en Intervención y Trabajo Social",
+    "Maestría en Neurociencia y Educación",
+    "Maestría en Inteligencia Artificial y Educación",
+    "Maestría en Desarrollo Humano y Gestión del Talento",
+    "Maestría en Tecnología y Creatividad Educativa",
+    "Maestría en Dirección y Gestión Educativa",
+    "Maestría en Educación",
+    "Maestría en Teología para la Nueva Evangelización",
+    "Maestría en Educación Inclusiva e Intercultural",
+    "MBA - Maestría en Administración y Dirección de Empresas",
+    "MBA - Especialidad en Logística",
+    "MBA - Especialidad en Project Management",
+    "MBA - Especialidad en Turismo",
+    "MBA - Especialidad en Recursos Humanos",
+    "MBA - Especialidad Marketing Digital & Comunicación",
+    "MBA - Especialidad en Marketing & Gestión Comercial",
+    "MBA - Especialidad en Finanzas",
+    "MBA - Especialidad en Comercio Internacional",
+    "MBA - Especialidad en Marketing Político",
+    "Doctorado en Neuropedagogía",
+    "Doctorado en Educación",
+    "Doctorado en Dirección y Administración de Empresas",
+    "Doctorado en Derecho"
+  ],
+  "Northern International University": [
+    "Pregrado en Derecho (Titulación colombiana)",
+    "Pregrado en Contaduría pública (Titulación colombiana)",
+    "Pregrado en Ingeniería de Software (Titulación colombiana)",
+    "Pregrado en Administración en S.S.T. (Titulación colombiana)",
+    "Pregrado en Administración de Empresas (Titulación colombiana)",
+    "Pregrado en Derecho Internacional",
+    "Pregrado en Criminología",
+    "Pregrado en Administración de Empresas",
+    "Pregrado en Administración Financiera",
+    "Pregrado en Administración del Factor Humano",
+    "Pregrado en Dirección y Administración Educativa",
+    "Pregrado en Emprendimiento e Innovación",
+    "Pregrado en Mercadotecnia",
+    "Pregrado en Ciencias de la Comunicación",
+    "Pregrado en Teología",
+    "Pregrado en Licenciatura en Artes",
+    "Pregrado en Psicología Educativa",
+    "Pregrado en Ingeniería Logística",
+    "Pregrado en Ingeniería de Calidad",
+    "Pregrado en Ingeniería de Proyectos",
+    "Especialización en Gerencia de S.S.T. (Titulación colombiana)",
+    "Especialización en Gerencia de la Calidad (Titulación colombiana)",
+    "Especialización en Gerencia de Proyectos (Titulación colombiana)",
+    "Especialización en Ambientes Virtuales de Aprendizaje (Titulación colombiana)",
+    "Maestría en Administración de Empresas",
+    "Maestría en Administración del Factor Humano",
+    "Maestría en Dirección y Administración Educativa",
+    "Maestría en Mercadotecnia",
+    "Maestría en Derecho Internacional",
+    "Maestría en Teología",
+    "Maestría en Medición y Gestión del Conflicto",
+    "Doctorado en Administración Educativa",
+    "Doctorado en Ciencias Administrativas",
+    "Doctorado en Administración Pública y Dirección Estratégica",
+    "Doctorado en Administración Bancaria"
+  ]
+};
+
 // Colores Institucionales
 const COLORS = {
   azul: "#3f7384",
@@ -128,7 +414,9 @@ export default function AfiliarPage() {
     mascotas: [],
     seleccionMembresias: {
       educativa: true,
+      educativaInternacional: false,
       integral: false,
+      casino: false,
     },
     // Nuevos Campos Perfil (Igual a /registro)
     sexo: "", orientacionSexual: "", orientacionOtro: "", estrato: "", etnia: "",
@@ -140,6 +428,8 @@ export default function AfiliarPage() {
     comoEntero: "", referido: "", codigoReferidor: "",
     deseaSerVoluntario: "",
     emergenciaNombre: "", emergenciaNumero: "", emergenciaWhatsapp: "", emergenciaDireccion: "",
+    modalidadEdu: "", institucionEdu: "", programaEdu: "", semestreEdu: "",
+    institucionEduInt: "", programaEduInt: "", semestreEduInt: "",
   });
 
   const llenarDatosDePrueba = () => {
@@ -430,17 +720,27 @@ export default function AfiliarPage() {
     if (formData.trastornoTipo === "Otro" && !formData.trastornoOtro) return toast.error("Especifique el otro trastorno");
     if (formData.condicionEspecial === "Sí" && !formData.condicionEspecialCual) return toast.error("Especifique la condición especial");
 
-    if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral) {
+    if (!formData.seleccionMembresias.educativa && !formData.seleccionMembresias.integral && !formData.seleccionMembresias.educativaInternacional && !formData.seleccionMembresias.casino) {
       toast.error("Seleccione al menos un tipo de membresía");
       return;
+    }
+    if (formData.seleccionMembresias.educativa && (!formData.modalidadEdu || !formData.institucionEdu || !formData.programaEdu || !formData.semestreEdu)) {
+      return toast.error("Seleccione la Modalidad, Institución, Programa y Semestre para la Membresía Educativa.");
+    }
+    if (formData.seleccionMembresias.educativaInternacional && (!formData.institucionEduInt || !formData.programaEduInt || !formData.semestreEduInt)) {
+      return toast.error("Seleccione la Institución, Programa y Semestre para la Membresía Educativa Internacional.");
     }
 
     if (!soportes.cedula) {
       toast.error("Debe subir el documento de identidad.");
       return;
     }
-    if (formData.seleccionMembresias.educativa && !soportes.notas) {
+    if (formData.seleccionMembresias.educativa && parseInt(formData.semestreEdu) >= 2 && !soportes.notas) {
       toast.error("Debe subir el certificado de notas para la membresía educativa.");
+      return;
+    }
+    if (formData.seleccionMembresias.educativaInternacional && parseInt(formData.semestreEduInt) >= 2 && !soportes.notas) {
+      toast.error("Debe subir el certificado de notas para la membresía educativa internacional.");
       return;
     }
     if (formData.seleccionMembresias.integral && formData.mascotas?.length > 0) {
@@ -470,9 +770,45 @@ export default function AfiliarPage() {
         nuevasMembresias.push({
           tipo: "educativa",
           estado: "activo",
+          modalidad: formData.modalidadEdu,
+          institucion: formData.institucionEdu,
+          programa: formData.programaEdu,
+          semestre: formData.semestreEdu,
           fechaInicio: fIngreso.toISOString(),
           fechaExpiracion: fExpEdu.toISOString(),
           codigo: `EDU-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+        });
+      }
+
+      if (formData.seleccionMembresias.educativaInternacional) {
+        let fExpEduInt;
+        if (month <= 4) fExpEduInt = new Date(year, 4, 30, 23, 59, 59);
+        else if (month <= 10) fExpEduInt = new Date(year, 10, 30, 23, 59, 59);
+        else fExpEduInt = new Date(year + 1, 4, 30, 23, 59, 59);
+
+        nuevasMembresias.push({
+          tipo: "educativaInternacional",
+          estado: "activo",
+          modalidad: "Virtual",
+          institucion: formData.institucionEduInt,
+          programa: formData.programaEduInt,
+          semestre: formData.semestreEduInt,
+          fechaInicio: fIngreso.toISOString(),
+          fechaExpiracion: fExpEduInt.toISOString(),
+          codigo: `EDUI-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+        });
+      }
+
+      if (formData.seleccionMembresias.casino) {
+        const fExpCas = new Date(fIngreso);
+        fExpCas.setFullYear(fExpCas.getFullYear() + 1);
+
+        nuevasMembresias.push({
+          tipo: "casino",
+          estado: "activo",
+          fechaInicio: fIngreso.toISOString(),
+          fechaExpiracion: fExpCas.toISOString(),
+          codigo: `CAS-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
         });
       }
 
@@ -1071,12 +1407,37 @@ export default function AfiliarPage() {
                       <Checkbox
                         id="edu"
                         checked={formData.seleccionMembresias.educativa}
-                        onCheckedChange={(v) => setFormData(p => ({
-                          ...p,
-                          seleccionMembresias: { ...p.seleccionMembresias, educativa: !!v }
-                        }))}
+                        onCheckedChange={(v) => setFormData(p => {
+                          const nextEdu = !!v;
+                          return {
+                            ...p,
+                            seleccionMembresias: { 
+                              ...p.seleccionMembresias, 
+                              educativa: nextEdu,
+                              ...(nextEdu ? { educativaInternacional: false, casino: false } : {})
+                            }
+                          };
+                        })}
                       />
                       <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educativa</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edu-int"
+                        checked={formData.seleccionMembresias.educativaInternacional}
+                        onCheckedChange={(v) => setFormData(p => {
+                          const nextEduInt = !!v;
+                          return {
+                            ...p,
+                            seleccionMembresias: { 
+                              ...p.seleccionMembresias, 
+                              educativaInternacional: nextEduInt,
+                              ...(nextEduInt ? { educativa: false, casino: false } : {})
+                            }
+                          };
+                        })}
+                      />
+                      <label htmlFor="edu-int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educ. Internacional</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1086,7 +1447,11 @@ export default function AfiliarPage() {
                           const isIntegral = !!v;
                           setFormData(p => ({
                             ...p,
-                            seleccionMembresias: { ...p.seleccionMembresias, integral: isIntegral },
+                            seleccionMembresias: { 
+                              ...p.seleccionMembresias, 
+                              integral: isIntegral,
+                              ...(isIntegral ? { casino: false } : {})
+                            },
                             beneficiarios: isIntegral && p.beneficiarios.length === 0
                               ? Array.from({ length: 5 }, () => ({ nombre: "", nuip: "" }))
                               : p.beneficiarios,
@@ -1097,6 +1462,24 @@ export default function AfiliarPage() {
                         }}
                       />
                       <label htmlFor="int" className="text-sm font-medium leading-none cursor-pointer">Afiliación Integral</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="cas"
+                        checked={formData.seleccionMembresias.casino}
+                        onCheckedChange={(v) => setFormData(p => {
+                          const nextCas = !!v;
+                          return {
+                            ...p,
+                            seleccionMembresias: { 
+                              ...p.seleccionMembresias, 
+                              casino: nextCas,
+                              ...(nextCas ? { educativa: false, educativaInternacional: false, integral: false } : {})
+                            }
+                          };
+                        })}
+                      />
+                      <label htmlFor="cas" className="text-sm font-medium leading-none cursor-pointer">Membresía Casino</label>
                     </div>
                   </div>
                 </div>
@@ -1142,6 +1525,175 @@ export default function AfiliarPage() {
                     </SelectContent>
                   </Select>
                 </Field>
+
+              {formData.seleccionMembresias.educativa && (
+                <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-200 mb-6 mt-6 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <GraduationCap className="h-5 w-5 text-blue-700" />
+                    <h3 className="font-bold text-blue-900">Selecciona tu Ruta Educativa</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                      <label className="text-xs font-bold text-blue-900 mb-2 block">¿Qué modalidad prefieres?</label>
+                      <Select 
+                        value={formData.modalidadEdu} 
+                        onValueChange={(val) => {
+                          setFormData(prev => ({ ...prev, modalidadEdu: val, institucionEdu: "", programaEdu: "" }));
+                        }}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder="Selecciona la modalidad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Virtual">Virtual</SelectItem>
+                          <SelectItem value="Presencial">Presencial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className={`bg-white p-3 rounded-lg border transition-all ${formData.modalidadEdu ? 'border-blue-200' : 'border-slate-200 opacity-50'}`}>
+                      <label className={`text-xs font-bold mb-2 block ${formData.modalidadEdu ? 'text-blue-900' : 'text-slate-400'}`}>¿Qué Institución deseas?</label>
+                      <Select 
+                        value={formData.institucionEdu} 
+                        onValueChange={(val) => {
+                          setFormData(prev => ({ ...prev, institucionEdu: val, programaEdu: "" }));
+                        }}
+                        disabled={!formData.modalidadEdu}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm whitespace-normal text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder={formData.modalidadEdu ? "Selecciona la institución aliada" : "Primero elige modalidad"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.modalidadEdu === "Virtual" && Object.keys(INSTITUCIONES_VIRTUALES).map(inst => (
+                            <SelectItem key={inst} value={inst} className="whitespace-normal">{inst}</SelectItem>
+                          ))}
+                          {formData.modalidadEdu === "Presencial" && Object.keys(INSTITUCIONES_PRESENCIALES).map(inst => (
+                            <SelectItem key={inst} value={inst} className="whitespace-normal">{inst}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className={`bg-white p-3 rounded-lg border transition-all ${formData.institucionEdu ? 'border-blue-200' : 'border-slate-200 opacity-50'}`}>
+                      <label className={`text-xs font-bold mb-2 block ${formData.institucionEdu ? 'text-blue-900' : 'text-slate-400'}`}>¿Qué Programa académico?</label>
+                      <Select 
+                        value={formData.programaEdu} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, programaEdu: val }))}
+                        disabled={!formData.institucionEdu}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm whitespace-normal text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder={formData.institucionEdu ? "Selecciona el programa" : "Primero elige una institución"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.modalidadEdu === "Virtual" && formData.institucionEdu && INSTITUCIONES_VIRTUALES[formData.institucionEdu] && INSTITUCIONES_VIRTUALES[formData.institucionEdu].map(prog => (
+                            <SelectItem key={prog} value={prog} className="whitespace-normal py-2">
+                              {prog}
+                            </SelectItem>
+                          ))}
+                          {formData.modalidadEdu === "Presencial" && formData.institucionEdu && INSTITUCIONES_PRESENCIALES[formData.institucionEdu] && INSTITUCIONES_PRESENCIALES[formData.institucionEdu].map(prog => (
+                            <SelectItem key={prog} value={prog} className="whitespace-normal py-2">
+                              {prog}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className={`bg-white p-3 rounded-lg border transition-all ${formData.programaEdu ? 'border-blue-200' : 'border-slate-200 opacity-50'}`}>
+                      <label className={`text-xs font-bold mb-2 block ${formData.programaEdu ? 'text-blue-900' : 'text-slate-400'}`}>¿Semestre a cursar?</label>
+                      <Select 
+                        value={formData.semestreEdu} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, semestreEdu: val }))}
+                        disabled={!formData.programaEdu}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder={formData.programaEdu ? "Seleccione" : "Falta programa"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"].map(s => (
+                            <SelectItem key={s} value={s}>Semestre {s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formData.seleccionMembresias.educativaInternacional && (
+                <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-200 mb-6 mt-6 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Globe className="h-5 w-5 text-purple-700" />
+                    <h3 className="font-bold text-purple-900">Selecciona tu Ruta Educativa Internacional</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white p-3 rounded-lg border border-purple-200">
+                      <label className="text-xs font-bold text-purple-900 mb-2 block">
+                        ¿Qué Institución deseas?
+                      </label>
+                      <Select 
+                        value={formData.institucionEduInt} 
+                        onValueChange={(val) => {
+                          setFormData(prev => ({ ...prev, institucionEduInt: val, programaEduInt: "" }));
+                        }}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm whitespace-normal text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder="Selecciona la institución aliada" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(INSTITUCIONES_INTERNACIONALES).map(inst => (
+                            <SelectItem key={inst} value={inst} className="whitespace-normal">
+                              {inst === "CEUPE" ? (
+                                <div className="flex items-center gap-2" title="Universidad Católica de Murcia, Universidad de Alcalá de Henares, Universidad Complutense de Madrid, Universidad de Nebrija, Universidad de Miami">
+                                  {inst} <Info className="h-4 w-4 text-slate-400" />
+                                </div>
+                              ) : inst}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className={`bg-white p-3 rounded-lg border transition-all ${formData.institucionEduInt ? 'border-purple-200' : 'border-slate-200 opacity-50'}`}>
+                      <label className={`text-xs font-bold mb-2 block ${formData.institucionEduInt ? 'text-purple-900' : 'text-slate-400'}`}>¿Qué Programa académico? (100% Virtual)</label>
+                      <Select 
+                        value={formData.programaEduInt} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, programaEduInt: val }))}
+                        disabled={!formData.institucionEduInt}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm whitespace-normal text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder={formData.institucionEduInt ? "Selecciona el programa" : "Primero elige una institución"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.institucionEduInt && INSTITUCIONES_INTERNACIONALES[formData.institucionEduInt] && INSTITUCIONES_INTERNACIONALES[formData.institucionEduInt].map(prog => (
+                            <SelectItem key={prog} value={prog} className="whitespace-normal py-2">
+                              {prog}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className={`bg-white p-3 rounded-lg border transition-all ${formData.programaEduInt ? 'border-purple-200' : 'border-slate-200 opacity-50'}`}>
+                      <label className={`text-xs font-bold mb-2 block ${formData.programaEduInt ? 'text-purple-900' : 'text-slate-400'}`}>¿Semestre a cursar?</label>
+                      <Select 
+                        value={formData.semestreEduInt} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, semestreEduInt: val }))}
+                        disabled={!formData.programaEduInt}
+                      >
+                        <SelectTrigger className="w-full bg-white text-sm text-left h-auto min-h-[40px]">
+                          <SelectValue placeholder={formData.programaEduInt ? "Seleccione" : "Falta programa"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"].map(s => (
+                            <SelectItem key={s} value={s}>Semestre {s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
                 {formData.seleccionMembresias.integral && (
                   <Field>
@@ -1698,9 +2250,9 @@ export default function AfiliarPage() {
                       <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><IdCard className="h-4 w-4 text-slate-400"/> Documento de Identidad (Obligatorio)</label>
                       <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('cedula', e)} className="bg-white cursor-pointer" disabled={isSaving} />
                     </div>
-                    {formData.seleccionMembresias.educativa && (
+                    {((formData.seleccionMembresias.educativa && parseInt(formData.semestreEdu) >= 2) || (formData.seleccionMembresias.educativaInternacional && parseInt(formData.semestreEduInt) >= 2)) && (
                       <div>
-                        <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><FileTextIcon className="h-4 w-4 text-slate-400"/> Certificado de Notas (Estudiantes)</label>
+                        <label className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-2"><FileTextIcon className="h-4 w-4 text-slate-400"/> Certificado de Notas (Semestre 2 en adelante)</label>
                         <Input type="file" accept=".pdf,image/*" onChange={(e) => handleSoporteChange('notas', e)} className="bg-white cursor-pointer" disabled={isSaving} />
                       </div>
                     )}
@@ -1823,12 +2375,18 @@ export default function AfiliarPage() {
 
                       <div className="mt-1">
                         <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Membresías Activas</p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {formData.seleccionMembresias?.educativa && (
                             <span className="px-2 py-1 border border-blue-300 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md">EDUCATIVA</span>
                           )}
+                          {formData.seleccionMembresias?.educativaInternacional && (
+                            <span className="px-2 py-1 border border-purple-300 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md">EDU. INTERNACIONAL</span>
+                          )}
                           {formData.seleccionMembresias?.integral && (
                             <span className="px-2 py-1 border border-green-300 bg-green-100 text-green-700 text-[10px] font-bold rounded-md">INTEGRAL</span>
+                          )}
+                          {formData.seleccionMembresias?.casino && (
+                            <span className="px-2 py-1 border border-amber-300 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">CASINO</span>
                           )}
                         </div>
                       </div>
