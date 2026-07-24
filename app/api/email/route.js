@@ -120,7 +120,7 @@ export async function POST(req) {
                 </tr>
                 <tr>
                   <td style="padding:20px 24px; background:#ffffff;">
-                    <p style="margin:0; font-size:22px; font-weight:700; color:#2c5364; letter-spacing:3px; font-family: 'Courier New', monospace;">${formData.codigo}</p>
+                    <p style="margin:0; font-size:22px; font-weight:700; color:#2c5364; letter-spacing:3px; font-family: 'Courier New', monospace;">${formData.codigoInstitucional}</p>
                   </td>
                 </tr>
               </table>
@@ -284,43 +284,72 @@ export async function POST(req) {
     // 3. CORREO DE ALERTA PARA EL SISBÉN
     // ==========================================
     if (tipo === "sisben") {
-      const html = emailHeader("Nueva Solicitud de Asesoría Sisbén", "linear-gradient(90deg,#cd7243,#b85f2e)") + `
+      const html = emailHeader("Alerta Sisbén", "#cd7243") + `
 
-          <!-- CUERPO -->
+          <!-- SEPARADOR -->
+          <tr><td style="height:8px; background:#f8fafc;"></td></tr>
+
+          <!-- SALUDO Y MENSAJE PRINCIPAL -->
           <tr>
-            <td style="padding: 24px 40px 10px 40px;">
-              <h2 style="margin:0 0 14px 0; color:#2c5364; font-size:22px; font-weight:800;">Nueva solicitud de asesoría Sisbén 📋</h2>
-              <p style="margin:0 0 18px 0; font-size:15px; color:#4a5568; line-height:1.7;">
+            <td style="padding: 36px 48px 0 48px;">
+              <p style="margin:0 0 6px 0; font-size:12px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:600;">Notificación del Sistema</p>
+              <h2 style="margin:0 0 20px 0; color:#1e293b; font-size:26px; font-weight:300; line-height:1.3; letter-spacing:-0.5px;">Nueva Solicitud de Asesoría</h2>
+              <div style="width:40px; height:3px; background:#cd7243; margin-bottom:24px;"></div>
+              <p style="margin:0; font-size:15px; color:#475569; line-height:1.8;">
                 Se ha registrado un nuevo afiliado en la Fundación Isla Cascajal que reside en Cali,
-                <strong>no cuenta con Sisbén</strong> y ha solicitado expresamente recibir asesoría para su inscripción.
+                <strong style="color:#1e293b; font-weight:600;">no cuenta con Sisbén</strong> y ha solicitado expresamente recibir asesoría para su inscripción.
               </p>
             </td>
           </tr>
 
           <!-- DATOS DEL CIUDADANO -->
           <tr>
-            <td style="padding: 0 40px 24px 40px;">
-              <p style="margin:0 0 12px 0; font-size:13px; font-weight:700; color:#2c5364; text-transform:uppercase; letter-spacing:1px;">Datos de Contacto del Ciudadano:</p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:10px; overflow:hidden; border: 1px solid #e2e8f0;">
-                <tr style="background:#f8fafc;">
-                  <td style="padding:10px 14px; font-weight:700; font-size:13px; color:#2c5364; width:35%; border-bottom:1px solid #e2e8f0;">👤 Nombre Completo</td>
-                  <td style="padding:10px 14px; font-size:13px; color:#4a5568; border-bottom:1px solid #e2e8f0;">${formData.nombre}</td>
+            <td style="padding: 28px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                <tr>
+                  <td colspan="2" style="padding:16px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                    <p style="margin:0; font-size:10px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Datos de Contacto del Ciudadano</p>
+                  </td>
                 </tr>
                 <tr>
-                  <td style="padding:10px 14px; font-weight:700; font-size:13px; color:#2c5364; border-bottom:1px solid #e2e8f0;">🪪 Cédula (NUIP)</td>
-                  <td style="padding:10px 14px; font-size:13px; color:#4a5568; border-bottom:1px solid #e2e8f0;">${formData.cedula}</td>
-                </tr>
-                <tr style="background:#f8fafc;">
-                  <td style="padding:10px 14px; font-weight:700; font-size:13px; color:#2c5364; border-bottom:1px solid #e2e8f0;">📞 Teléfono</td>
-                  <td style="padding:10px 14px; font-size:13px; border-bottom:1px solid #e2e8f0;"><a href="tel:${formData.telefono}" style="color:#2563eb; text-decoration:none; font-weight:600;">${formData.telefono}</a></td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9; width:40%;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Nombre Completo</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;">${formData.nombre}</p>
+                  </td>
                 </tr>
                 <tr>
-                  <td style="padding:10px 14px; font-weight:700; font-size:13px; color:#2c5364; border-bottom:1px solid #e2e8f0;">✉️ Correo</td>
-                  <td style="padding:10px 14px; font-size:13px; border-bottom:1px solid #e2e8f0;"><a href="mailto:${formData.correo}" style="color:#2563eb; text-decoration:none;">${formData.correo || "No proporcionado"}</a></td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Cédula (NUIP)</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;">${formData.cedula}</p>
+                  </td>
                 </tr>
-                <tr style="background:#f8fafc;">
-                  <td style="padding:10px 14px; font-weight:700; font-size:13px; color:#2c5364;">📍 Dirección</td>
-                  <td style="padding:10px 14px; font-size:13px; color:#4a5568;">${formData.direccion}, ${formData.ciudad}</td>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Teléfono</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;"><a href="tel:${formData.telefono}" style="color:#2563eb; text-decoration:none;">${formData.telefono}</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Correo</p>
+                  </td>
+                  <td style="padding:16px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;"><a href="mailto:${formData.correo}" style="color:#2563eb; text-decoration:none;">${formData.correo || "No proporcionado"}</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Dirección</p>
+                  </td>
+                  <td style="padding:16px 24px;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:500;">${formData.direccion}, ${formData.ciudad}</p>
+                  </td>
                 </tr>
               </table>
             </td>
@@ -328,9 +357,11 @@ export async function POST(req) {
 
           <!-- NOTA INSTITUCIONAL -->
           <tr>
-            <td style="padding: 0 40px 24px 40px;">
-              <div style="background:#fff7ed; border-left:4px solid #cd7243; border-radius:6px; padding:14px 16px;">
-                <p style="margin:0; font-size:13px; color:#92400e;">Esta alerta es generada automáticamente por el sistema de vinculación institucional de la Fundación Isla Cascajal.</p>
+            <td style="padding: 0 48px 36px 48px;">
+              <div style="border-left: 2px solid #cd7243; padding-left: 16px;">
+                <p style="margin:0; font-size:12px; color:#64748b; line-height:1.6;">
+                  Esta alerta es generada automáticamente por el sistema de vinculación institucional de la Fundación Isla Cascajal.
+                </p>
               </div>
             </td>
           </tr>
