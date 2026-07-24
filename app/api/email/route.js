@@ -6,7 +6,7 @@ const CORREO_REMITENTE = "Fundación Isla Cascajal <info@islacascajal.org>";
 const CORREOS_SISBEN = ["sisbencali@cali.gov.co", "sisben-coordinacionpuntos@admon.uniajc.edu.co"];
 const PORTAL_URL = "https://fundacion.islacascajal.org/afiliado";
 const BANNER_URL = "https://islacascajal.org/banner.png";
-const LOGO_URL = "https://firebasestorage.googleapis.com/v0/b/fundacion-isla-cascajal-19ee7.appspot.com/o/soportes%2Flogo.png?alt=media";
+const LOGO_URL = "https://islacascajal.org/logo.png";
 
 // ─────────────────────────────────────────────────
 // PLANTILLA BASE: Header + Banner reutilizable
@@ -63,7 +63,7 @@ const emailFooter = () => `
           <tr>
             <td align="center" style="background:linear-gradient(135deg,#2c5364,#3f7384); padding: 18px 30px;">
               <p style="margin:0 0 4px 0; color:#b2d8e3; font-size:12px;">&copy; ${new Date().getFullYear()} Fundación Isla Cascajal. Todos los derechos reservados.</p>
-              <p style="margin:0; color:#7fb5c3; font-size:11px;">Este es un correo automático, por favor no respondas a esta dirección.</p>
+              <p style="margin:0; color:#7fb5c3; font-size:11px;">Este es un correo automático, por favor no responda a esta dirección.</p>
             </td>
           </tr>
 
@@ -76,7 +76,8 @@ const emailFooter = () => `
 
 export async function POST(req) {
   try {
-    const { tipo, formData } = await req.json();
+    const body = await req.json();
+    const { tipo, formData } = body;
 
     if (!formData || !formData.nombre) {
       return NextResponse.json({ error: "Datos del formulario incompletos" }, { status: 400 });
@@ -175,37 +176,48 @@ export async function POST(req) {
         return NextResponse.json({ error: "El afiliado no tiene correo" }, { status: 400 });
       }
 
-      const html = emailHeader("🎉 ¡Tu Afiliación está Activa!", "linear-gradient(90deg,#16a34a,#15803d)") + `
+      const html = emailHeader("Afiliación Activa", "#16a34a") + `
 
-          <!-- CUERPO -->
+          <!-- SEPARADOR -->
+          <tr><td style="height:8px; background:#f8fafc;"></td></tr>
+
+          <!-- SALUDO -->
           <tr>
-            <td style="padding: 24px 40px 10px 40px;">
-              <h2 style="margin:0 0 14px 0; color:#2c5364; font-size:26px; font-weight:800;">¡Felicidades, <span style="color:#16a34a;">${formData.nombre}</span>! 🎊</h2>
-              <p style="margin:0 0 18px 0; font-size:16px; color:#4a5568; line-height:1.7;">
-                Tu pago fue confirmado y tu afiliación a la Fundación Isla Cascajal está
-                <strong style="color:#16a34a;">completamente activa</strong>.
-                Ya puedes acceder a tu Portal Personal del Afiliado y disfrutar todos los beneficios.
+            <td style="padding: 36px 48px 0 48px;">
+              <p style="margin:0 0 6px 0; font-size:12px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:600;">Confirmación de Pago</p>
+              <h2 style="margin:0 0 20px 0; color:#1e293b; font-size:28px; font-weight:300; line-height:1.3; letter-spacing:-0.5px;">Felicidades, ${formData.nombre}</h2>
+              <div style="width:40px; height:3px; background:#16a34a; margin-bottom:24px;"></div>
+              <p style="margin:0; font-size:15px; color:#475569; line-height:1.8;">
+                Su pago ha sido confirmado con éxito. Su afiliación a la Fundación Isla Cascajal se encuentra
+                <strong style="color:#16a34a; font-weight:600;">completamente activa</strong>.
+                A partir de este momento tiene acceso total a su Portal Personal del Afiliado.
               </p>
             </td>
           </tr>
 
           <!-- CREDENCIALES DE ACCESO -->
           <tr>
-            <td style="padding: 0 40px 16px 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-radius:12px; border-left:5px solid #16a34a;">
+            <td style="padding: 28px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
                 <tr>
-                  <td style="padding:18px 20px;">
-                    <p style="margin:0 0 10px 0; font-size:13px; font-weight:700; color:#166534; text-transform:uppercase; letter-spacing:1px;">Tus datos de acceso al portal:</p>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding:5px 0; font-size:13px; color:#4a5568; font-weight:600; width:45%;">🪪 Número de Identificación:</td>
-                        <td style="padding:5px 0; font-size:13px; color:#166534; font-weight:700;">${formData.cedula}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:5px 0; font-size:13px; color:#4a5568; font-weight:600;">🔑 Código Institucional:</td>
-                        <td style="padding:5px 0; font-size:18px; color:#166534; font-weight:900; letter-spacing:2px;">${formData.codigoInstitucional || formData.codigo}</td>
-                      </tr>
-                    </table>
+                  <td colspan="2" style="padding:16px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                    <p style="margin:0; font-size:10px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Datos de Acceso al Portal</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 24px; border-bottom:1px solid #f1f5f9; width:45%;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Número de Identificación</p>
+                  </td>
+                  <td style="padding:20px 24px; border-bottom:1px solid #f1f5f9;">
+                    <p style="margin:0; font-size:14px; color:#1e293b; font-weight:600;">${formData.cedula}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:600;">Código Institucional</p>
+                  </td>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0; font-size:18px; color:#1e293b; font-weight:700; letter-spacing:2px; font-family: 'Courier New', monospace;">${formData.codigoInstitucional || formData.codigo}</p>
                   </td>
                 </tr>
               </table>
@@ -214,55 +226,54 @@ export async function POST(req) {
 
           <!-- BOTÓN PORTAL -->
           <tr>
-            <td align="center" style="padding: 0 40px 20px 40px;">
+            <td align="center" style="padding: 0 48px 20px 48px;">
               <a href="${PORTAL_URL}" target="_blank"
-                style="display:inline-block; background:linear-gradient(135deg,#3f7384,#2c5364); color:#ffffff; font-size:16px; font-weight:700; text-decoration:none; padding:14px 36px; border-radius:50px; letter-spacing:0.5px;">
-                🌐 Ingresar a Mi Portal
+                style="display:inline-block; background:#1e293b; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none; padding:14px 36px; border-radius:6px; letter-spacing:0.5px;">
+                Ingresar a Mi Portal
               </a>
             </td>
           </tr>
 
           <!-- QUÉ ENCONTRARÁS -->
           <tr>
-            <td style="padding: 0 40px 24px 40px;">
-              <p style="margin:0 0 12px 0; font-size:13px; font-weight:700; color:#2c5364; text-transform:uppercase; letter-spacing:1px;">¿Qué encuentras en tu portal?</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;">
-                  <table cellpadding="0" cellspacing="0"><tr>
-                    <td style="font-size:20px; vertical-align:middle; padding-right:10px;">🪪</td>
-                    <td style="font-size:14px; color:#4a5568; vertical-align:middle;"><strong style="color:#2c5364;">Carnet Institucional Digital</strong> – Descárgalo e imprímelo cuando quieras.</td>
-                  </tr></table>
-                </td></tr>
-                <tr><td style="padding:6px 0;">
-                  <table cellpadding="0" cellspacing="0"><tr>
-                    <td style="font-size:20px; vertical-align:middle; padding-right:10px;">🧾</td>
-                    <td style="font-size:14px; color:#4a5568; vertical-align:middle;"><strong style="color:#2c5364;">Comprobante de Pago</strong> – Descarga el recibo de tu afiliación.</td>
-                  </tr></table>
-                </td></tr>
-                <tr><td style="padding:6px 0;">
-                  <table cellpadding="0" cellspacing="0"><tr>
-                    <td style="font-size:20px; vertical-align:middle; padding-right:10px;">📜</td>
-                    <td style="font-size:14px; color:#4a5568; vertical-align:middle;"><strong style="color:#2c5364;">Certificados</strong> – Accede a tus certificados institucionales disponibles.</td>
-                  </tr></table>
-                </td></tr>
-                <tr><td style="padding:6px 0;">
-                  <table cellpadding="0" cellspacing="0"><tr>
-                    <td style="font-size:20px; vertical-align:middle; padding-right:10px;">👥</td>
-                    <td style="font-size:14px; color:#4a5568; vertical-align:middle;"><strong style="color:#2c5364;">Mis Referidos</strong> – Consulta las personas que has referido a la Fundación.</td>
-                  </tr></table>
-                </td></tr>
+            <td style="padding: 10px 48px 36px 48px;">
+              <p style="margin:0 0 20px 0; font-size:10px; color:#94a3b8; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Servicios Disponibles</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-left: 2px solid #e2e8f0;">
+                <tr>
+                  <td style="padding:0 0 16px 20px;">
+                    <p style="margin:0 0 2px 0; font-size:13px; font-weight:600; color:#1e293b;">Carnet Digital</p>
+                    <p style="margin:0; font-size:13px; color:#64748b;">Descargue e imprima su identificación oficial.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 0 16px 20px;">
+                    <p style="margin:0 0 2px 0; font-size:13px; font-weight:600; color:#1e293b;">Comprobante de Pago</p>
+                    <p style="margin:0; font-size:13px; color:#64748b;">Acceda al recibo formal de su afiliación.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 0 16px 20px;">
+                    <p style="margin:0 0 2px 0; font-size:13px; font-weight:600; color:#1e293b;">Certificados</p>
+                    <p style="margin:0; font-size:13px; color:#64748b;">Solicite certificaciones institucionales.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 0 0 20px;">
+                    <p style="margin:0 0 2px 0; font-size:13px; font-weight:600; color:#1e293b;">Módulo de Referidos</p>
+                    <p style="margin:0; font-size:13px; color:#64748b;">Consulte el estado de las personas que ha referido.</p>
+                  </td>
+                </tr>
               </table>
             </td>
           </tr>
 
           <!-- NOTA ACCESO -->
           <tr>
-            <td style="padding: 0 40px 20px 40px;">
-              <div style="background:#fffbeb; border-left:4px solid #f59e0b; border-radius:6px; padding:14px 16px;">
-                <p style="margin:0; font-size:13px; color:#92400e;">
-                  💡 <strong>¿Cómo entrar?</strong> Visita
-                  <a href="${PORTAL_URL}" style="color:#2c5364; font-weight:700;">${PORTAL_URL}</a>,
-                  ingresa tu número de identificación y tu código institucional en la pantalla de acceso.
+            <td style="padding: 0 48px 36px 48px;">
+              <div style="border-left: 2px solid #16a34a; padding-left: 16px;">
+                <p style="margin:0; font-size:12px; color:#64748b; line-height:1.6;">
+                  Para ingresar, visite <a href="${PORTAL_URL}" style="color:#2c5364; font-weight:600; text-decoration:none;">${PORTAL_URL}</a> 
+                  y digite su número de identificación y código institucional.
                 </p>
               </div>
             </td>
@@ -273,7 +284,7 @@ export async function POST(req) {
       const data = await resend.emails.send({
         from: CORREO_REMITENTE,
         to: formData.correo,
-        subject: `🎉 ¡Tu afiliación está activa, ${formData.nombre}! Accede a tu portal`,
+        subject: `Activación Exitosa - Acceso al Portal`,
         html,
       });
 
