@@ -45,13 +45,40 @@ export async function POST(request) {
         // Es un registro nuevo
         const snapshot = await adminDb.collection("afiliados").where("codigo", "==", entityId).get();
         if (!snapshot.empty) {
-          const doc = snapshot.docs[0];
-          await doc.ref.update({
+          const docSnap = snapshot.docs[0];
+          const afiliadoData = docSnap.data();
+          await docSnap.ref.update({
             estadoAfiliacion: "activo",
             estadoPago: "Aprobado",
             fechaPago: new Date().toISOString(),
             transaccionId: id
           });
+
+          // Enviar correo de activación si el afiliado tiene correo
+          if (afiliadoData.correo) {
+            try {
+              const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}`
+                : "https://islacascajal.org";
+              await fetch(`${baseUrl}/api/email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  tipo: "activacion",
+                  formData: {
+                    nombre: afiliadoData.nombre,
+                    correo: afiliadoData.correo,
+                    cedula: afiliadoData.cedula,
+                    codigo: afiliadoData.codigo,
+                    codigoInstitucional: afiliadoData.codigoInstitucional
+                  }
+                })
+              });
+              console.log(`Correo de activación enviado a: ${afiliadoData.correo}`);
+            } catch (emailError) {
+              console.error("Error enviando correo de activación:", emailError);
+            }
+          }
         }
       }
     } else if (status === 'DECLINED' || status === 'ERROR') {

@@ -524,7 +524,7 @@ export default function RegistroPublicoPage() {
         currency: currency,
         amountInCents: amountInCents,
         reference: reference,
-        publicKey: 'pub_test_BhrIxCHRMvQUYQJIGaukv9MhHm3KiKuM',
+        publicKey: process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || 'pub_test_BhrIxCHRMvQUYQJIGaukv9MhHm3KiKuM',
         signature: { integrity: signature }
         // No pasamos redirectUrl para que se mantenga en la misma página (experiencia Modal)
       });
@@ -1244,56 +1244,68 @@ export default function RegistroPublicoPage() {
                   <CreditCard className="h-5 w-5 text-slate-500" /> Resumen de Afiliación (1 Año)
                 </h3>
                 
-                <div className="space-y-3 text-sm text-slate-600">
+                <div className="space-y-4 text-sm text-slate-600">
                   {formData.seleccionMembresias.educativa && (
-                    <div className="flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span>Membresía Educativa</span>
-                        <span className="text-[10px] text-slate-400">Vence: {
-                          (() => {
-                            const date = new Date();
-                            const mes = date.getMonth();
-                            const year = date.getFullYear();
-                            let exp;
-                            if (mes >= 0 && mes <= 4) exp = new Date(year, 4, 30);
-                            else if (mes >= 5 && mes <= 10) exp = new Date(year, 10, 30);
-                            else exp = new Date(year + 1, 4, 30);
-                            return exp.toLocaleDateString('es-CO');
-                          })()
-                        } (Corte Académico)</span>
+                    <div className="border border-slate-200 rounded-lg p-3 bg-white">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800">Membresía Educativa</span>
+                          <span className="text-[10px] text-slate-400">Vence: {
+                            (() => {
+                              const date = new Date();
+                              const mes = date.getMonth();
+                              const year = date.getFullYear();
+                              let exp;
+                              if (mes >= 0 && mes <= 4) exp = new Date(year, 4, 30);
+                              else if (mes >= 5 && mes <= 10) exp = new Date(year, 10, 30);
+                              else exp = new Date(year + 1, 4, 30);
+                              return exp.toLocaleDateString('es-CO');
+                            })()
+                          } (Corte Académico)</span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-slate-800">$149.990</span>
+                      <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span>Valor Base:</span>
+                        <span>$180.000</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-green-600 font-semibold mb-2">
+                        <span>Aporte FICong ({formData.seleccionMembresias.integral ? "Combo 55%" : "55%"}):</span>
+                        <span>- {formData.seleccionMembresias.integral ? "$100.000" : "$100.001"}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-2 font-bold text-slate-700">
+                        <span>Subtotal:</span>
+                        <span>{formData.seleccionMembresias.integral ? "$80.000" : "$79.999"}</span>
+                      </div>
                     </div>
                   )}
+
                   {formData.seleccionMembresias.integral && (
-                    <div className="flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span>Membresía Integral</span>
-                        <span className="text-[10px] text-slate-400">Vence: {new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString('es-CO')} (1 Año Calendario)</span>
+                    <div className="border border-slate-200 rounded-lg p-3 bg-white">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800">Membresía Integral</span>
+                          <span className="text-[10px] text-slate-400">Vence: {new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString('es-CO')} (1 Año Calendario)</span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-slate-800">$149.990</span>
+                      <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span>Valor Base:</span>
+                        <span>$180.000</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-green-600 font-semibold mb-2">
+                        <span>Aporte FICong ({formData.seleccionMembresias.educativa ? "Combo 55%" : "35%"}):</span>
+                        <span>- {formData.seleccionMembresias.educativa ? "$100.001" : "$63.001"}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-2 font-bold text-slate-700">
+                        <span>Subtotal:</span>
+                        <span>{formData.seleccionMembresias.educativa ? "$79.999" : "$116.999"}</span>
+                      </div>
                     </div>
                   )}
-                  
-                  <div className="border-t pt-3 flex justify-between items-center">
-                    <span className="font-bold">Subtotal Base</span>
-                    <span className="font-bold text-slate-800">
-                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "299.990" : "149.990"}
-                    </span>
-                  </div>
 
-                  <div className="bg-green-100 text-green-800 p-3 rounded-lg flex justify-between items-center font-bold border border-green-200 shadow-sm my-3">
-                    <div className="flex items-center gap-2">
-                      <BadgeCheck className="h-5 w-5" />
-                      <span>Beca FICong (Aporte 25%)</span>
-                    </div>
-                    <span>- ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "53.328" : "27.333"}</span>
-                  </div>
-
-                  <div className="border-t border-slate-300 pt-3 flex justify-between items-center text-xl">
+                  <div className="border-t border-slate-300 pt-3 flex justify-between items-center text-xl mt-4">
                     <span className="font-black text-slate-800">Total a Pagar</span>
                     <span className="font-black text-blue-700">
-                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "246.662" : "122.657"} COP
+                      ${(formData.seleccionMembresias.educativa && formData.seleccionMembresias.integral) ? "159.999" : formData.seleccionMembresias.integral ? "116.999" : "79.999"} COP
                     </span>
                   </div>
                 </div>

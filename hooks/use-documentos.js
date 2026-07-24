@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { collection, onSnapshot, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, listAll, deleteObject } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 export function useDocumentos() {
   const [documentos, setDocumentos] = useState([]);
@@ -54,6 +55,19 @@ export function useDocumentos() {
   }, []);
 
   const eliminarDocumento = async (codigo, collectionName = "documentos") => {
+    // 1. Intentar borrar los archivos de Storage (Soportes)
+    try {
+      const folderRef = ref(storage, `soportes/${codigo}`);
+      const fileList = await listAll(folderRef);
+      // Borrar cada archivo encontrado en la carpeta del usuario
+      const deletePromises = fileList.items.map((fileRef) => deleteObject(fileRef));
+      await Promise.all(deletePromises);
+      console.log(`Archivos de Storage eliminados para: ${codigo}`);
+    } catch (error) {
+      console.warn(`No se pudieron borrar archivos de storage para ${codigo} (quizás no tenía):`, error);
+    }
+
+    // 2. Borrar el documento de Firestore
     await deleteDoc(doc(db, collectionName, codigo));
   };
 
