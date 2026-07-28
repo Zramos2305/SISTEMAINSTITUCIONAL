@@ -352,6 +352,41 @@ const INSTITUCIONES_INTERNACIONALES = {
     "Doctorado en Ciencias Administrativas",
     "Doctorado en Administración Pública y Dirección Estratégica",
     "Doctorado en Administración Bancaria"
+  ],
+  "Instituto Técnico AVANZU": [
+    "Técnico Laboral en Atención Integral a la Primera Infancia",
+    "Técnico Laboral en Atención Integral al Adulto Mayor",
+    "Técnico Laboral en Atención Integral en Seguridad y Salud en el Trabajo",
+    "Técnico Laboral en Joyería",
+    "Técnico Laboral en Transporte y Logística",
+    "Técnico Laboral en Alta Cocina e Industria Alimenticia",
+    "Técnico Laboral en Auxiliar Veterinaria",
+    "Técnico Laboral en Peluquería, Barbería y Estética",
+    "Técnico Laboral en Operación en Maquinaria Pesada y Amarilla",
+    "Técnico Laboral en Transporte y Logística Empresarial",
+    "Técnico Laboral en Producción y Asistencia Agropecuaria"
+  ],
+  "U de Colombia": [
+    "Pregrado en Contaduría Pública",
+    "Pregrado en Administración Financiera",
+    "Pregrado en Comunicación y Diseño en Ambientes Digitales",
+    "Pregrado en Mercadeo e Innovación Comercial",
+    "Pregrado en Seguridad y Salud en el Trabajo",
+    "Pregrado en Licenciatura en Educación Física",
+    "Pregrado en Sistemas de Información",
+    "Pregrado en Psicología",
+    "Pregrado en Derecho",
+    "Pregrado en Licenciatura en Educación Básica",
+    "Pregrado en Negocios Internacionales",
+    "Especialización en Análisis de Datos",
+    "Especialización en Derecho Informático",
+    "Especialización en Derecho de Daños",
+    "Especialización en Estándares Internacionales NIIF-NIC",
+    "Especialización en Legislación y Gestión Tributaria",
+    "Especialización en Finanzas y Banca",
+    "Especialización en Contratación Estatal",
+    "Especialización en Psicopedagogía y Docencia",
+    "Especialización en Relaciones Laborales y Seguridad Social"
   ]
 };
 
@@ -431,60 +466,6 @@ export default function AfiliarPage() {
     modalidadEdu: "", institucionEdu: "", programaEdu: "", semestreEdu: "",
     institucionEduInt: "", programaEduInt: "", semestreEduInt: "",
   });
-
-  const llenarDatosDePrueba = () => {
-    setFormData(prev => ({
-      ...prev,
-      nombre: "Usuario de Prueba",
-      cedula: "1.234.567.890",
-      fechaNacimiento: "1990-01-01",
-      paisNacimiento: "Colombia",
-      otroPaisNacimiento: "",
-      lugarNacimiento: "Bogotá",
-      edad: "36 Años",
-      rh: "O+",
-      telefono: "3001234567",
-      correo: "prueba@example.com",
-      direccion: "Calle 123 # 45-67",
-      estado: "activo",
-      cargo: "Afiliado",
-      oficina: "Sede Principal",
-      dependencia: "Administración",
-      pais: "Colombia",
-      departamento: "Valle del Cauca",
-      ciudad: "Cali",
-      sexo: "Masculino",
-      orientacionSexual: "Heterosexual",
-      estrato: "3",
-      etnia: "Ninguna",
-      sisben: "No",
-      asesoriaSisben: "Sí",
-      victimaConflicto: "No",
-      discriminacion: "No",
-      educacionNivel: "Profesional",
-      educacionEstudio: "Ingeniería",
-      educacionSemestre: "10",
-      educacionPlantel: "Universidad de Cali",
-      eps: "Sura",
-      arl: "Sura",
-      enfermedad: "No",
-      alergia: "No",
-      discapacidad: "No",
-      trastorno: "No",
-      condicionEspecial: "No",
-      comoEntero: "Redes Sociales",
-      deseaSerVoluntario: "Sí",
-      emergenciaNombre: "Contacto Prueba",
-      emergenciaNumero: "3007654321",
-      emergenciaWhatsapp: "Sí",
-      emergenciaDireccion: "Carrera 45 # 12-34",
-      seleccionMembresias: {
-        educativa: true,
-        integral: true,
-      }
-    }));
-    toast.success("Datos de prueba rellenados automáticamente");
-  };
 
   const [soportes, setSoportes] = useState({ cedula: null, notas: null, vacunas: null });
   const handleSoporteChange = (tipo, e) => {
@@ -1145,9 +1126,6 @@ export default function AfiliarPage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={llenarDatosDePrueba} className="border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 hidden md:flex font-bold">
-            Rellenar Datos de Prueba
-          </Button>
         </div>
         <div className="h-1 w-full flex">
           <div style={{ flex: 1, backgroundColor: COLORS.azul }} />
