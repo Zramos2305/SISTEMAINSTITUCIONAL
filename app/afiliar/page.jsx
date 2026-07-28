@@ -1397,7 +1397,7 @@ export default function AfiliarPage() {
                           };
                         })}
                       />
-                      <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Afiliación Educativa</label>
+                      <label htmlFor="edu" className="text-sm font-medium leading-none cursor-pointer">Membresía Educativa Nacional</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1508,7 +1508,7 @@ export default function AfiliarPage() {
                 <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-200 mb-6 mt-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <GraduationCap className="h-5 w-5 text-blue-700" />
-                    <h3 className="font-bold text-blue-900">Selecciona tu Ruta Educativa</h3>
+                    <h3 className="font-bold text-blue-900">Selecciona tu Ruta Educativa Nacional</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -2355,7 +2355,7 @@ export default function AfiliarPage() {
                         <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Membresías Activas</p>
                         <div className="flex flex-wrap gap-2">
                           {formData.seleccionMembresias?.educativa && (
-                            <span className="px-2 py-1 border border-blue-300 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md">EDUCATIVA</span>
+                            <span className="px-2 py-1 border border-blue-300 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md">EDUCATIVA NACIONAL</span>
                           )}
                           {formData.seleccionMembresias?.educativaInternacional && (
                             <span className="px-2 py-1 border border-purple-300 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-md">EDU. INTERNACIONAL</span>
@@ -2601,7 +2601,7 @@ export default function AfiliarPage() {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {formData.seleccionMembresias?.educativa && (
                         <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#1d4ed8', backgroundColor: '#dbeafe', padding: '4px 12px', borderRadius: '12px', border: `1px solid #93c5fd` }}>
-                          EDUCATIVA
+                          EDUCATIVA NACIONAL
                         </span>
                       )}
                       {formData.seleccionMembresias?.integral && (

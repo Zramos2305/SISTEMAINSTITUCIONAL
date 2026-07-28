@@ -818,6 +818,9 @@ export default function RegistroPublicoPage() {
       if (formData.seleccionMembresias.casino) {
         totalPagar += 50000;
       }
+      if (formData.seleccionMembresias.educativaInternacional) {
+        totalPagar += 299999;
+      }
       
       const amountInCents = totalPagar * 100;
       const currency = "COP";
@@ -1371,7 +1374,7 @@ export default function RegistroPublicoPage() {
                 >
                   <div className="flex items-center space-x-3 mb-2">
                     <Checkbox checked={formData.seleccionMembresias.educativa} id="mem-edu" className="pointer-events-none" />
-                    <label className="font-bold text-blue-900 pointer-events-none text-lg">Convenio Educativo</label>
+                    <label className="font-bold text-blue-900 pointer-events-none text-lg">Membresía Educativa Nacional</label>
                   </div>
                   <p className="text-sm text-blue-700 ml-7 mb-4">Acceso exclusivo a nuestros convenios universitarios y técnicos con beneficios especiales.</p>
                 </div>
@@ -1467,7 +1470,7 @@ export default function RegistroPublicoPage() {
                 <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-200 mb-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <GraduationCap className="h-5 w-5 text-blue-700" />
-                    <h3 className="font-bold text-blue-900">Selecciona tu Ruta Educativa</h3>
+                    <h3 className="font-bold text-blue-900">Selecciona tu Ruta Educativa Nacional</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white p-3 rounded-lg border border-blue-200">
@@ -1785,7 +1788,7 @@ export default function RegistroPublicoPage() {
             {(formData.seleccionMembresias.educativa || formData.seleccionMembresias.integral || formData.seleccionMembresias.casino || formData.seleccionMembresias.educativaInternacional) && (
               <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-5 mb-6">
                 <h3 className="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-slate-500" /> Resumen de Afiliación (1 Año)
+                  <CreditCard className="h-5 w-5 text-slate-500" /> Resumen de Afiliación
                 </h3>
                 
                 <div className="space-y-4 text-sm text-slate-600">
@@ -1793,7 +1796,7 @@ export default function RegistroPublicoPage() {
                     <div className="border border-slate-200 rounded-lg p-3 bg-white">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800">Membresía Educativa</span>
+                          <span className="font-bold text-slate-800">Membresía Educativa Nacional</span>
                           <span className="text-[10px] text-slate-400">Vence: {
                             (() => {
                               const date = new Date();

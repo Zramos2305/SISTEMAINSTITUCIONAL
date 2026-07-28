@@ -585,7 +585,7 @@ export default function AfiliadoDashboard() {
                 {membresiaEducativa && (
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4 ${estadoEdu?.vencida ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
                     <div>
-                      <h4 className="font-bold text-blue-800 flex items-center gap-2">Membresía Educativa</h4>
+                      <h4 className="font-bold text-blue-800 flex items-center gap-2">Membresía Educativa Nacional</h4>
                       <p className="text-sm text-slate-500 mt-1">Vence: {formatearFecha(membresiaEducativa.fechaExpiracion)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
