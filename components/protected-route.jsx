@@ -29,8 +29,8 @@ export default function ProtectedRoute({ allowedRoles, children }) {
 
     // Si el usuario existe pero no tiene los datos de rol cargados (podría ser un delay)
     // O si el usuario está inactivo
-    if (!userData || userData.activo === false) {
-      if (userData?.activo === false) {
+    if (!userData || userData.activo === false || userData.estado === "inactivo") {
+      if (userData?.activo === false || userData?.estado === "inactivo") {
         // Podríamos redirigir a una página de cuenta desactivada
         router.push("/unauthorized?reason=inactive");
       }
@@ -68,7 +68,7 @@ export default function ProtectedRoute({ allowedRoles, children }) {
   }
 
   // Si tiene el rol activo y permitido
-  if (userData.activo !== false && allowedRoles.includes(userData.rol)) {
+  if (userData.activo !== false && userData.estado !== "inactivo" && allowedRoles.includes(userData.rol)) {
     return <>{children}</>;
   }
 

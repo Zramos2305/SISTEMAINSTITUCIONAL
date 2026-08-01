@@ -485,6 +485,57 @@ export default function AfiliarPage() {
   const [tipoCertificadoActual, setTipoCertificadoActual] = useState(null); // 'educativa' o 'integral'
   const [currentCertData, setCurrentCertData] = useState(null); // Para compatibilidad con templates del dashboard
 
+  const llenarDatosPrueba = () => {
+    setFormData(prev => ({
+      ...prev,
+      nombre: "JUAN PEREZ PRUEBA",
+      cedula: "1000200300",
+      fechaNacimiento: "1990-05-15",
+      edad: "36 Años",
+      paisNacimiento: "Colombia",
+      lugarNacimiento: "Cali",
+      rh: "O+",
+      telefono: "3001234567",
+      correo: "juanperez@ejemplo.com",
+      direccion: "Calle 1 # 2-3",
+      pais: "Colombia",
+      departamento: "Valle del Cauca",
+      ciudad: "Cali",
+      sexo: "Masculino",
+      orientacionSexual: "Heterosexual",
+      estrato: "3",
+      etnia: "Ninguno",
+      sisben: "No",
+      asesoriaSisben: "Sí",
+      victimaConflicto: "No",
+      discriminacion: "No",
+      educacionNivel: "Profesional",
+      educacionEstudio: "Ingeniería",
+      educacionSemestre: "10",
+      educacionPlantel: "Univalle",
+      eps: "Sura",
+      arl: "Sura",
+      enfermedad: "No",
+      alergia: "No",
+      discapacidad: "No",
+      trastorno: "No",
+      condicionEspecial: "No",
+      comoEntero: "Redes Sociales",
+      deseaSerVoluntario: "No",
+      seleccionMembresias: {
+        educativa: true,
+        integral: false,
+        casino: false,
+        educativaInternacional: false
+      },
+      modalidadEdu: "Presencial",
+      institucionEdu: "Universidad del Valle",
+      programaEdu: "Ingeniería de Sistemas",
+      semestreEdu: "8"
+    }));
+    toast.success("Datos de prueba cargados");
+  };
+
   // Generar QR en tiempo real cuando cambia el código
   useEffect(() => {
     const generateQR = async () => {
@@ -781,9 +832,12 @@ export default function AfiliarPage() {
       }
 
       if (formData.seleccionMembresias.casino) {
-        const fExpCas = new Date(fIngreso);
-        fExpCas.setFullYear(fExpCas.getFullYear() + 1);
-
+        let fExpCas;
+        const year = fIngreso.getFullYear();
+        const month = fIngreso.getMonth();
+        if (month <= 4) fExpCas = new Date(year, 4, 30, 23, 59, 59);
+        else if (month <= 10) fExpCas = new Date(year, 10, 30, 23, 59, 59);
+        else fExpCas = new Date(year + 1, 4, 30, 23, 59, 59);
         nuevasMembresias.push({
           tipo: "casino",
           estado: "activo",
@@ -998,11 +1052,11 @@ export default function AfiliarPage() {
 
 
   const descargarCarnet = async () => {
-    if (!exportRef.current) return;
+    if (!carnetRef.current) return;
     setIsDownloading(true);
 
     try {
-      const canvas = await html2canvas(exportRef.current, {
+      const canvas = await html2canvas(carnetRef.current, {
         scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
@@ -1036,6 +1090,15 @@ export default function AfiliarPage() {
     setIsDownloadingCert(tipoMembresia);
 
     try {
+      const qrDataUrl = formData.codigo ? await QRCode.toDataURL(`${getVerificacionBaseUrl()}${formData.codigo}`) : null;
+      
+      if (qrDataUrl) {
+        const qrImageEdu = document.getElementById(`qr-code-edu-confirm`);
+        if (qrImageEdu) qrImageEdu.src = qrDataUrl;
+        const qrImageInt = document.getElementById(`qr-code-integral-confirm`);
+        if (qrImageInt) qrImageInt.src = qrDataUrl;
+      }
+
       // Esperar un momento para que el DOM se actualice
       await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -1071,27 +1134,6 @@ export default function AfiliarPage() {
       const xOffset = (pdfWidth - finalImgWidth) / 2;
       pdf.addImage(imgData, "PNG", xOffset, 0, finalImgWidth, finalImgHeight);
 
-      // INSERTAR QR DIRECTAMENTE EN EL PDF (Capa superior)
-      if (qrDataUrl) {
-        const qrSize = 35; // 35mm
-        const marginX = pdfWidth - qrSize - 20;
-        const marginY = pageHeight - qrSize - 30;
-
-        pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
-
-        pdf.setDrawColor(5, 49, 138);
-        pdf.setLineWidth(0.5);
-        pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'D');
-
-        pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
-
-        pdf.setTextColor(5, 49, 138);
-        pdf.setFontSize(8);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("VERIFICACIÓN DIGITAL", marginX + (qrSize / 2), marginY + qrSize + 6, { align: "center" });
-      }
-
       pdf.save(`Certificado_${tipoMembresia === 'educativa' ? 'Educativa' : 'Integral'}_${formData.nombre.trim().replace(/\s+/g, "_")}.pdf`);
 
       toast.success(`Certificado ${tipoMembresia === 'educativa' ? 'Educativo' : 'Integral'} generado correctamente`);
@@ -1117,7 +1159,7 @@ export default function AfiliarPage() {
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
+              <img src="/logo.png" alt="Logo" width="40" height="40" className="rounded-full" />
               <div>
                 <h1 className="font-black text-slate-800 flex items-center gap-2" style={{ color: COLORS.verde }}>
                   Nueva Afiliación
@@ -1140,10 +1182,26 @@ export default function AfiliarPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
             {/* Formulario */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg relative">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={llenarDatosPrueba}
+                className="absolute right-4 top-4 hidden md:flex items-center gap-2"
+              >
+                Llenar Datos de Prueba
+              </Button>
               <CardHeader>
                 <CardTitle>Datos del Afiliado</CardTitle>
                 <CardDescription>Complete la información para generar el carnet institucional.</CardDescription>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={llenarDatosPrueba}
+                  className="mt-2 md:hidden w-full"
+                >
+                  Llenar Datos de Prueba
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2641,50 +2699,40 @@ export default function AfiliarPage() {
         <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
           {currentCertData && (
             <>
-              {/* Template de Aval Educativo */}
+              {/* Template de Aval Educativo (Confirmación) */}
               <div
                 id="hidden-cert-edu-confirm"
                 style={{
                   width: "800px",
                   padding: "80px",
                   background: "white",
-                  fontFamily: "'Times New Roman', serif",
+                  fontFamily: "Calibri, 'Times New Roman', serif",
                   color: "#1a1a1a",
-                  lineHeight: "1.6",
+                  lineHeight: "1.5",
                   boxSizing: "border-box"
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+                  <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
                   <div style={{ textAlign: "right" }}>
-                    <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                    <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+                    <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                    <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
                   </div>
                 </div>
 
-                <div style={{ textAlign: "center", marginBottom: "40px" }}>
-                  <h2 style={{ fontSize: "22px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
+                <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "50px" }}>
+                  <h2 style={{ fontSize: "24px", fontWeight: "900", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
                 </div>
 
-                <div style={{ fontSize: "16px", textAlign: "justify" }}>
-                  <p>
-                    La presente organización de base <strong>Fundación Isla Cascajal “FICong”</strong>, identificada con NIT 900.248.351-0, con principal domicilio en el Distrito Especial de Santiago de Cali, República de Colombia, se permite presentar a:
+                <div style={{ fontSize: "14px", textAlign: "justify" }}>
+                  <p style={{ marginBottom: "15px" }}>
+                    La presente organización de base denominada <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{currentCertData.persona.nombre.toUpperCase()}</strong> con NUIP. <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
                   </p>
-
-                  <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
-                    {currentCertData.persona.nombre}
+                  <p style={{ marginBottom: "15px" }}>
+                    Esta membresía fue realizada el día <strong>{new Date(currentCertData.persona.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong> a las <strong>{new Date().toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
                   </p>
-
-                  <p>
-                    con NIUP <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con afiliación activa para acceder a nuestros convenios educativos.
-                  </p>
-
-                  <p>
-                    Esta afiliación fue realizada en día <strong>{new Date(currentCertData.persona.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos por la Fundación Isla Cascajal.
-                  </p>
-
-                  <p>
-                    Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del afiliado, se procede a conceder el <strong>AVAL</strong> para que se le realicen los correspondientes descuentos para programas educativos para el período académico <strong>{(() => {
+                  <p style={{ marginBottom: "15px" }}>
+                    Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder <strong>AVAL</strong> y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico <strong>{(() => {
                       if (!currentCertData.membresia.fechaExpiracion) return "";
                       const date = new Date(currentCertData.membresia.fechaExpiracion);
                       const year = date.getFullYear();
@@ -2693,15 +2741,20 @@ export default function AfiliarPage() {
                       return `${year}${letra}`;
                     })()}</strong>.
                   </p>
+                  <p style={{ marginBottom: "40px" }}>
+                    El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+                  </p>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "60px" }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Fundación Isla Cascajal</p>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Fecha de expedición: {currentCertData.fechaImpresion || new Date().toLocaleDateString("es-CO")}</p>
-                    <div style={{ marginTop: "30px", width: "180px", borderBottom: "1px solid #000" }}></div>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Firma electrónica</p>
-                    <p style={{ margin: 0, fontSize: "12px" }}>Verificable con el código QR</p>
+                <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+                    <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                    <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+                  </div>
+                  <div style={{ width: "120px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <img id="qr-code-edu-confirm" alt="QR Code" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
                 </div>
               </div>

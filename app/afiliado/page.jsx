@@ -37,21 +37,30 @@ export default function AfiliadoLoginPage() {
 
       const q = query(
         collection(db, "afiliados"),
-        where("cedula", "==", cedulaLimpia),
-        where("codigoInstitucional", "==", codigoLimpio),
-        limit(1)
+        where("cedula", "==", cedulaLimpia)
       );
 
       const snap = await getDocs(q);
 
       if (snap.empty) {
-        toast.error("Credenciales incorrectas. Verifica tu número de cédula y código institucional.");
+        toast.error("No encontramos un afiliado con ese número de cédula.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Buscar el documento que coincida con el código (soporta usuarios antiguos y nuevos)
+      const afiliadoDoc = snap.docs.find(doc => {
+        const data = doc.data();
+        return (data.codigo === codigoLimpio) || (data.codigoInstitucional === codigoLimpio);
+      });
+
+      if (!afiliadoDoc) {
+        toast.error("El Código Institucional es incorrecto. Verifica los datos de tu carnet.");
         setIsLoading(false);
         return;
       }
 
       // Existe el afiliado
-      const afiliadoDoc = snap.docs[0];
       const afiliadoData = afiliadoDoc.data();
 
       // Guardar sesión segura temporal

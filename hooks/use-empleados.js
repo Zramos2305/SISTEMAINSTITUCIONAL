@@ -8,16 +8,16 @@ import { db } from "@/lib/firebase";
 
 export const DIAS_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
-export const MODALIDADES = ["presencial", "teletrabajo", "libre"];
+export const MODALIDADES = ["presencial", "teletrabajo", "libre", "presencial_sin_horario", "teletrabajo_sin_horario"];
 
 export const HORARIO_DEFAULT = {
-  lunes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  martes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  miercoles: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  jueves: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  viernes: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  sabado: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
-  domingo: { modalidad: "libre", entrada: "08:00", salida: "17:00" },
+  lunes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  martes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  miercoles: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  jueves: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  viernes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  sabado: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  domingo: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -42,13 +42,15 @@ export function normalizarHorario(horario) {
       const data = horario[dia];
       if (typeof data === "string" && MODALIDADES.includes(data)) {
         // Compatibilidad con estructura anterior
-        base[dia] = { modalidad: data, entrada: "08:00", salida: "17:00" };
+        base[dia] = { modalidad: data, entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" };
       } else if (data && typeof data === "object") {
         // Nueva estructura
         base[dia] = {
           modalidad: MODALIDADES.includes(data.modalidad) ? data.modalidad : "libre",
-          entrada: data.entrada || "08:00",
-          salida: data.salida || "17:00",
+          entrada1: data.entrada1 || data.entrada || "08:00",
+          salida1: data.salida1 || "12:00",
+          entrada2: data.entrada2 || "14:00",
+          salida2: data.salida2 || data.salida || "18:00",
         };
       }
     });

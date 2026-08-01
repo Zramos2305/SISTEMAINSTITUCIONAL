@@ -357,7 +357,15 @@ export default function CRM_Afiliados() {
     toast.info(`Generando certificado...`);
 
     try {
+      const qrDataUrl = await QRCode.toDataURL(`${getVerificacionBaseUrl()}${selectedAfiliado.codigo}`);
+      
+      const qrImageEdu = document.getElementById(`qr-code-edu`);
+      if (qrImageEdu) qrImageEdu.src = qrDataUrl;
+      const qrImageInt = document.getElementById(`qr-code-integral`);
+      if (qrImageInt) qrImageInt.src = qrDataUrl;
+
       await new Promise(resolve => setTimeout(resolve, 800)); // Esperar render
+
       const templateId = membresia.tipo === "educativa" ? "hidden-cert-edu" : "hidden-cert-integral";
       const element = document.getElementById(templateId);
       if (!element) throw new Error("Template no encontrado");
@@ -369,15 +377,6 @@ export default function CRM_Afiliados() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      const qrDataUrl = await QRCode.toDataURL(`${getVerificacionBaseUrl()}${selectedAfiliado.codigo}`);
-      const qrSize = 35;
-      const marginX = pdfWidth - qrSize - 20;
-      const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
-
-      pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
-      pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
 
       pdf.save(`Certificado_${membresia.tipo.toUpperCase()}_${selectedAfiliado.nombre.replace(/\s+/g, "_")}.pdf`);
       toast.success("Certificado descargado");
@@ -781,7 +780,7 @@ export default function CRM_Afiliados() {
                             <h2 style={{ color: COLORS.verde, fontWeight: 900, fontSize: '26px', margin: 0, marginTop: '4px', lineHeight: 1.2 }}>ISLA CASCAJAL</h2>
                             <p style={{ color: '#ea580c', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', margin: 0, marginTop: '-2px', letterSpacing: '1px' }}>Fundación</p>
                             <div style={{ marginTop: '12px', width: '100px', height: '110px', borderRadius: '12px', backgroundColor: '#f1f5f9', border: '2px solid #e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                              {selectedAfiliado?.foto ? <img src={selectedAfiliado.foto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User className="h-8 w-8 text-slate-300" />}
+                              {selectedAfiliado?.foto ? <img src={selectedAfiliado.foto} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User className="h-8 w-8 text-slate-300" />}
                             </div>
                             <div style={{ marginTop: '12px', width: '100%', textAlign: 'center' }}>
                               <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, color: COLORS.verde, margin: 0 }}>{selectedAfiliado?.nombre}</h3>
@@ -995,30 +994,45 @@ export default function CRM_Afiliados() {
         <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
           {currentCertData && (
             <>
-              {/* Template de Aval Educativo */}
-              <div id="hidden-cert-edu" style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}>
+              {/* Template de Aval Educativo (Dashboard) */}
+              <div id="hidden-cert-edu" style={{ width: "800px", padding: "80px", background: "white", fontFamily: "Calibri, 'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.5", boxSizing: "border-box" }}>
+                
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+                  <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
                   <div style={{ textAlign: "right" }}>
-                    <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                    <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+                    <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                    <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
                   </div>
                 </div>
-                <div style={{ textAlign: "center", marginBottom: "20px" }}>
-                  <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
+
+                <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "50px" }}>
+                  <h2 style={{ fontSize: "24px", fontWeight: "900", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
                 </div>
+
                 <div style={{ fontSize: "14px", textAlign: "justify" }}>
-                  <p>La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{currentCertData.persona.nombre}</strong> con NUIP. <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.</p>
-                  <p>Esta membresía fue realizada el día {formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.</p>
-                  <p>Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico {getPeriodoEducativo(currentCertData.membresia.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.</p>
+                  <p style={{ marginBottom: "15px" }}>
+                    La presente organización de base denominada <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{currentCertData.persona.nombre.toUpperCase()}</strong> con NUIP. <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
+                  </p>
+                  <p style={{ marginBottom: "15px" }}>
+                    Esta membresía fue realizada el día <strong>{new Date(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong> a las <strong>{new Date(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
+                  </p>
+                  <p style={{ marginBottom: "15px" }}>
+                    Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder <strong>AVAL</strong> y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico <strong>{getPeriodoEducativo(currentCertData.membresia.fechaExpiracion)}</strong>.
+                  </p>
+                  <p style={{ marginBottom: "40px" }}>
+                    El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+                  </p>
                 </div>
-                <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                    <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
-                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
-                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
-                    <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
-                    <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+
+                <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+                    <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                    <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+                  </div>
+                  <div style={{ width: "120px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <img id="qr-code-edu" alt="QR Code" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
                 </div>
               </div>
@@ -1064,7 +1078,7 @@ export default function CRM_Afiliados() {
                 <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
                   <p style={{ margin: 0, fontSize: "12px", marginBottom: "20px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                    <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
+                    <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
                     <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
                     <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>

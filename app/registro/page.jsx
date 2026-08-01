@@ -416,6 +416,57 @@ export default function RegistroPublicoPage() {
   const [referidorNombre, setReferidorNombre] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const llenarDatosPrueba = () => {
+    setFormData(prev => ({
+      ...prev,
+      nombre: "JUAN PEREZ PRUEBA",
+      cedula: "1000200300",
+      fechaNacimiento: "1990-05-15",
+      edad: "36 Años",
+      paisNacimiento: "Colombia",
+      lugarNacimiento: "Cali",
+      rh: "O+",
+      telefono: "3001234567",
+      correo: "juanperez@ejemplo.com",
+      direccion: "Calle 1 # 2-3",
+      pais: "Colombia",
+      departamento: "Valle del Cauca",
+      ciudad: "Cali",
+      sexo: "Masculino",
+      orientacionSexual: "Heterosexual",
+      estrato: "3",
+      etnia: "Ninguno",
+      sisben: "No",
+      asesoriaSisben: "Sí",
+      victimaConflicto: "No",
+      discriminacion: "No",
+      educacionNivel: "Profesional",
+      educacionEstudio: "Ingeniería",
+      educacionSemestre: "10",
+      educacionPlantel: "Univalle",
+      eps: "Sura",
+      arl: "Sura",
+      enfermedad: "No",
+      alergia: "No",
+      discapacidad: "No",
+      trastorno: "No",
+      condicionEspecial: "No",
+      comoEntero: "Redes Sociales",
+      deseaSerVoluntario: "No",
+      aceptaTerminos: true,
+      seleccionMembresias: {
+        educativa: true,
+        integral: false,
+        casino: false,
+        educativaInternacional: false
+      },
+      modalidadEdu: "Presencial",
+      institucionEdu: "Universidad del Valle",
+      programaEdu: "Ingeniería de Sistemas"
+    }));
+    toast.success("Datos de prueba cargados");
+  };
+
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
       let finalValue = value;
@@ -692,7 +743,7 @@ export default function RegistroPublicoPage() {
         if (soportes[tipo]) {
           const extension = soportes[tipo].name.split('.').pop();
           const storageRef = ref(storage, `soportes/${finalId}/${tipo}.${extension}`);
-          await uploadBytes(storageRef, soportes[tipo]);
+          await uploadBytes(storageRef, soportes[tipo], { contentType: soportes[tipo].type || 'application/pdf' });
           linksSoportes[tipo] = await getDownloadURL(storageRef);
         }
       }
@@ -832,6 +883,12 @@ export default function RegistroPublicoPage() {
       });
       const { signature } = await resSignature.json();
 
+      if (typeof window.WidgetCheckout !== 'function') {
+        toast.error("El sistema de pagos (Wompi) no pudo cargar. Por favor desactiva tu bloqueador de anuncios.");
+        setIsSaving(false);
+        return;
+      }
+
       const checkout = new window.WidgetCheckout({
         currency: currency,
         amountInCents: amountInCents,
@@ -892,7 +949,15 @@ export default function RegistroPublicoPage() {
     <div className="min-h-screen bg-slate-100 flex items-start justify-center p-4 py-8 md:py-12">
       <div className="max-w-5xl w-full">
         {/* Encabezado */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={llenarDatosPrueba}
+            className="absolute right-0 top-0 hidden md:flex items-center gap-2"
+          >
+            Llenar Datos de Prueba
+          </Button>
           <div className="mx-auto bg-white p-2 rounded-full shadow-md w-28 h-28 mb-4 border-4 border-white" style={{ borderColor: COLORS.azul }}>
             <img src="/logo.png" alt="Logo Isla Cascajal" className="w-full h-full object-contain" />
           </div>
@@ -902,6 +967,14 @@ export default function RegistroPublicoPage() {
           <p className="text-slate-600 mt-3 max-w-2xl mx-auto text-sm md:text-base">
             Complete el siguiente formulario con su información verídica para iniciar su proceso de vinculación a la Fundación Isla Cascajal.
           </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={llenarDatosPrueba}
+            className="mt-4 md:hidden w-full"
+          >
+            Llenar Datos de Prueba
+          </Button>
         </div>
 
         <div className="space-y-6">

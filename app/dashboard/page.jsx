@@ -100,7 +100,8 @@ import {
   Mail,
   Globe,
   Map,
-  PawPrint
+  PawPrint,
+  CalendarClock
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -349,6 +350,17 @@ function DashboardContent() {
   const [busquedaAuditoria, setBusquedaAuditoria] = useState("");
   const [seleccionadosAuditoria, setSeleccionadosAuditoria] = useState([]);
   const [verBitacoraDoc, setVerBitacoraDoc] = useState(null);
+  const [extraHoursModal, setExtraHoursModal] = useState(null);
+  const [extraHoursNote, setExtraHoursNote] = useState("");
+  const [permisoModal, setPermisoModal] = useState(false);
+  const [permisoFormData, setPermisoFormData] = useState({
+    empleadoId: "",
+    nombre: "",
+    fechaInicio: "",
+    fechaFin: "",
+    tipo: "remunerado",
+    razon: ""
+  });
   const { registros, cargando: cargandoAsistencias, recargar } = useAsistencias(fechaAsistencia);
 
   const registrosFiltrados = useMemo(() => {
@@ -478,6 +490,63 @@ function DashboardContent() {
     } catch (error) {
       console.error(error);
       toast.error("Error al eliminar asistencia");
+    }
+  };
+
+  const handleEvaluarHorasExtras = async (estado) => {
+    if (!extraHoursModal) return;
+    try {
+      const ref = doc(db, "asistencias", extraHoursModal.id);
+      await updateDoc(ref, {
+        "horasExtras.estado": estado,
+        "horasExtras.notas": extraHoursNote
+      });
+
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: `Horas Extras ${estado === 'aprobada' ? 'Aprobadas' : 'Rechazadas'}`,
+        documentoId: extraHoursModal.id,
+        detalles: `El SuperAdmin evaluó las horas extras de ${extraHoursModal.nombre} del ${extraHoursModal.fecha} como ${estado}.`
+      });
+
+      recargar(); 
+      toast.success(`Horas extras ${estado === 'aprobada' ? 'aprobadas' : 'rechazadas'} exitosamente.`);
+      setExtraHoursModal(null);
+      setExtraHoursNote("");
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al evaluar horas extras");
+    }
+  };
+
+  const handleOtorgarPermiso = async () => {
+    if (!permisoFormData.empleadoId || !permisoFormData.fechaInicio || !permisoFormData.fechaFin || !permisoFormData.razon) {
+      toast.error("Completa todos los campos obligatorios");
+      return;
+    }
+    try {
+      const permisoId = `permiso_${Date.now()}`;
+      await setDoc(doc(db, "permisos", permisoId), {
+        ...permisoFormData,
+        creadoPor: user.uid,
+        creadoEn: new Date().toISOString()
+      });
+
+      await registrarAuditoria({
+        user,
+        userData,
+        accion: "Permiso Otorgado",
+        documentoId: permisoId,
+        detalles: `Permiso ${permisoFormData.tipo} otorgado a ${permisoFormData.nombre} del ${permisoFormData.fechaInicio} al ${permisoFormData.fechaFin}.`
+      });
+
+      toast.success("Permiso otorgado correctamente");
+      setPermisoModal(false);
+      setPermisoFormData({ empleadoId: "", nombre: "", fechaInicio: "", fechaFin: "", tipo: "remunerado", razon: "" });
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al otorgar permiso");
     }
   };
 
@@ -697,6 +766,14 @@ function DashboardContent() {
     toast.info(`Generando certificado ${membresia.tipo}...`);
 
     try {
+      const QRCode = (await import("qrcode")).default;
+      const qrDataUrl = await QRCode.toDataURL(`${getVerificacionBaseUrl()}${persona.codigo}`);
+
+      const qrImageEdu = document.getElementById(`qr-code-edu`);
+      if (qrImageEdu) qrImageEdu.src = qrDataUrl;
+      const qrImageInt = document.getElementById(`qr-code-integral`);
+      if (qrImageInt) qrImageInt.src = qrDataUrl;
+
       await new Promise(resolve => setTimeout(resolve, 800));
       
       const templateId = membresia.tipo === "educativa" ? "hidden-cert-edu" : "hidden-cert-integral";
@@ -705,7 +782,6 @@ function DashboardContent() {
 
       const { jsPDF } = await import("jspdf");
       const html2canvas = (await import("html2canvas")).default;
-      const QRCode = (await import("qrcode")).default;
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -720,16 +796,6 @@ function DashboardContent() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      // Generar QR
-      const qrDataUrl = await QRCode.toDataURL(`${getVerificacionBaseUrl()}${persona.codigo}`);
-      const qrSize = 35;
-      const marginX = pdfWidth - qrSize - 20;
-      const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
-
-      pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
-      pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
 
       pdf.save(`Certificado_${membresia.tipo.toUpperCase()}_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
       toast.success("Certificado descargado");
@@ -1166,6 +1232,19 @@ function DashboardContent() {
                           className="border rounded-md px-3 py-1.5 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
+                      {esSuperAdmin && (
+                        <div className="pt-5">
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="bg-info hover:bg-info/90 text-info-foreground h-9"
+                            onClick={() => setPermisoModal(true)}
+                          >
+                            <CalendarClock className="h-4 w-4 mr-2" />
+                            Otorgar Permiso
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <div className="relative flex-1 sm:max-w-xs">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1205,6 +1284,7 @@ function DashboardContent() {
                             <TableHead className="hidden lg:table-cell">Sal. Almuerzo</TableHead>
                             <TableHead className="hidden lg:table-cell">Reg. Almuerzo</TableHead>
                             <TableHead className="hidden md:table-cell">Salida</TableHead>
+                            <TableHead>Extras</TableHead>
                             <TableHead>T. Laborado</TableHead>
                             <TableHead className="hidden xl:table-cell">Modo</TableHead>
                             <TableHead>Acciones</TableHead>
@@ -1244,12 +1324,27 @@ function DashboardContent() {
                                       {fmtDiferencia(reg.salidaDiferenciaMinutos)} antes
                                     </span>
                                   )}
-                                  {reg.salidaDiferenciaMinutos > 0 && (
+                                  {reg.salidaDiferenciaMinutos > 0 && !reg.horasExtras && (
                                     <span className="text-[10px] text-success font-bold">
                                       +{fmtDiferencia(reg.salidaDiferenciaMinutos)} extra
                                     </span>
                                   )}
                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                {reg.horasExtras ? (
+                                  <div className="flex flex-col items-center gap-1 min-w-[70px]">
+                                    <span className="text-xs font-bold text-amber-600 leading-none">
+                                      D: {reg.horasExtras.solicitadasDiurnas || 0}m | N: {reg.horasExtras.solicitadasNocturnas || 0}m
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground leading-none">Total: {reg.horasExtras.solicitadasMinutos}m</span>
+                                    <Badge variant={reg.horasExtras.estado === 'pendiente' ? 'outline' : (reg.horasExtras.estado === 'aprobada' ? 'default' : 'destructive')} className="text-[9px] px-1 py-0 h-4 uppercase cursor-pointer mt-1" onClick={() => esSuperAdmin && setExtraHoursModal(reg)}>
+                                      {reg.horasExtras.estado}
+                                    </Badge>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
                               </TableCell>
                               <TableCell className="font-semibold text-primary whitespace-nowrap">
                                 {calcularHorasTrabajadasDashboard(reg)}
@@ -1445,7 +1540,7 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                <PersonalReadOnlyList />
+                <PersonalReadOnlyList onOtorgarPermiso={(u) => { setPermisoFormData({...permisoFormData, empleadoId: u.empleadoId, nombre: u.nombre}); setPermisoModal(true); }} />
               </div>
             </TabsContent>
           )}
@@ -2048,6 +2143,105 @@ function DashboardContent() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Modal Evaluar Horas Extras */}
+      <Dialog open={!!extraHoursModal} onOpenChange={(open) => !open && setExtraHoursModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-amber-500" />
+              Evaluar Horas Extras
+            </DialogTitle>
+            <DialogDescription>
+              {extraHoursModal?.nombre} registró salida tarde: <br/>
+              <strong>Diurnas:</strong> {extraHoursModal?.horasExtras?.solicitadasDiurnas || 0} min | <strong>Nocturnas:</strong> {extraHoursModal?.horasExtras?.solicitadasNocturnas || 0} min <br/>
+              (Total: {extraHoursModal?.horasExtras?.solicitadasMinutos} minutos)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Notas / Observaciones (Opcional)</label>
+              <textarea 
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Escribe el motivo de la aprobación o rechazo..."
+                value={extraHoursNote}
+                onChange={(e) => setExtraHoursNote(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setExtraHoursModal(null)}>Cancelar</Button>
+              <Button variant="destructive" onClick={() => handleEvaluarHorasExtras('rechazada')}>Rechazar</Button>
+              <Button onClick={() => handleEvaluarHorasExtras('aprobada')}>Aprobar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Otorgar Permiso */}
+      <Dialog open={permisoModal} onOpenChange={setPermisoModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+              Otorgar Permiso de Trabajo
+            </DialogTitle>
+            <DialogDescription>
+              Registra un permiso para un trabajador que justificará su inasistencia en las fechas dadas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Trabajador</label>
+              <Select 
+                value={permisoFormData.empleadoId} 
+                onValueChange={(v) => {
+                  const emp = documentos.find(d => d.id === v);
+                  setPermisoFormData({ ...permisoFormData, empleadoId: v, nombre: emp ? emp.nombre : "" });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecciona un trabajador..." /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {documentos.filter(d => d.tipo !== "afiliado" && d.tipo !== "afiliacion_individual").map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.nombre} ({d.cargo || "Sin cargo"})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Desde</label>
+                <Input type="date" value={permisoFormData.fechaInicio} onChange={(e) => setPermisoFormData({ ...permisoFormData, fechaInicio: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Hasta</label>
+                <Input type="date" value={permisoFormData.fechaFin} onChange={(e) => setPermisoFormData({ ...permisoFormData, fechaFin: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de Permiso</label>
+              <Select value={permisoFormData.tipo} onValueChange={(v) => setPermisoFormData({ ...permisoFormData, tipo: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="remunerado">Remunerado</SelectItem>
+                  <SelectItem value="no_remunerado">No Remunerado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Motivo</label>
+              <textarea 
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Cita médica, licencia de maternidad, etc..."
+                value={permisoFormData.razon}
+                onChange={(e) => setPermisoFormData({ ...permisoFormData, razon: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setPermisoModal(false)}>Cancelar</Button>
+              <Button onClick={handleOtorgarPermiso}>Guardar Permiso</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Modal para ver bitácora de asistencia */}
       <Dialog open={!!verBitacoraDoc} onOpenChange={(open) => !open && setVerBitacoraDoc(null)}>
         <DialogContent>
@@ -2094,45 +2288,48 @@ function DashboardContent() {
                 width: "800px",
                 padding: "80px",
                 background: "white",
-                fontFamily: "'Times New Roman', serif",
+                fontFamily: "Calibri, 'Times New Roman', serif",
                 color: "#1a1a1a",
-                lineHeight: "1.6",
+                lineHeight: "1.5",
                 boxSizing: "border-box"
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
-                <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+                <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
                 <div style={{ textAlign: "right" }}>
-                  <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                  <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+                  <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                  <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
                 </div>
               </div>
 
-              <div style={{ textAlign: "center", marginBottom: "20px" }}>
-                <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
+              <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "50px" }}>
+                <h2 style={{ fontSize: "24px", fontWeight: "900", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
               </div>
 
               <div style={{ fontSize: "14px", textAlign: "justify" }}>
-                <p>
-                  La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{currentCertData.persona.nombre}</strong> con NUIP. <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
+                <p style={{ marginBottom: "15px" }}>
+                  La presente organización de base denominada <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{currentCertData.persona.nombre.toUpperCase()}</strong> con NUIP. <strong>{currentCertData.persona.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
                 </p>
-
-                <p>
-                  Esta membresía fue realizada el día {formatearFecha(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso)}, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
+                <p style={{ marginBottom: "15px" }}>
+                  Esta membresía fue realizada el día <strong>{new Date(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong> a las <strong>{new Date(currentCertData.persona.fechaCreacion || currentCertData.persona.fechaIngreso).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</strong>, bajo el código institucional <strong>{currentCertData.persona.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
                 </p>
-
-                <p>
-                  Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico {getPeriodoEducativo(currentCertData.membresia.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+                <p style={{ marginBottom: "15px" }}>
+                  Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder <strong>AVAL</strong> y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico <strong>{getPeriodoEducativo(currentCertData.membresia.fechaExpiracion)}</strong>.
+                </p>
+                <p style={{ marginBottom: "40px" }}>
+                  El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
                 </p>
               </div>
 
-              <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                  <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
-                  <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
-                  <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+              <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <div style={{ textAlign: "center" }}>
+                  <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+                  <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                  <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+                </div>
+                <div style={{ width: "120px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <img id="qr-code-edu" alt="QR Code" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               </div>
             </div>
@@ -2202,7 +2399,7 @@ function DashboardContent() {
               <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
                 <p style={{ margin: 0, fontSize: "12px", marginBottom: "20px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
                 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                  <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} onError={(e) => e.target.style.display = 'none'} />
+                  <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
                   <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
                   <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
                   <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>

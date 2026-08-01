@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { crearUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
+import { crearUsuarioInstitucional, reingresarUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 // Librerías para PDF y QR
@@ -57,6 +57,26 @@ const COLORS = {
   amarillo: "#f3de4d",
   rojo: "#ce181b"
 };
+
+const PAISES_PERSONAL = [
+  "Colombia", "Venezuela", "Ecuador", "Per\u00fa", "Chile", "Argentina", "Brasil", "Panam\u00e1", "M\u00e9xico", "Estados Unidos", "Espa\u00f1a", "Otro"
+];
+
+const DEPARTAMENTOS_COLOMBIA_PERSONAL = [
+  "Amazonas", "Antioquia", "Arauca", "Atl\u00e1ntico", "Bol\u00edvar", "Boyac\u00e1", "Caldas", "Caquet\u00e1", "Casanare", "Cauca", "Cesar", "Choc\u00f3", "C\u00f3rdoba", "Cundinamarca", "Guain\u00eda", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Nari\u00f1o", "Norte de Santander", "Putumayo", "Quind\u00edo", "Risaralda", "San Andr\u00e9s y Providencia", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupes", "Vichada"
+];
+
+const SEDES_INSTITUCIONALES = [
+  "Sede Principal",
+  "Subdirecci\u00f3n Regional Pac\u00edfico Norte",
+  "Subdirecci\u00f3n Regional Pac\u00edfico Sur",
+  "Subdirecci\u00f3n Regional Eje Cafetero",
+  "Subdirecci\u00f3n Regional Sur Central",
+  "Subdirecci\u00f3n Regional Nor Caribe",
+  "Subdirecci\u00f3n Regional Sur Caribe",
+  "Subdirecci\u00f3n Regional Nor Oriente",
+  "Subdirecci\u00f3n Regional Sur Oriente"
+];
 
 const TIPOS_PERSONAL = [
   "Empleado", "Practicante", "Contratista", "Administrativo", "Coordinador", "Directivo", "Otro"
@@ -98,7 +118,25 @@ function PersonalContent() {
     mascotas: [],
     foto: null,
     horarioModalidad: HORARIO_DEFAULT,
-    memorandos: []
+    memorandos: [],
+    // Nuevos campos institucionales
+    oficinaContrata: "",
+    dependenciaSolicita: "",
+    paisAsignacion: "Colombia",
+    otroPaisAsignacion: "",
+    departamentoAsignacion: "Valle del Cauca",
+    ciudadAsignacion: "",
+    correoPersonal: "",
+    // Remuneración desglosada
+    valorDiaTrabajo: "",
+    horasSemanales: "",
+    auxilioTransporte: "",
+    // Nuevos Afiliaciones
+    eps: "",
+    fondoPension: "",
+    cesantias: "",
+    cajaCompensacion: "",
+    arl: "POSITIVA ARL",
   });
   const [fotoPreview, setFotoPreview] = useState(null);
   const [creando, setCreando] = useState(false);
@@ -109,6 +147,8 @@ function PersonalContent() {
   const [personalReciente, setPersonalReciente] = useState(null);
   const [qrPersonal, setQrPersonal] = useState(null);
   const [fechaCertificado, setFechaCertificado] = useState("");
+  const [showRemuneracionModal, setShowRemuneracionModal] = useState(false);
+  const [personaCertPendiente, setPersonaCertPendiente] = useState(null);
 
   // Estados Table
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,6 +175,43 @@ function PersonalContent() {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    if (!formData.fechaIngreso || !formData.tipoVinculacion) return;
+    
+    if (formData.tipoContrato === "Contrato a Término Indefinido") {
+      if (formData.fechaTerminacion !== "") {
+        setFormData(prev => ({ ...prev, fechaTerminacion: "" }));
+      }
+      return;
+    }
+
+    const start = new Date(formData.fechaIngreso);
+    // ensure the timezone isn't off by adding the timezone offset so it acts as local
+    start.setMinutes(start.getMinutes() + start.getTimezoneOffset());
+    
+    if (isNaN(start)) return;
+
+    if (formData.tipoVinculacion === "Periodo de Prueba") {
+      const days = parseInt(formData.tiempoPeriodoPrueba);
+      if (!isNaN(days) && days > 0) {
+        start.setDate(start.getDate() + days);
+        const endStr = start.toISOString().split("T")[0];
+        if (formData.fechaTerminacion !== endStr) {
+          setFormData(prev => ({ ...prev, fechaTerminacion: endStr }));
+        }
+      }
+    } else if (formData.tipoVinculacion === "Contrato" || formData.tipoVinculacion === "Nombramiento") {
+      const months = parseInt(formData.tiempoContrato);
+      if (!isNaN(months) && months > 0) {
+        start.setMonth(start.getMonth() + months);
+        const endStr = start.toISOString().split("T")[0];
+        if (formData.fechaTerminacion !== endStr) {
+          setFormData(prev => ({ ...prev, fechaTerminacion: endStr }));
+        }
+      }
+    }
+  }, [formData.fechaIngreso, formData.tiempoContrato, formData.tiempoPeriodoPrueba, formData.tipoVinculacion, formData.tipoContrato]);
 
   const removerTildes = (str) => {
     if (!str) return "";
@@ -236,6 +313,27 @@ function PersonalContent() {
     setFormData(prev => ({ ...prev, beneficiarios: newBeneficiarios }));
   };
 
+  const handleTimeChange = (dia, field, value) => {
+    let updates = { [field]: value };
+    if (field === 'entrada1' && value) {
+      const [h, m] = value.split(':');
+      let outH = (parseInt(h) + 4) % 24;
+      updates['salida1'] = `${String(outH).padStart(2, '0')}:${m}`;
+    }
+    if (field === 'entrada2' && value) {
+      const [h, m] = value.split(':');
+      let outH = (parseInt(h) + 4) % 24;
+      updates['salida2'] = `${String(outH).padStart(2, '0')}:${m}`;
+    }
+    setFormData({
+      ...formData,
+      horarioModalidad: {
+        ...formData.horarioModalidad,
+        [dia]: { ...formData.horarioModalidad[dia], ...updates }
+      }
+    });
+  };
+
   const handleMascotaChange = (index, field, value) => {
     const newMascotas = [...(formData.mascotas || [])];
     newMascotas[index][field] = value;
@@ -255,18 +353,30 @@ function PersonalContent() {
     }
 
     // Verificar si ya existe un empleado con esa cédula
+    let empleadoExistente = null;
+    let esReingreso = false;
+
     if (!confirmDuplicado) {
       try {
         const docNumeroLimpio = formData.documento.replace(/\./g, "");
         const q = query(collection(db, "empleados"), where("documento", "in", [formData.documento, docNumeroLimpio]));
         const snap = await getDocs(q);
         if (!snap.empty) {
-          const existente = snap.docs[0].data();
-          const confirmar = window.confirm(
-            `⚠️ Ya existe un empleado registrado con este número de cédula:\n\n👤 ${existente.nombre}\n📋 Documento: ${existente.documento}\n\n¿Deseas continuar de todas formas con el registro?`
-          );
-          if (!confirmar) return;
-          setConfirmDuplicado(true);
+          empleadoExistente = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          
+          if (empleadoExistente.estado === "inactivo" || empleadoExistente.estado === "Inactivo") {
+            const confirmar = window.confirm(
+              `⚠️ El usuario ${empleadoExistente.nombre} ya existe y está INACTIVO.\n\n¿Deseas RE-INGRESARLO? Esto guardará su contrato anterior en el historial y creará uno nuevo conservando su membresía y accesos.`
+            );
+            if (!confirmar) return;
+            esReingreso = true;
+          } else {
+            const confirmar = window.confirm(
+              `⚠️ Ya existe un empleado ACTIVO con este número de cédula:\n\n👤 ${empleadoExistente.nombre}\n📋 Documento: ${empleadoExistente.documento}\n\n¿Deseas continuar de todas formas con el registro creando un duplicado?`
+            );
+            if (!confirmar) return;
+            setConfirmDuplicado(true);
+          }
         }
       } catch (err) {
         console.warn("No se pudo verificar duplicado:", err);
@@ -275,7 +385,7 @@ function PersonalContent() {
 
     setCreando(true);
     try {
-      const codigoG = "FIC-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const codigoG = esReingreso ? empleadoExistente.codigoInstitucional : ("FIC-" + Math.random().toString(36).substr(2, 6).toUpperCase());
 
       const beneficiariosValidos = formData.afiliarAutomaticamente ? (formData.beneficiarios || []).filter(b => b.nombre.trim() !== "") : [];
       const mascotasValidas = formData.afiliarAutomaticamente ? (formData.mascotas || []).filter(m => m.nombre.trim() !== "") : [];
@@ -288,7 +398,12 @@ function PersonalContent() {
         creadoPorUid: user.uid
       };
 
-      const result = await crearUsuarioInstitucional(payload);
+      let result;
+      if (esReingreso) {
+        result = await reingresarUsuarioInstitucional(empleadoExistente, payload);
+      } else {
+        result = await crearUsuarioInstitucional(payload);
+      }
 
       if (result.success) {
         await registrarAuditoria({
@@ -399,7 +514,19 @@ function PersonalContent() {
       mascotas: target.mascotas || [],
       foto: target.foto || null,
       horarioModalidad: target.horarioModalidad || HORARIO_DEFAULT,
-      memorandos: Array.isArray(target.memorandos) ? target.memorandos : []
+      memorandos: Array.isArray(target.memorandos) ? target.memorandos : [],
+      // Campos de asignación institucional
+      oficinaContrata: target.oficinaContrata || "",
+      dependenciaSolicita: target.dependenciaSolicita || "",
+      paisAsignacion: target.paisAsignacion || "Colombia",
+      otroPaisAsignacion: "",
+      departamentoAsignacion: target.departamentoAsignacion || "Valle del Cauca",
+      ciudadAsignacion: target.ciudadAsignacion || "",
+      correoPersonal: target.correoPersonal || "",
+      // Remuneración desglosada
+      valorDiaTrabajo: target.valorDiaTrabajo || "",
+      horasSemanales: target.horasSemanales || "",
+      auxilioTransporte: target.auxilioTransporte || "",
     });
     setFotoPreview(target.foto || null);
     setIsEditing(true);
@@ -501,9 +628,19 @@ function PersonalContent() {
           fechaTerminacion: formData.fechaTerminacion,
           motivoTerminacion: formData.motivoTerminacion,
           salario: formData.salario,
+          valorDiaTrabajo: formData.valorDiaTrabajo || "",
+          horasSemanales: formData.horasSemanales || "",
+          auxilioTransporte: formData.auxilioTransporte || "",
           modalidadLaboral: formData.modalidadLaboral,
           foto: formData.foto,
           memorandos: formData.memorandos || [],
+          // Campos de asignación institucional
+          oficinaContrata: formData.oficinaContrata || "",
+          dependenciaSolicita: formData.dependenciaSolicita || "",
+          paisAsignacion: formData.paisAsignacion === "Otro" ? formData.otroPaisAsignacion : (formData.paisAsignacion || "Colombia"),
+          departamentoAsignacion: formData.paisAsignacion === "Colombia" ? (formData.departamentoAsignacion || "") : "",
+          ciudadAsignacion: formData.ciudadAsignacion || "",
+          correoPersonal: formData.correoPersonal || "",
         });
       }
       toast.success("Personal actualizado correctamente");
@@ -574,11 +711,28 @@ function PersonalContent() {
     }
   };
 
-  const generarCertificadoPersonal = async (persona) => {
+  const solicitarCertificadoPersonal = (persona) => {
+    // Verificar que hayan pasado al menos 30 días desde la fecha de ingreso
+    const fechaIngreso = new Date(persona.fechaIngreso);
+    const hoy = new Date();
+    const diffDias = Math.floor((hoy - fechaIngreso) / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 30) {
+      const diasRestantes = 30 - diffDias;
+      toast.error(`El certificado laboral estará disponible en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}. Se requieren al menos 30 días laborando.`);
+      return;
+    }
+
+    // Si ya tiene 30+ días, preguntar con o sin remuneración
+    setPersonaCertPendiente(persona);
+    setShowRemuneracionModal(true);
+  };
+
+  const generarCertificadoPersonal = async (persona, conRemuneracion) => {
     toast.info("Generando certificado...");
     try {
-      setPersonalReciente(persona);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setPersonalReciente({ ...persona, mostrarRemuneracion: conRemuneracion });
+      await new Promise(resolve => setTimeout(resolve, 600));
 
       const element = document.getElementById("hidden-cert-personal");
       if (!element) throw new Error("Template no encontrado");
@@ -608,8 +762,8 @@ function PersonalContent() {
       pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
       pdf.addImage(qrDataUrl, "PNG", marginX, marginY, qrSize, qrSize);
 
-      pdf.save(`Certificado_${persona.tipoPersonal}_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
-      toast.success("Certificado descargado");
+      pdf.save(`Certificado_Laboral_${persona.nombre.replace(/\s+/g, "_")}.pdf`);
+      toast.success("Certificado laboral descargado");
     } catch (err) {
       console.error(err);
       toast.error("Error al generar PDF");
@@ -622,7 +776,11 @@ function PersonalContent() {
       tipoPersonal: "Empleado", fechaIngreso: new Date().toISOString().split("T")[0],
       estado: "activo", rol: "empleado", password: "", modalidadLaboral: "Presencial",
       diasTeletrabajo: "", afiliarAutomaticamente: false, beneficiarios: [], mascotas: [], foto: null,
-      horarioModalidad: HORARIO_DEFAULT
+      horarioModalidad: HORARIO_DEFAULT,
+      oficinaContrata: "", dependenciaSolicita: "", paisAsignacion: "Colombia", otroPaisAsignacion: "",
+      departamentoAsignacion: "Valle del Cauca", ciudadAsignacion: "", correoPersonal: "",
+      valorDiaTrabajo: "", horasSemanales: "", auxilioTransporte: "",
+      eps: "", fondoPension: "", cesantias: "", cajaCompensacion: "", arl: "POSITIVA ARL"
     });
     setFotoPreview(null);
     setPersonalReciente(null);
@@ -792,7 +950,7 @@ function PersonalContent() {
                                     <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
                                       <QrCode className="h-4 w-4 text-info" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => generarCertificadoPersonal(personal)} title="Descargar Certificado">
+                                    <Button variant="ghost" size="icon" onClick={() => solicitarCertificadoPersonal(personal)} title="Descargar Certificado Laboral">
                                       <FileText className="h-4 w-4 text-success" />
                                     </Button>
                                     <Button
@@ -994,6 +1152,94 @@ function PersonalContent() {
                     </div>
                   </div>
 
+                  {/* INFORMACIÓN DE ASIGNACIÓN INSTITUCIONAL */}
+                  <div className="pt-8 border-t">
+                    <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Building className="w-4 h-4" /> Asignación Institucional</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/10 p-5 rounded-xl border">
+
+                      {/* Oficina que contrata */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Oficina que Contrata *</label>
+                        <Select value={formData.oficinaContrata} onValueChange={v => setFormData({ ...formData, oficinaContrata: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione la sede..." /></SelectTrigger>
+                          <SelectContent>
+                            {SEDES_INSTITUCIONALES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Dependencia que vincula (siempre fija) */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Dependencia que Vincula</label>
+                        <Input value="Área de Talento Humano" disabled className="bg-muted text-muted-foreground cursor-not-allowed" />
+                      </div>
+
+                      {/* Dependencia que solicita */}
+                      <div className="space-y-2 sm:col-span-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Dependencia que Solicita</label>
+                        <Input
+                          value={formData.dependenciaSolicita}
+                          onChange={e => setFormData({ ...formData, dependenciaSolicita: e.target.value })}
+                          placeholder="Ej. Área de Comunicaciones, Coordinación Jurídica..."
+                        />
+                      </div>
+
+                      {/* País de Asignación */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">País de Asignación</label>
+                        <Select value={formData.paisAsignacion} onValueChange={v => setFormData({ ...formData, paisAsignacion: v, otroPaisAsignacion: "" })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione país..." /></SelectTrigger>
+                          <SelectContent>
+                            {PAISES_PERSONAL.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {formData.paisAsignacion === "Otro" && (
+                          <Input
+                            className="mt-2"
+                            placeholder="Escriba el nombre del país"
+                            value={formData.otroPaisAsignacion}
+                            onChange={e => setFormData({ ...formData, otroPaisAsignacion: e.target.value })}
+                          />
+                        )}
+                      </div>
+
+                      {/* Departamento de Asignación (solo si Colombia) */}
+                      {formData.paisAsignacion === "Colombia" && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase text-muted-foreground">Departamento de Asignación</label>
+                          <Select value={formData.departamentoAsignacion} onValueChange={v => setFormData({ ...formData, departamentoAsignacion: v })}>
+                            <SelectTrigger><SelectValue placeholder="Seleccione departamento..." /></SelectTrigger>
+                            <SelectContent>
+                              {DEPARTAMENTOS_COLOMBIA_PERSONAL.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Ciudad de Asignación */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Ciudad de Asignación</label>
+                        <Input
+                          value={formData.ciudadAsignacion}
+                          onChange={e => setFormData({ ...formData, ciudadAsignacion: e.target.value })}
+                          placeholder="Ej. Cali, Buenaventura..."
+                        />
+                      </div>
+
+                      {/* Correo Personal */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Correo Personal</label>
+                        <Input
+                          type="email"
+                          value={formData.correoPersonal}
+                          onChange={e => setFormData({ ...formData, correoPersonal: e.target.value })}
+                          placeholder="correo@gmail.com"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
                   {/* INFORMACION CONTRACTUAL */}
                   <div className="pt-8 border-t">
                     <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><Briefcase className="w-4 h-4" /> Información Contractual</h3>
@@ -1013,19 +1259,18 @@ function PersonalContent() {
 
                       {/* Tipo de contrato: solo visible si es Contrato o Nombramiento */}
                       {(formData.tipoVinculacion === "Contrato" || formData.tipoVinculacion === "Nombramiento") && (
-                        <div className="space-y-2 animate-in fade-in zoom-in duration-200">
+                        <div className="space-y-2 md:col-span-2 lg:col-span-2 animate-in fade-in zoom-in duration-200">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Tipo de Contrato</label>
                           <Select value={formData.tipoContrato} onValueChange={v => setFormData({ ...formData, tipoContrato: v })}>
                             <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="A Término Fijo">A Término Fijo</SelectItem>
-                              <SelectItem value="A Término Indefinido">A Término Indefinido</SelectItem>
-                              <SelectItem value="De Obra o Labor">De Obra o Labor</SelectItem>
-                              <SelectItem value="Por Prestación de Servicios">Por Prestación de Servicios</SelectItem>
-                              <SelectItem value="Ocasional, Accidental o Transitorio">Ocasional, Accidental o Transitorio</SelectItem>
-                              <SelectItem value="De Aprendizaje">De Aprendizaje</SelectItem>
-                              <SelectItem value="De Prácticas">De Prácticas</SelectItem>
-                              <SelectItem value="De Pasantías">De Pasantías</SelectItem>
+                              <SelectItem value="Contrato a Término Fijo">Contrato a Término Fijo</SelectItem>
+                              <SelectItem value="Contrato a Término Indefinido">Contrato a Término Indefinido</SelectItem>
+                              <SelectItem value="Contrato de Prestación de Servicios">Contrato de Prestación de Servicios</SelectItem>
+                              <SelectItem value="Contrato de Obra o Labor">Contrato de Obra o Labor</SelectItem>
+                              <SelectItem value="Contrato Ocasional, Accidental o Transitorio">Contrato Ocasional, Accidental o Transitorio</SelectItem>
+                              <SelectItem value="Contrato de Aprendizaje">Contrato de Aprendizaje</SelectItem>
+                              <SelectItem value="Convenio de Práctica, Pasantías o Vinculación Formativa">Convenio de Práctica, Pasantías o Vinculación Formativa</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1038,8 +1283,8 @@ function PersonalContent() {
                           <Select value={formData.tiempoPeriodoPrueba} onValueChange={v => setFormData({ ...formData, tiempoPeriodoPrueba: v })}>
                             <SelectTrigger><SelectValue placeholder="Seleccione días..." /></SelectTrigger>
                             <SelectContent>
-                              {Array.from({ length: 20 }, (_, i) => i + 1).map(d => (
-                                <SelectItem key={d} value={String(d)}>{d} {d === 1 ? "día" : "días"}</SelectItem>
+                              {Array.from({ length: 46 }, (_, i) => i + 15).map(d => (
+                                <SelectItem key={d} value={String(d)}>{d} días</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -1062,32 +1307,196 @@ function PersonalContent() {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs font-semibold uppercase text-muted-foreground">Salario u Honorario</label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-xs">
-                              <p>El sistema añadirá automáticamente el signo de peso ($) y los separadores de miles cuando termines de escribir.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Input
-                          value={formData.salario}
-                          onChange={e => {
-                            let val = e.target.value.replace(/\D/g, "");
-                            if (!val) {
-                              setFormData({ ...formData, salario: "" });
-                            } else {
-                              const formatted = "$ " + parseInt(val, 10).toLocaleString("es-CO");
-                              setFormData({ ...formData, salario: formatted });
-                            }
-                          }}
-                          placeholder="Ej. $ 1.500.000"
-                        />
-                      </div>
+                      {/* === TABLA DE CÁLCULO DE REMUNERACIÓN === */}
+                      {[
+                        "Contrato a Término Fijo",
+                        "Contrato a Término Indefinido",
+                        "Contrato de Aprendizaje",
+                        "Contrato Ocasional, Accidental o Transitorio"
+                      ].includes(formData.tipoContrato) && (() => {
+                        const valorDia = parseFloat((formData.valorDiaTrabajo || "").replace(/[^0-9.]/g, "")) || 0;
+                        const horasSem = parseFloat((formData.horasSemanales || "").replace(/[^0-9.]/g, "")) || 0;
+                        const horasMes = horasSem * 4;
+                        const valorMensual = valorDia * 30;
+                        const auxTransporte = parseFloat((formData.auxilioTransporte || "").replace(/[^0-9.]/g, "")) || 0;
+                        const valorTotal = valorMensual + auxTransporte;
+                        const fmt = (n) => n > 0 ? "$ " + n.toLocaleString("es-CO") : "—";
+
+                        const updateSalario = (diario, aux) => {
+                          const vm = (parseFloat((diario || "").replace(/[^0-9.]/g, "")) || 0) * 30;
+                          const at = parseFloat((aux || "").replace(/[^0-9.]/g, "")) || 0;
+                          const total = vm + at;
+                          return total > 0 ? "$ " + total.toLocaleString("es-CO") : "";
+                        };
+
+                        return (
+                          <div className="col-span-full space-y-3 animate-in fade-in zoom-in duration-200">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Cálculo de Remuneración</label>
+                            <div className="overflow-x-auto rounded-lg border">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-primary text-white">
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">VALOR DEL DÍA DE TRABAJO</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">HORAS SEMANALES A LABORAR</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">HORAS MENSUALES A LABORAR</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">VALOR DE LA REMUNERACIÓN MENSUAL</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">AUXILIO DE TRANSPORTE</th>
+                                    <th className="px-3 py-2 text-center font-bold">VALOR REMUNERACIÓN</th>
+                                  </tr>
+                                 
+                                </thead>
+                                <tbody>
+                                  <tr className="bg-card">
+                                    {/* Valor día trabajo */}
+                                    <td className="px-3 py-3 border-r">
+                                      <input
+                                        type="text"
+                                        value={formData.valorDiaTrabajo}
+                                        onChange={e => {
+                                          let raw = e.target.value.replace(/[^0-9]/g, "");
+                                          const formatted = raw ? "$ " + parseInt(raw).toLocaleString("es-CO") : "";
+                                          setFormData(prev => ({ ...prev, valorDiaTrabajo: formatted, salario: updateSalario(formatted, prev.auxilioTransporte) }));
+                                        }}
+                                        placeholder="$ 58.364"
+                                        className="w-full text-center border rounded px-2 py-1 text-sm bg-background"
+                                      />
+                                    </td>
+                                    {/* Horas semanales */}
+                                    <td className="px-3 py-3 border-r">
+                                      <input
+                                        type="text"
+                                        value={formData.horasSemanales}
+                                        onChange={e => {
+                                          const val = e.target.value.replace(/[^0-9]/g, "");
+                                          setFormData(prev => ({ ...prev, horasSemanales: val }));
+                                        }}
+                                        placeholder="42"
+                                        className="w-full text-center border rounded px-2 py-1 text-sm bg-background"
+                                      />
+                                    </td>
+                                    {/* Horas mensuales (auto) */}
+                                    <td className="px-3 py-3 border-r">
+                                      <div className="w-full text-center px-2 py-1 text-sm font-bold text-primary bg-primary/5 rounded">
+                                        {horasMes > 0 ? horasMes : "—"}
+                                      </div>
+                                    </td>
+                                    {/* Valor remuneración mensual (auto) */}
+                                    <td className="px-3 py-3 border-r">
+                                      <div className="w-full text-center px-2 py-1 text-sm font-bold text-primary bg-primary/5 rounded">
+                                        {fmt(valorMensual)}
+                                      </div>
+                                    </td>
+                                    {/* Auxilio transporte */}
+                                    <td className="px-3 py-3 border-r">
+                                      <input
+                                        type="text"
+                                        value={formData.auxilioTransporte}
+                                        onChange={e => {
+                                          let raw = e.target.value.replace(/[^0-9]/g, "");
+                                          const formatted = raw ? "$ " + parseInt(raw).toLocaleString("es-CO") : "";
+                                          setFormData(prev => ({ ...prev, auxilioTransporte: formatted, salario: updateSalario(prev.valorDiaTrabajo, formatted) }));
+                                        }}
+                                        placeholder="$ 249.095"
+                                        className="w-full text-center border rounded px-2 py-1 text-sm bg-background"
+                                      />
+                                    </td>
+                                    {/* Valor total remuneración (auto) */}
+                                    <td className="px-3 py-3">
+                                      <div className="w-full text-center px-2 py-1 text-sm font-bold text-success bg-success/10 rounded">
+                                        {fmt(valorTotal)}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">El <strong>Valor Remuneración</strong> se calcula automáticamente y se guardará como la remuneración total del trabajador.</p>
+                          </div>
+                        );
+                      })()}
+
+                      {/* === TABLA DE CÁLCULO DE REMUNERACIÓN PARA OTROS CONTRATOS === */}
+                      {![
+                        "Contrato a Término Fijo",
+                        "Contrato a Término Indefinido",
+                        "Contrato de Aprendizaje",
+                        "Contrato Ocasional, Accidental o Transitorio"
+                      ].includes(formData.tipoContrato) && (() => {
+                        const valorDia = parseFloat((formData.valorDiaTrabajo || "").replace(/[^0-9.]/g, "")) || 0;
+                        const horasSem = parseFloat((formData.horasSemanales || "").replace(/[^0-9.]/g, "")) || 0;
+                        const horasMes = horasSem * 4;
+                        const valorTotal = valorDia * horasMes;
+                        const fmt = (n) => n > 0 ? "$ " + n.toLocaleString("es-CO") : "—";
+
+                        const updateSalario = (diario, horasS) => {
+                          const vd = parseFloat((diario || "").replace(/[^0-9.]/g, "")) || 0;
+                          const hs = parseFloat((horasS || "").replace(/[^0-9.]/g, "")) || 0;
+                          const total = vd * (hs * 4);
+                          return total > 0 ? "$ " + total.toLocaleString("es-CO") : "";
+                        };
+
+                        return (
+                          <div className="col-span-full space-y-3 animate-in fade-in zoom-in duration-200">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Cálculo de Remuneración</label>
+                            <div className="overflow-x-auto rounded-lg border">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-primary text-white">
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">VALOR DEL DÍA DE TRABAJO</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">HORAS SEMANALES A LABORAR</th>
+                                    <th className="px-3 py-2 text-center font-bold border-r border-primary/40">HORAS MENSUALES A LABORAR</th>
+                                    <th className="px-3 py-2 text-center font-bold">VALOR REMUNERACIÓN</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="bg-card">
+                                    {/* Valor día trabajo */}
+                                    <td className="px-3 py-3 border-r">
+                                      <input
+                                        type="text"
+                                        value={formData.valorDiaTrabajo}
+                                        onChange={e => {
+                                          let raw = e.target.value.replace(/[^0-9]/g, "");
+                                          const formatted = raw ? "$ " + parseInt(raw).toLocaleString("es-CO") : "";
+                                          setFormData(prev => ({ ...prev, valorDiaTrabajo: formatted, salario: updateSalario(formatted, prev.horasSemanales) }));
+                                        }}
+                                        placeholder="$ 50.000"
+                                        className="w-full text-center border rounded px-2 py-1 text-sm bg-background"
+                                      />
+                                    </td>
+                                    {/* Horas semanales */}
+                                    <td className="px-3 py-3 border-r">
+                                      <input
+                                        type="text"
+                                        value={formData.horasSemanales}
+                                        onChange={e => {
+                                          const val = e.target.value.replace(/[^0-9]/g, "");
+                                          setFormData(prev => ({ ...prev, horasSemanales: val, salario: updateSalario(prev.valorDiaTrabajo, val) }));
+                                        }}
+                                        placeholder="10"
+                                        className="w-full text-center border rounded px-2 py-1 text-sm bg-background"
+                                      />
+                                    </td>
+                                    {/* Horas mensuales (auto) */}
+                                    <td className="px-3 py-3 border-r">
+                                      <div className="w-full text-center px-2 py-1 text-sm font-bold text-primary bg-primary/5 rounded">
+                                        {horasMes > 0 ? horasMes : "—"}
+                                      </div>
+                                    </td>
+                                    {/* Valor total remuneración (auto) */}
+                                    <td className="px-3 py-3">
+                                      <div className="w-full text-center px-2 py-1 text-sm font-bold text-success bg-success/10 rounded">
+                                        {fmt(valorTotal)}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">El <strong>Valor Remuneración</strong> se calcula automáticamente y se guardará como la remuneración total del trabajador.</p>
+                          </div>
+                        );
+                      })()}
 
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase text-muted-foreground">Fecha de Ingreso *</label>
@@ -1108,11 +1517,70 @@ function PersonalContent() {
                     </div>
                   </div>
 
+                  {/* AFILIACIONES */}
+                  <div className="pt-8 border-t">
+                    <h3 className="text-sm font-bold text-primary border-b pb-2 flex items-center gap-2 mb-4"><ShieldCheck className="w-4 h-4" /> Afiliaciones al Sistema de Seguridad Social</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 bg-muted/10 p-5 rounded-xl border">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">EPS</label>
+                        <Select value={formData.eps} onValueChange={v => setFormData({ ...formData, eps: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione EPS..." /></SelectTrigger>
+                          <SelectContent>
+                            {["Sura EPS", "Sanitas EPS", "Salud Total", "Nueva EPS", "Compensar EPS", "Famisanar", "Coosalud", "Asmet Salud", "Emssanar", "Mutual Ser", "Savia Salud", "Cajacopi", "Capresoca", "Capital Salud", "Otra"].map(eps => (
+                              <SelectItem key={eps} value={eps}>{eps}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Fondo de Pensión</label>
+                        <Select value={formData.fondoPension} onValueChange={v => setFormData({ ...formData, fondoPension: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione Pensión..." /></SelectTrigger>
+                          <SelectContent>
+                            {["Protección", "Porvenir", "Colfondos", "Skandia", "Colpensiones"].map(p => (
+                              <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Cesantías</label>
+                        <Select value={formData.cesantias} onValueChange={v => setFormData({ ...formData, cesantias: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione Cesantías..." /></SelectTrigger>
+                          <SelectContent>
+                            {["Protección", "Porvenir", "Colfondos", "Fondo Nacional del Ahorro"].map(c => (
+                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">Caja de Compensación</label>
+                        <Select value={formData.cajaCompensacion} onValueChange={v => setFormData({ ...formData, cajaCompensacion: v })}>
+                          <SelectTrigger><SelectValue placeholder="Seleccione Caja..." /></SelectTrigger>
+                          <SelectContent>
+                            {["Comfandi", "Comfenalco Valle", "Compensar", "Cafam", "Colsubsidio", "Comfama", "Comfenalco Antioquia", "Otra"].map(c => (
+                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase text-muted-foreground">ARL</label>
+                        <Input value={formData.arl} readOnly className="bg-muted cursor-not-allowed text-muted-foreground font-semibold" />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* HORARIO SEMANAL */}
                   <div className="pt-8 border-t">
                     <div className="space-y-4 bg-muted/10 p-5 rounded-xl border border-dashed">
                       <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4" /> Horario y Modalidad Semanal
+                        <CalendarDays className="w-4 h-4" /> Horario Laboral o de Actividades y Modalidad
                       </h3>
                       <p className="text-[10px] text-muted-foreground uppercase font-bold mb-4">Configure la jornada y modalidad por cada día</p>
 
@@ -1138,48 +1606,54 @@ function PersonalContent() {
                                 <SelectContent>
                                   <SelectItem value="presencial">Presencial</SelectItem>
                                   <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                                  <SelectItem value="presencial_sin_horario">Presencial sin Horario</SelectItem>
+                                  <SelectItem value="teletrabajo_sin_horario">Teletrabajo sin Horario</SelectItem>
                                   <SelectItem value="libre">No Laboral</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div className="flex-1 flex justify-end w-full">
-                              {formData.horarioModalidad[dia].modalidad !== "libre" ? (
-                                <div className="flex flex-row gap-4 items-center w-full lg:w-auto bg-muted/20 lg:bg-transparent p-2 lg:p-0 rounded-md">
-                                  <div className="flex items-center gap-2 w-1/2 lg:w-auto justify-between lg:justify-start">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
+                              {!["libre", "presencial_sin_horario", "teletrabajo_sin_horario"].includes(formData.horarioModalidad[dia].modalidad) ? (
+                                <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 items-center w-full bg-muted/20 lg:bg-transparent p-2 lg:p-0 rounded-md">
+                                  {/* Jornada 1 */}
+                                  <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10">Ent 1</label>
                                     <Input
                                       type="time"
-                                      className="w-[120px] lg:w-[130px] h-9 text-sm"
-                                      value={formData.horarioModalidad[dia].entrada}
-                                      onChange={(e) => setFormData({
-                                        ...formData,
-                                        horarioModalidad: {
-                                          ...formData.horarioModalidad,
-                                          [dia]: { ...formData.horarioModalidad[dia], entrada: e.target.value }
-                                        }
-                                      })}
+                                      className="w-[90px] h-8 text-xs px-2"
+                                      value={formData.horarioModalidad[dia].entrada1 || ""}
+                                      onChange={(e) => handleTimeChange(dia, 'entrada1', e.target.value)}
+                                    />
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right lg:pl-2 border-l border-muted-foreground/20">Sal 1</label>
+                                    <Input
+                                      type="time"
+                                      className="w-[90px] h-8 text-xs px-2 bg-muted cursor-not-allowed"
+                                      value={formData.horarioModalidad[dia].salida1 || ""}
+                                      readOnly
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2 w-1/2 lg:w-auto justify-between lg:justify-start border-l lg:border-l-0 pl-3 lg:pl-0 border-muted-foreground/20">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
+                                  {/* Jornada 2 */}
+                                  <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start lg:pl-4 lg:border-l border-muted-foreground/20">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10">Ent 2</label>
                                     <Input
                                       type="time"
-                                      className="w-[120px] lg:w-[130px] h-9 text-sm"
-                                      value={formData.horarioModalidad[dia].salida}
-                                      onChange={(e) => setFormData({
-                                        ...formData,
-                                        horarioModalidad: {
-                                          ...formData.horarioModalidad,
-                                          [dia]: { ...formData.horarioModalidad[dia], salida: e.target.value }
-                                        }
-                                      })}
+                                      className="w-[90px] h-8 text-xs px-2"
+                                      value={formData.horarioModalidad[dia].entrada2 || ""}
+                                      onChange={(e) => handleTimeChange(dia, 'entrada2', e.target.value)}
+                                    />
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right lg:pl-2 border-l border-muted-foreground/20">Sal 2</label>
+                                    <Input
+                                      type="time"
+                                      className="w-[90px] h-8 text-xs px-2 bg-muted cursor-not-allowed"
+                                      value={formData.horarioModalidad[dia].salida2 || ""}
+                                      readOnly
                                     />
                                   </div>
                                 </div>
                               ) : (
                                 <div className="w-full lg:w-auto text-center lg:text-right text-sm text-muted-foreground italic py-2 lg:py-0">
-                                  Día de descanso
+                                  Sin horario asignado
                                 </div>
                               )}
                             </div>
@@ -1189,6 +1663,7 @@ function PersonalContent() {
                     </div>
                   </div>
 
+                  {formData.tipoVinculacion !== "Periodo de Prueba" && (
                   <div className="border-t pt-6">
                     <div className="flex items-start space-x-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
                       <Checkbox
@@ -1292,6 +1767,7 @@ function PersonalContent() {
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* ANOTACIONES DE MEMORANDO */}
                   <div className="pt-8 border-t">
@@ -1483,6 +1959,47 @@ function PersonalContent() {
       </main>
 
       {/* ================================================== */}
+      {/* MODAL: ¿Con o sin remuneración? */}
+      <Dialog open={showRemuneracionModal} onOpenChange={setShowRemuneracionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Certificado Laboral
+            </DialogTitle>
+            <DialogDescription>
+              ¿Desea incluir la remuneración en el certificado?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Seleccione si el certificado debe indicar la remuneración mensual del trabajador o expedirse sin esa información.
+            </p>
+            <div className="flex gap-3 mt-2">
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setShowRemuneracionModal(false);
+                  generarCertificadoPersonal(personaCertPendiente, true);
+                }}
+              >
+                Con Remuneración
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowRemuneracionModal(false);
+                  generarCertificadoPersonal(personaCertPendiente, false);
+                }}
+              >
+                Sin Remuneración
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* TEMPLATES OCULTOS PARA GENERACIÓN SILENCIOSA */}
       {/* ================================================== */}
       <div style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
@@ -1606,7 +2123,9 @@ function PersonalContent() {
                   <p>FECHA DE INGRESO: {personalReciente.fechaIngreso}</p>
                   <p>TERMINACIÓN DEL CONTRATO: {personalReciente.fechaTerminacion || "No aplica"}</p>
                   <p>MOTIVO DE TERMINACIÓN: {personalReciente.motivoTerminacion || "No aplica"}</p>
-                  <p>SALARIO U HONORARIO MENSUAL: {personalReciente.salario || "No especificado"}</p>
+                  {personalReciente.mostrarRemuneracion && (
+                    <p>REMUNERACIÓN MENSUAL: {personalReciente.salario || "No especificado"}</p>
+                  )}
                 </div>
 
                 <p style={{ marginTop: "30px" }}>

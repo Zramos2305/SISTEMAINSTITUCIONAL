@@ -17,7 +17,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { LogOut, Download, AlertCircle, FileText, BadgeCheck, User, Users, MapPin, Calendar, HeartPulse, ShieldAlert, CreditCard } from "lucide-react";
-import Script from "next/script";const COLORS = {
+import Script from "next/script";
+import QRCode from "qrcode";
+
+const COLORS = {
   azul: "#3f7384",
   verde: "#606f3a",
   amarillo: "#f4b958",
@@ -113,11 +116,14 @@ export default function AfiliadoDashboard() {
     cantidadMembresias = afiliado.membresias.length || 1;
     const referidos = afiliado.referidosExitosos || 0;
     const tieneEdu = afiliado.membresias.some(m => m.tipo === "educativa");
+    const tieneInt = afiliado.membresias.some(m => m.tipo === "integral");
+    const tieneCas = afiliado.membresias.some(m => m.tipo === "casino");
+    const tieneEduInt = afiliado.membresias.some(m => m.tipo === "educativa_internacional");
     
     afiliado.membresias.forEach(m => {
       if (m.fechaExpiracion) {
         const expiracion = new Date(m.fechaExpiracion);
-        if (m.tipo === "educativa") {
+        if (m.tipo === "educativa" || m.tipo === "educativa_internacional") {
           expiracion.setMonth(expiracion.getMonth() + 6);
         } else {
           expiracion.setFullYear(expiracion.getFullYear() + 1);
@@ -126,19 +132,43 @@ export default function AfiliadoDashboard() {
       }
     });
 
+    let baseLabel = "";
+    
     if (isVencido) {
-      labelPrecio = cantidadMembresias === 2 ? "Afiliación Nueva (Ambas)" : (tieneEdu ? "Afiliación Nueva (Educativa)" : "Afiliación Nueva (Integral)");
+      if (tieneEdu && tieneInt) { precioRenovacion = 159999; baseLabel = "Afiliación Nueva (Ambas)"; }
+      else if (tieneInt) { precioRenovacion = 116999; baseLabel = "Afiliación Nueva (Integral)"; }
+      else if (tieneEdu) { precioRenovacion = 79999; baseLabel = "Afiliación Nueva (Educativa)"; }
       aporteText = "Aporte (Beca) del 55% al 35% aplicado.";
-      precioRenovacion = cantidadMembresias === 2 ? 159999 : (tieneEdu ? 79999 : 116999);
     } else if (referidos >= 5) {
       usaPlanReferidos = true;
-      labelPrecio = cantidadMembresias === 2 ? "Plan Referidos (Ambas)" : (tieneEdu ? "Plan Referidos (Educativa)" : "Plan Referidos (Integral)");
+      if (tieneEdu && tieneInt) { precioRenovacion = 79999; baseLabel = "Plan Referidos (Ambas)"; }
+      else if (tieneInt) { precioRenovacion = 59999; baseLabel = "Plan Referidos (Integral)"; }
+      else if (tieneEdu) { precioRenovacion = 19999; baseLabel = "Plan Referidos (Educativa)"; }
       aporteText = "Aporte Especial por Referidos aplicado (del 55% al 90%).";
-      precioRenovacion = cantidadMembresias === 2 ? 79999 : (tieneEdu ? 19999 : 59999);
     } else {
-      labelPrecio = cantidadMembresias === 2 ? "Renovación (Ambas)" : (tieneEdu ? "Renovación Normal (Educativa)" : "Renovación Normal (Integral)");
+      if (tieneEdu && tieneInt) { precioRenovacion = 119999; baseLabel = "Renovación (Ambas)"; }
+      else if (tieneInt) { precioRenovacion = 90999; baseLabel = "Renovación Normal (Integral)"; }
+      else if (tieneEdu) { precioRenovacion = 45999; baseLabel = "Renovación Normal (Educativa)"; }
       aporteText = "Aporte (Beca) de Renovación aplicado (del 55% al 70%).";
-      precioRenovacion = cantidadMembresias === 2 ? 119999 : (tieneEdu ? 45999 : 90999);
+    }
+
+    let extras = [];
+    if (tieneCas) {
+      precioRenovacion += 50000;
+      extras.push("Casino");
+    }
+    if (tieneEduInt) {
+      precioRenovacion += 299999;
+      extras.push("Edu. Internacional");
+    }
+
+    if (extras.length > 0 && baseLabel === "") {
+      labelPrecio = "Renovación (" + extras.join(" y ") + ")";
+      if (aporteText === "") aporteText = "Aporte Institucional aplicado.";
+    } else if (extras.length > 0) {
+      labelPrecio = baseLabel + " + " + extras.join(" y ");
+    } else {
+      labelPrecio = baseLabel;
     }
   }
 
@@ -156,6 +186,7 @@ export default function AfiliadoDashboard() {
     toast.info("Generando imagen de alta calidad, por favor espera...", { duration: 3000 });
     
     try {
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(carnetRef.current, {
         scale: 4,
         useCORS: true,
@@ -301,7 +332,7 @@ export default function AfiliadoDashboard() {
       toast.info("Conectando con la pasarela segura de Wompi...");
 
       // 2. Pedir firma criptográfica al servidor local
-      const reference = `${afiliado.codigoInstitucional}_${Date.now()}`;
+      const reference = `${afiliado.codigoInstitucional}_RENOV_${Date.now()}`;
       
       const amountInCents = parseInt(precioRenovacion) * 100;
       const currency = "COP";
@@ -382,7 +413,7 @@ export default function AfiliadoDashboard() {
 
   // Verificar si TODO está vencido o el usuario está inactivo
   const estaInactivoGlobal = afiliado.estado === "inactivo" || afiliado.estado === "rechazado";
-  const todoVencido = (!estadoEdu || estadoEdu.vencida) && (!estadoEduInt || estadoEduInt.vencida) && (!estadoInt || estadoInt.vencida);
+  const todoVencido = (!estadoEdu || estadoEdu.vencida) && (!estadoEduInt || estadoEduInt.vencida) && (!estadoInt || estadoInt.vencida) && (!estadoCas || estadoCas.vencida);
   const bloqueadoPorVencimiento = estaInactivoGlobal || todoVencido;
 
   return (
@@ -475,7 +506,7 @@ export default function AfiliadoDashboard() {
 
                 <div style={{ marginTop: '12px', width: '100px', height: '110px', borderRadius: '12px', backgroundColor: '#f1f5f9', border: '2px solid #e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {afiliado.foto ? (
-                    <img src={afiliado.foto} alt="Foto Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={afiliado.foto} alt="Foto Perfil" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
@@ -632,8 +663,25 @@ export default function AfiliadoDashboard() {
                     </div>
                   </div>
                 )}
+
+                {membresiaCasino && (
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4 ${estadoCas?.vencida ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div>
+                      <h4 className="font-bold text-amber-800 flex items-center gap-2">Membresía Casino</h4>
+                      <p className="text-sm text-slate-500 mt-1">Vence: {formatearFecha(membresiaCasino.fechaExpiracion)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`px-3 py-1 text-xs font-bold uppercase rounded-full border ${estadoCas?.color}`}>
+                        {estadoCas?.texto}
+                      </span>
+                      {(estadoCas?.vencida || estadoCas?.porVencer) && !bloqueadoPorVencimiento && (
+                        <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 w-full sm:w-auto pointer-events-auto" onClick={() => setModalRenovacion(true)}>Renovar Ahora</Button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
-                {!membresiaEducativa && !membresiaIntegral && (
+                {!membresiaEducativa && !membresiaEducativaInt && !membresiaIntegral && !membresiaCasino && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-center">
                     <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
                     <p className="text-red-700 font-bold">No tienes membresías activas registradas.</p>
@@ -911,41 +959,44 @@ export default function AfiliadoDashboard() {
         {membresiaEducativa && (
           <div
             ref={certEduRef}
-            style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
+            style={{ display: "none", width: "800px", padding: "80px", background: "white", fontFamily: "Calibri, 'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.5", boxSizing: "border-box" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
-              <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
+              <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} crossOrigin="anonymous" />
               <div style={{ textAlign: "right" }}>
-                <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: COLORS.azul }}>FUNDACIÓN ISLA CASCAJAL</h1>
-                <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+                <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: COLORS.azul, letterSpacing: "1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+                <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
               </div>
             </div>
 
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
+            <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "50px" }}>
+              <h2 style={{ fontSize: "24px", fontWeight: "900", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
             </div>
 
             <div style={{ fontSize: "14px", textAlign: "justify" }}>
-              <p>
-                La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{afiliado.nombre}</strong> con NUIP. <strong>{afiliado.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
+              <p style={{ marginBottom: "15px" }}>
+                La presente organización de base denominada <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{afiliado.nombre.toUpperCase()}</strong> con NUIP. <strong>{afiliado.cedula}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
               </p>
-
-              <p>
-                Esta membresía fue realizada el día {formatearFecha(afiliado.fechaActivacion || afiliado.fechaIngreso)}, bajo el código institucional <strong>{afiliado.codigoInstitucional}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
+              <p style={{ marginBottom: "15px" }}>
+                Esta membresía fue realizada el día <strong>{new Date(afiliado.fechaActivacion || afiliado.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</strong> a las <strong>{new Date(afiliado.fechaActivacion || afiliado.fechaIngreso).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</strong>, bajo el código institucional <strong>{afiliado.codigoInstitucional || afiliado.codigo}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
               </p>
-
-              <p>
-                Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder AVAL y se le solicita a la institución educativa receptora de este documento <strong>{membresiaEducativa.institucion ? `(${membresiaEducativa.institucion})` : ""}</strong>, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para el programa académico de <strong>{membresiaEducativa.programa || "elección del afiliado"}</strong> {membresiaEducativa.modalidad ? `en modalidad ${membresiaEducativa.modalidad}` : ""} y demás servicios educativos para el período académico {getPeriodoEducativo(membresiaEducativa.fechaExpiracion)}. El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+              <p style={{ marginBottom: "15px" }}>
+                Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder <strong>AVAL</strong> y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos para el período académico <strong>{getPeriodoEducativo(membresiaEducativa.fechaExpiracion)}</strong>.
+              </p>
+              <p style={{ marginBottom: "40px" }}>
+                El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
               </p>
             </div>
 
-            <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
-                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
-                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
-                <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
-                <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+            <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div style={{ textAlign: "center" }}>
+                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+                <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+              </div>
+              <div style={{ width: "120px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                {qrDataUrl && <img src={qrDataUrl} alt="QR Code" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
               </div>
             </div>
             {qrDataUrl && (
@@ -960,7 +1011,7 @@ export default function AfiliadoDashboard() {
         {membresiaEducativaInt && (
           <div
             ref={certEduIntRef}
-            style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
+            style={{ display: "none", width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
               <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
@@ -990,7 +1041,7 @@ export default function AfiliadoDashboard() {
 
             <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
+                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
                 <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
                 <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
                 <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
@@ -1009,7 +1060,7 @@ export default function AfiliadoDashboard() {
         {membresiaIntegral && (
           <div
             ref={certIntRef}
-            style={{ width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
+            style={{ display: "none", width: "800px", padding: "80px", background: "white", fontFamily: "'Times New Roman', serif", color: "#1a1a1a", lineHeight: "1.6", boxSizing: "border-box" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid ${COLORS.azul}`, paddingBottom: "15px" }}>
               <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} crossOrigin="anonymous" />
@@ -1063,7 +1114,7 @@ export default function AfiliadoDashboard() {
             <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
               <p style={{ margin: 0, fontSize: "12px", marginBottom: "20px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
+                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
                 <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
                 <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
                 <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
@@ -1089,39 +1140,50 @@ export default function AfiliadoDashboard() {
               </div>
             </div>
 
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0, color: "#b45309" }}>CERTIFICADO DE MEMBRESÍA CASINO</h2>
+            <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "20px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: 0, color: "#000" }}>CERTIFICADO DE AFILIACIÓN PARA EL SERVICIO</h2>
+              <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: 0, color: "#000", marginTop: "5px" }}>DE CASINO</h2>
             </div>
 
-            <div style={{ fontSize: "14px", textAlign: "justify", lineHeight: "1.6" }}>
-              <p>
-                La FUNDACIÓN ISLA CASCAJAL “FICong”, certifica que <strong>{afiliado.nombre}</strong> identificado(a) con NUIP. <strong>{afiliado.cedula}</strong> y código institucional <strong>{afiliado.codigoInstitucional}</strong>, se encuentra afiliado(a) bajo la <strong>Membresía Casino</strong>.
+            <div style={{ fontSize: "14px", textAlign: "justify", lineHeight: "1.8", color: "#000" }}>
+              <p style={{ marginBottom: "20px" }}>
+                La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, 
+                identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, 
+                República de Colombia, se permite presentar a <strong>{afiliado.nombre}</strong> con NUIP. <strong>{afiliado.cedula}</strong>, 
+                bajo el código institucional <strong>{afiliado.codigoInstitucional}</strong> y le permite acceder a los descuentos que se aplican 
+                para el servicio de <strong>CASINO</strong>.
               </p>
 
               <p>
-                Esta membresía de carácter especial y de acceso restringido le permite al titular disfrutar de los beneficios institucionales, descuentos y acceso exclusivo a las instalaciones y eventos de Casino organizados y avalados por la Fundación Isla Cascajal, de acuerdo a los términos y condiciones del programa.
+                Esta membresía tiene validez y cobertura para los puntos instalados por nuestra organización a nivel 
+                nacional para el servicio de CASINO, así pues; después de corroborar que se asumirán los 
+                compromisos sociales y morales por parte del titular de este documento, se procede a reconocer su 
+                <strong>AFILIACIÓN ACTIVA</strong> y se solicita se le brinde la mejor atención al titular de la membresía hasta las 
+                11:59 p.m. del día {formatearFecha(membresiaCasino.fechaExpiracion)}.
+              </p>
+            </div>
+
+            <div style={{ marginTop: "60px" }}>
+              <p style={{ margin: 0, fontSize: "14px" }}>
+                El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.
               </p>
               
-              <p>
-                El estado de esta membresía se encuentra <strong>ACTIVO</strong> y tiene validez hasta las 11:59 p.m. del día {formatearFecha(membresiaCasino.fechaExpiracion)}.
-              </p>
-            </div>
-
-            <div style={{ marginTop: "40px", paddingBottom: "10px" }}>
-              <p style={{ margin: 0, fontSize: "12px", marginBottom: "30px" }}>El presente certificado se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} crossOrigin="anonymous" onError={(e) => e.target.style.display = 'none'} />
-                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
-                <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
-                <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
-                <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable.</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "40px" }}>
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  <img src="/firma.png" alt="Firma Dirección Administrativa" crossOrigin="anonymous" style={{ width: "150px", height: "auto", margin: "0 auto", marginBottom: "5px" }} />
+                  <div style={{ borderTop: "1px solid #000", width: "200px", margin: "0 auto", paddingTop: "5px" }}>
+                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Dirección Administrativa</p>
+                    <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+                    <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+                  </div>
+                </div>
+                {qrDataUrl && (
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <img src={qrDataUrl} alt="QR Validación" crossOrigin="anonymous" style={{ width: "120px", height: "120px", border: "2px solid #000", padding: "4px" }} />
+                  </div>
+                )}
               </div>
             </div>
-            {qrDataUrl && (
-              <div style={{ position: "absolute", top: "75px", left: "350px", opacity: 0.8 }}>
-                <img src={qrDataUrl} alt="QR Validación" crossOrigin="anonymous" style={{ width: "90px", height: "90px", border: `2px solid ${COLORS.amarillo}`, padding: "4px", borderRadius: "8px" }} />
-              </div>
-            )}
           </div>
         )}
       </div>

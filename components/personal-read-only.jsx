@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Monitor, Search } from "lucide-react";
 
-export function PersonalReadOnlyList() {
+export function PersonalReadOnlyList({ onOtorgarPermiso }) {
   const [usuarios, setUsuarios] = useState([]);
   const { empleados, isLoading: cargandoEmpleados, recargar } = useEmpleados();
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
@@ -86,6 +86,7 @@ export function PersonalReadOnlyList() {
               <TableHead>Rol / Cargo</TableHead>
               <TableHead>Modalidad Laboral</TableHead>
               <TableHead>Estado</TableHead>
+              {onOtorgarPermiso && <TableHead>Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -144,6 +145,17 @@ export function PersonalReadOnlyList() {
                       {u.activo !== false ? "Activo" : "Inactivo"}
                     </Badge>
                     </TableCell>
+                    {onOtorgarPermiso && (
+                      <TableCell>
+                        {u.empleadoId ? (
+                          <Button size="sm" variant="outline" onClick={() => onOtorgarPermiso(u)}>
+                            Otorgar Permiso
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No aplica</span>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })

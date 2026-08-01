@@ -18,8 +18,22 @@ import Link from "next/link";
 import {
   LogIn, LogOut, Coffee, RotateCcw, Monitor, CheckCircle2,
   Clock, User, Wifi, WifiOff, MapPin, MapPinOff, Activity,
-  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck
+  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck, FileText
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const IPS_AUTORIZADAS = ["181.57.30.136", "191.156.13.184", "181.54.0.27"];
 
@@ -60,6 +74,8 @@ function fmtDiferencia(minutos) {
 const MODALIDAD_DISPLAY = {
   presencial: { label: "Presencial", icon: Briefcase, color: "bg-success/15 text-success border-success/30", dot: "bg-success" },
   teletrabajo: { label: "Teletrabajo", icon: Monitor, color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
+  presencial_sin_horario: { label: "Presencial (Sin Horario)", icon: Briefcase, color: "bg-success/15 text-success border-success/30", dot: "bg-success" },
+  teletrabajo_sin_horario: { label: "Teletrabajo (Sin Horario)", icon: Monitor, color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
   libre: { label: "Día libre", icon: CalendarOff, color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
 };
 
@@ -75,20 +91,20 @@ const ESTADO_DISPLAY = {
 
 function getAcciones(modalidad, registro) {
   const r = registro;
-  if (modalidad === "presencial") {
+  if (modalidad === "presencial" || modalidad === "presencial_sin_horario") {
     return [
-      { id: "entrada", label: "Registrar Entrada", icon: LogIn, campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-success hover:bg-success/90 text-success-foreground", show: !r?.horaEntrada, desc: "Marca el inicio de tu jornada presencial" },
-      { id: "salidaAlmuerzo", label: "Salida Almuerzo", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Marca tu salida para almorzar" },
-      { id: "entradaAlmuerzo", label: "Regreso de Almuerzo", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "trabajando", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Regresa a tu jornada presencial" },
-      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Marca el fin de tu jornada presencial" },
+      { id: "entrada", label: "Entrada Primera Jornada", icon: LogIn, campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-success hover:bg-success/90 text-success-foreground", show: !r?.horaEntrada, desc: "Inicia tu primera jornada presencial" },
+      { id: "salidaAlmuerzo", label: "Salida Primera Jornada", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Finaliza tu primera jornada" },
+      { id: "entradaAlmuerzo", label: "Entrada Segunda Jornada", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "trabajando", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Inicia tu segunda jornada presencial" },
+      { id: "salida", label: "Salida Segunda Jornada", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu segunda jornada" },
     ].filter((a) => a.show);
   }
-  if (modalidad === "teletrabajo") {
+  if (modalidad === "teletrabajo" || modalidad === "teletrabajo_sin_horario") {
     return [
-      { id: "entrada", label: "Activar Teletrabajo", icon: Monitor, campo: "horaEntrada", estadoResultante: "teletrabajo_activo", color: "bg-primary hover:bg-primary/90 text-primary-foreground", show: !r?.horaEntrada, desc: "Inicia tu jornada en modalidad remota" },
-      { id: "salidaAlmuerzo", label: "Salida Almuerzo", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Marca tu salida para almorzar" },
-      { id: "entradaAlmuerzo", label: "Regreso de Almuerzo", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "teletrabajo_activo", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Regresa a tu jornada remota" },
-      { id: "salida", label: "Registrar Salida", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu jornada remota" },
+      { id: "entrada", label: "Entrada Primera Jornada", icon: Monitor, campo: "horaEntrada", estadoResultante: "teletrabajo_activo", color: "bg-primary hover:bg-primary/90 text-primary-foreground", show: !r?.horaEntrada, desc: "Inicia tu primera jornada remota" },
+      { id: "salidaAlmuerzo", label: "Salida Primera Jornada", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Finaliza tu primera jornada remota" },
+      { id: "entradaAlmuerzo", label: "Entrada Segunda Jornada", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "teletrabajo_activo", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Inicia tu segunda jornada remota" },
+      { id: "salida", label: "Salida Segunda Jornada", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu segunda jornada remota" },
     ].filter((a) => a.show);
   }
   return [];
@@ -182,6 +198,16 @@ function AsistenciaContent() {
   const [ipActual, setIpActual] = useState("");
   const [coords, setCoords] = useState(null);
   const [horasTrabajadas, setHorasTrabajadas] = useState("0h 0m");
+  const [showRemuneracionModal, setShowRemuneracionModal] = useState(false);
+  const [generandoCert, setGenerandoCert] = useState(false);
+  const [certConRemuneracion, setCertConRemuneracion] = useState(false);
+
+  const [generandoAfiliacion, setGenerandoAfiliacion] = useState(false);
+  const [generandoAval, setGenerandoAval] = useState(false);
+  const [generandoDesprendible, setGenerandoDesprendible] = useState(false);
+  const [showDesprendibleModal, setShowDesprendibleModal] = useState(false);
+  const [desprendibleMes, setDesprendibleMes] = useState(new Date().getMonth());
+  const [desprendibleQuincena, setDesprendibleQuincena] = useState("1");
 
   const hoy = fechaHoy();
   const diaActual = getDiaActualES();
@@ -312,7 +338,7 @@ function AsistenciaContent() {
     let ipParaRegistrar = ipActual;
     let esRedValida = redValida;
 
-    if (modalidadPermitida === "presencial") {
+    if (modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario") {
       toast.loading("Validando conexión institucional...", { id: "val-ip" });
       const currentIp = await verificarRed();
       toast.dismiss("val-ip");
@@ -330,7 +356,7 @@ function AsistenciaContent() {
     try {
       // Capturar ubicación en el momento exacto si es presencial y no la tenemos
       let ubicacionFinal = coords;
-      if (modalidadPermitida === "presencial" && !ubicacionFinal) {
+      if ((modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario") && !ubicacionFinal) {
         try {
           const pos = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, enableHighAccuracy: true });
@@ -346,29 +372,78 @@ function AsistenciaContent() {
       const ahora = new Date();
       const horaHHMM = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false });
 
+      const snap = await getDoc(ref);
+      let dataExistente = snap.exists() ? snap.data() : null;
+
       let minutosDiferencia = 0;
-      if (accion.id === "entrada") {
-        minutosDiferencia = diffMinutos(horaHHMM, horarioHoy.entrada);
-      } else if (accion.id === "salida") {
-        minutosDiferencia = diffMinutos(horaHHMM, horarioHoy.salida);
+      let extraData = {};
+      const tieneHorario = !["presencial_sin_horario", "teletrabajo_sin_horario"].includes(modalidadPermitida);
+
+      let horaProgramadaEntrada = dataExistente?.horaProgramadaEntrada || null;
+      let horaProgramadaSalida = dataExistente?.horaProgramadaSalida || null;
+
+      if (tieneHorario) {
+        let horaEsperada = null;
+        if (accion.id === "entrada") { horaEsperada = horarioHoy.entrada1 || horarioHoy.entrada; horaProgramadaEntrada = horaEsperada; }
+        else if (accion.id === "salidaAlmuerzo") { horaEsperada = horarioHoy.salida1 || horarioHoy.salidaAlmuerzo; }
+        else if (accion.id === "entradaAlmuerzo") { horaEsperada = horarioHoy.entrada2 || horarioHoy.entradaAlmuerzo; }
+        else if (accion.id === "salida") { horaEsperada = horarioHoy.salida2 || horarioHoy.salida; horaProgramadaSalida = horaEsperada; }
+
+        if (horaEsperada) {
+          minutosDiferencia = diffMinutos(horaHHMM, horaEsperada);
+          
+          if ((accion.id === "salida" || accion.id === "salidaAlmuerzo") && minutosDiferencia > 0) {
+            let extrasDiurnas = 0;
+            let extrasNocturnas = 0;
+            
+            const [hE, mE] = horaEsperada.split(":").map(Number);
+            let tiempoTemp = new Date();
+            tiempoTemp.setHours(hE, mE, 0, 0);
+
+            const [hR, mR] = horaHHMM.split(":").map(Number);
+            let tiempoReal = new Date();
+            tiempoReal.setHours(hR, mR, 0, 0);
+            
+            if (tiempoReal < tiempoTemp) tiempoReal.setDate(tiempoReal.getDate() + 1);
+
+            while (tiempoTemp < tiempoReal) {
+              const h = tiempoTemp.getHours();
+              if (h >= 6 && h < 21) {
+                extrasDiurnas++;
+              } else {
+                extrasNocturnas++;
+              }
+              tiempoTemp.setMinutes(tiempoTemp.getMinutes() + 1);
+            }
+
+            const prevExtras = dataExistente?.horasExtras || { solicitadasMinutos: 0, solicitadasDiurnas: 0, solicitadasNocturnas: 0 };
+            extraData.horasExtras = {
+              solicitadasMinutos: (prevExtras.solicitadasMinutos || 0) + extrasDiurnas + extrasNocturnas,
+              solicitadasDiurnas: (prevExtras.solicitadasDiurnas || 0) + extrasDiurnas,
+              solicitadasNocturnas: (prevExtras.solicitadasNocturnas || 0) + extrasNocturnas,
+              estado: "pendiente",
+              notas: ""
+            };
+          }
+        }
       }
 
-      const snap = await getDoc(ref);
       const base = {
         usuarioId: user.uid,
         [accion.campo]: serverTimestamp(),
-        [`${accion.id}DiferenciaMinutos`]: minutosDiferencia,
+        [`${accion.id}DiferenciaMinutos`]: tieneHorario ? minutosDiferencia : 0,
         estadoActual: accion.estadoResultante,
         modoTrabajo: modalidadPermitida,
         modalidadAsignada: modalidadPermitida,
-        horaProgramadaEntrada: horarioHoy.entrada,
-        horaProgramadaSalida: horarioHoy.salida,
+        horaProgramadaEntrada,
+        horaProgramadaSalida,
         wifiValidado: wifiValido,
         gpsValidado: !!ubicacionFinal,
-        ubicacion: modalidadPermitida === "presencial" ? ubicacionFinal : null,
+        ubicacion: (modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario") ? ubicacionFinal : null,
         redInstitucional: esRedValida,
         ipPublica: ipParaRegistrar,
         actualizadoEn: serverTimestamp(),
+        ...extraData
       };
       if (!snap.exists()) {
         await setDoc(ref, {
@@ -430,6 +505,166 @@ function AsistenciaContent() {
       await cargarRegistro();
     } catch (e) { toast.error("Error al guardar"); }
     finally { setEnviando(false); }
+  };
+
+  // ─── Certificado Laboral ───────────────────────────────────────────────────
+  const solicitarCertificado = () => {
+    const fechaIngreso = new Date(empleadoData?.fechaIngreso);
+    const hoyDate = new Date();
+    const diffDias = Math.floor((hoyDate - fechaIngreso) / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 30) {
+      const faltan = 30 - diffDias;
+      toast.error(`El certificado laboral estará disponible en ${faltan} día${faltan !== 1 ? 's' : ''}. Se requieren al menos 30 días laborando.`);
+      return;
+    }
+    setShowRemuneracionModal(true);
+  };
+
+  const generarCertificadoLaboral = async (conRemuneracion) => {
+    setGenerandoCert(true);
+    toast.info("Generando certificado...");
+    try {
+      const element = document.getElementById("hidden-cert-empleado");
+      if (!element) throw new Error("Template no encontrado");
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      const QRCode = (await import("qrcode")).default;
+
+      element.style.display = "block";
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      element.style.display = "none";
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      const qrUrl = await QRCode.toDataURL(`${window.location.origin}/verificar?doc=${empleadoData?.codigoInstitucional}`);
+      const qrSize = 35;
+      const marginX = pdfWidth - qrSize - 20;
+      const marginY = pdf.internal.pageSize.getHeight() - qrSize - 30;
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(marginX - 2, marginY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
+      pdf.addImage(qrUrl, "PNG", marginX, marginY, qrSize, qrSize);
+
+      pdf.save(`Certificado_Laboral_${empleadoData?.nombre?.replace(/\s+/g, "_")}.pdf`);
+      toast.success("¡Certificado descargado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el certificado");
+    } finally {
+      setGenerandoCert(false);
+    }
+  };
+
+  const solicitarAvalEducativo = () => {
+    if (!empleadoData?.fechaIngreso) {
+      toast.error("No se registra fecha de ingreso.");
+      return;
+    }
+    const partes = empleadoData.fechaIngreso.split("-");
+    const fIngreso = new Date(partes[0], partes[1] - 1, partes[2]);
+    const fHoy = new Date();
+    const diffMs = fHoy - fIngreso;
+    const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 30) {
+      const faltan = 30 - diffDias;
+      toast.error(`El Aval Educativo estará disponible en ${faltan} día${faltan !== 1 ? 's' : ''}. Se requieren al menos 30 días laborando.`);
+      return;
+    }
+    generarAvalEducativo();
+  };
+
+  const generarAfiliacionIntegral = async () => {
+    setGenerandoAfiliacion(true);
+    toast.info("Generando Certificado Integral...");
+    try {
+      const element = document.getElementById("hidden-cert-integral");
+      if (!element) throw new Error("Template no encontrado");
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      element.style.display = "block";
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      element.style.display = "none";
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Afiliacion_Integral_${empleadoData?.nombre?.replace(/\s+/g, "_")}.pdf`);
+      toast.success("¡Certificado descargado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el certificado");
+    } finally {
+      setGenerandoAfiliacion(false);
+    }
+  };
+
+  const generarAvalEducativo = async () => {
+    setGenerandoAval(true);
+    toast.info("Generando Aval Educativo...");
+    try {
+      const element = document.getElementById("hidden-cert-aval");
+      if (!element) throw new Error("Template no encontrado");
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      element.style.display = "block";
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      element.style.display = "none";
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Aval_Educativo_${empleadoData?.nombre?.replace(/\s+/g, "_")}.pdf`);
+      toast.success("¡Aval Educativo descargado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el aval");
+    } finally {
+      setGenerandoAval(false);
+    }
+  };
+
+  const solicitarDesprendible = () => setShowDesprendibleModal(true);
+
+  const generarDesprendiblePago = async () => {
+    setGenerandoDesprendible(true);
+    setShowDesprendibleModal(false);
+    toast.info("Generando Desprendible...");
+    try {
+      const element = document.getElementById("hidden-cert-desprendible");
+      if (!element) throw new Error("Template no encontrado");
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      element.style.display = "block";
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      element.style.display = "none";
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      const nombreMes = meses[desprendibleMes];
+      pdf.save(`Desprendible_Pago_Q${desprendibleQuincena}_${nombreMes}_${empleadoData?.nombre?.replace(/\s+/g, "_")}.pdf`);
+      toast.success("¡Desprendible descargado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el desprendible");
+    } finally {
+      setGenerandoDesprendible(false);
+    }
   };
 
   // Loading
@@ -725,10 +960,468 @@ function AsistenciaContent() {
           </Card>
         )}
 
+        {/* Botón Certificado Laboral */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">Certificado Laboral</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Disponible después de 30 días laborando. Con o sin remuneración.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-primary/30 text-primary hover:bg-primary hover:text-white"
+                onClick={solicitarCertificado}
+                disabled={generandoCert}
+              >
+                {generandoCert ? <Spinner className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {empleadoData?.tipoVinculacion !== "Periodo de Prueba" && (
+          <>
+            {/* Botón Certificado Integral */}
+            <Card className="border-primary/20 bg-primary/5 mt-4">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Certificado Afiliación Integral</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Muestra sus beneficios y afiliación a la fundación.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-primary/30 text-primary hover:bg-primary hover:text-white"
+                    onClick={generarAfiliacionIntegral}
+                    disabled={generandoAfiliacion}
+                  >
+                    {generandoAfiliacion ? <Spinner className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Botón Aval Educativo */}
+            <Card className="border-primary/20 bg-primary/5 mt-4">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Aval Educativo</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Disponible después de 30 días laborando.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-primary/30 text-primary hover:bg-primary hover:text-white"
+                    onClick={solicitarAvalEducativo}
+                    disabled={generandoAval}
+                  >
+                    {generandoAval ? <Spinner className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Botón Desprendible de Pago */}
+            <Card className="border-primary/20 bg-primary/5 mt-4">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Desprendibles de Pago</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Corte a 15 días (quincenal).
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-primary/30 text-primary hover:bg-primary hover:text-white"
+                    onClick={solicitarDesprendible}
+                    disabled={generandoDesprendible}
+                  >
+                    {generandoDesprendible ? <Spinner className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+
         <p className="text-center text-xs text-muted-foreground pb-4">
           Fundación Isla Cascajal · Sistema de Asistencia
         </p>
       </main>
+
+      {/* DIALOG: ¿Con o sin remuneración? */}
+      <Dialog open={showRemuneracionModal} onOpenChange={setShowRemuneracionModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Certificado Laboral
+            </DialogTitle>
+            <DialogDescription>
+              ¿Desea que el certificado incluya su remuneración mensual?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Button
+              className="w-full"
+              disabled={generandoCert}
+              onClick={() => { setCertConRemuneracion(true); setShowRemuneracionModal(false); generarCertificadoLaboral(true); }}
+            >
+              {generandoCert ? <Spinner className="h-4 w-4 mr-2" /> : null}
+              Con Remuneración
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={generandoCert}
+              onClick={() => { setCertConRemuneracion(false); setShowRemuneracionModal(false); generarCertificadoLaboral(false); }}
+            >
+              Sin Remuneración
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: Desprendible de Pago */}
+      <Dialog open={showDesprendibleModal} onOpenChange={setShowDesprendibleModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Generar Desprendible
+            </DialogTitle>
+            <DialogDescription>
+              Seleccione la quincena y el mes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Mes</label>
+              <Select value={String(desprendibleMes)} onValueChange={(v) => setDesprendibleMes(Number(v))}>
+                <SelectTrigger><SelectValue placeholder="Mes..." /></SelectTrigger>
+                <SelectContent>
+                  {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((m, i) => (
+                    <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Quincena</label>
+              <Select value={desprendibleQuincena} onValueChange={setDesprendibleQuincena}>
+                <SelectTrigger><SelectValue placeholder="Quincena..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1ra Quincena (1 al 15)</SelectItem>
+                  <SelectItem value="2">2da Quincena (16 al fin de mes)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full mt-2"
+              disabled={generandoDesprendible}
+              onClick={generarDesprendiblePago}
+            >
+              {generandoDesprendible ? <Spinner className="h-4 w-4 mr-2" /> : null}
+              Descargar Desprendible
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* TEMPLATE OCULTO: Certificado Laboral */}
+      <div
+        id="hidden-cert-empleado"
+        style={{ display: "none", position: "fixed", left: "-9999px", top: 0, zIndex: -1,
+          width: "800px", padding: "80px", background: "white",
+          fontFamily: "Calibri, 'Times New Roman', serif", color: "#1a1a1a",
+          lineHeight: "1.5", boxSizing: "border-box" }}
+      >
+        {/* Encabezado */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: "2px solid #05318a", paddingBottom: "15px" }}>
+          <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+          <div style={{ textAlign: "right" }}>
+            <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: "#05318a" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+            <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
+          </div>
+        </div>
+
+        {/* Título */}
+        <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "30px" }}>
+          <h2 style={{ fontSize: "22px", fontWeight: "900", margin: 0 }}>CERTIFICADO LABORAL</h2>
+        </div>
+
+        {/* Cuerpo */}
+        <div style={{ fontSize: "14px", textAlign: "justify" }}>
+          <p style={{ marginBottom: "15px" }}>
+            El <strong>Área de Talento Humano</strong> de la <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, certifica que:
+          </p>
+          <p style={{ fontSize: "20px", fontWeight: "900", textAlign: "center", margin: "25px 0", textTransform: "uppercase" }}>
+            {empleadoData?.nombre}
+          </p>
+          <p style={{ marginBottom: "15px" }}>
+            identificado(a) con cédula de ciudadanía Nº <strong>{empleadoData?.documento}</strong>, se encuentra vinculado(a) a nuestra institución bajo la modalidad de <strong>{empleadoData?.tipoContrato || empleadoData?.tipoVinculacion || "Contrato"}</strong>, desempeñándose en el cargo de <strong>{empleadoData?.cargo}</strong>, a partir del día <strong>{empleadoData?.fechaIngreso}</strong>, acumulando un tiempo activo de vinculación de <strong>{(() => {
+              if (!empleadoData?.fechaIngreso) return "";
+              let totalDays = 0;
+
+              // Historial
+              if (empleadoData.contratosAnteriores && Array.isArray(empleadoData.contratosAnteriores)) {
+                empleadoData.contratosAnteriores.forEach(c => {
+                  if (c.fechaIngreso && c.fechaTerminacion) {
+                    const start = new Date(c.fechaIngreso);
+                    start.setMinutes(start.getMinutes() + start.getTimezoneOffset());
+                    const end = new Date(c.fechaTerminacion);
+                    end.setMinutes(end.getMinutes() + end.getTimezoneOffset());
+                    const diffTime = Math.abs(end - start);
+                    totalDays += Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  }
+                });
+              }
+
+              // Contrato actual
+              const inicio = new Date(empleadoData.fechaIngreso);
+              inicio.setMinutes(inicio.getMinutes() + inicio.getTimezoneOffset());
+              const fin = new Date();
+              if (!isNaN(inicio)) {
+                const diffTime = Math.abs(fin - inicio);
+                totalDays += Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              }
+
+              if (totalDays === 0) return "0 días";
+
+              let anios = Math.floor(totalDays / 365);
+              let rem = totalDays % 365;
+              let meses = Math.floor(rem / 30);
+              let dias = rem % 30;
+
+              let res = [];
+              if (anios > 0) res.push(`${anios} ${anios === 1 ? 'año' : 'años'}`);
+              if (meses > 0) res.push(`${meses} ${meses === 1 ? 'mes' : 'meses'}`);
+              if (dias > 0) res.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+              if (res.length === 0) return "0 días";
+              if (res.length > 1) { const ult = res.pop(); return res.join(", ") + " y " + ult; }
+              return res[0];
+            })()}</strong>.
+          </p>
+          {certConRemuneracion && (
+            <p style={{ marginBottom: "15px", fontWeight: "bold" }}>
+              REMUNERACIÓN MENSUAL: {empleadoData?.salario || "No especificado"}
+            </p>
+          )}
+          <p style={{ marginBottom: "40px" }}>
+            El presente certificado se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali, a solicitud de la parte interesada.
+          </p>
+        </div>
+
+        {/* Firma */}
+        <div style={{ marginTop: "60px", textAlign: "center" }}>
+          <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+          <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+          <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+          <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+        </div>
+      </div>
+
+      {/* TEMPLATE OCULTO: Afiliación Integral */}
+      <div
+        id="hidden-cert-integral"
+        style={{ display: "none", position: "fixed", left: "-9999px", top: 0, zIndex: -1,
+          width: "800px", padding: "80px", background: "white",
+          fontFamily: "'Times New Roman', serif", color: "#1a1a1a",
+          lineHeight: "1.6", boxSizing: "border-box" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid #05318a`, paddingBottom: "15px" }}>
+          <img src="/logo.png" alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%" }} />
+          <div style={{ textAlign: "right" }}>
+            <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: "#05318a" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+            <p style={{ fontSize: "10px", fontWeight: "bold", margin: 0, color: "#666", textTransform: "uppercase" }}>NIT: 900.248.351-0</p>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "bold", textDecoration: "underline", margin: 0 }}>CERTIFICADO DE AFILIACIÓN INTEGRAL</h2>
+        </div>
+        <div style={{ fontSize: "14px", textAlign: "justify" }}>
+          <p>La presente organización de base denominada FUNDACIÓN ISLA CASCAJAL “FICong”, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{empleadoData?.nombre}</strong> con NUIP. <strong>{empleadoData?.documento}</strong>, bajo el código institucional <strong>{empleadoData?.codigoInstitucional}</strong> y le permite acceder a los descuentos que otorgan nuestros convenios interinstitucionales.</p>
+          <p>Esta membresía tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos establecidos por la Fundación Isla Cascajal, así pues; después de corroborar que se asumirán los compromisos sociales y morales por parte del titular de este documento, se procede a reconocer su AFILIACIÓN ACTIVA y se le solicita a la organización receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos especiales tanto al titular de la membresía como a sus beneficiarios y mascotas hasta las 11:59 p.m. del día {new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}.</p>
+        </div>
+        {empleadoData?.beneficiarios?.length > 0 && (
+          <div style={{ marginTop: "15px", border: "1px solid #000", padding: "8px", paddingBottom: "10px" }}>
+            <p style={{ color: "#0070C0", margin: 0, marginBottom: "8px", fontSize: "12px", fontWeight: "bold" }}>BENEFICIARIOS:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {empleadoData.beneficiarios.map((b, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", paddingRight: "20px" }}>
+                  <span>{b.nombre}</span><span>NUIP: {b.nuip || "Sin registro"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {empleadoData?.mascotas?.length > 0 && (
+          <div style={{ marginTop: "10px", border: "1px solid #000", padding: "8px", paddingBottom: "10px" }}>
+            <p style={{ color: "#0070C0", margin: 0, marginBottom: "8px", fontSize: "12px", fontWeight: "bold" }}>MASCOTAS (PLAN INTEGRAL):</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+              {empleadoData.mascotas.map((m, i) => (
+                <div key={i} style={{ fontSize: "11px" }}>{m.nombre} ({m.tipo}{m.raza ? ` - ${m.raza}` : ''})</div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{ marginTop: "20px", paddingBottom: "10px" }}>
+          <p style={{ margin: 0, fontSize: "12px", marginBottom: "20px" }}>El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali.</p>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+            <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+            <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Diana C. Rojas V.</p>
+            <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>Directora Administrativa</p>
+            <p style={{ margin: 0, fontSize: "12px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+            <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic" }}>Documento electrónico verificable con el código QR.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* TEMPLATE OCULTO: Aval Educativo */}
+      <div
+        id="hidden-cert-aval"
+        style={{ display: "none", position: "fixed", left: "-9999px", top: 0, zIndex: -1,
+          width: "800px", padding: "80px", background: "white",
+          fontFamily: "'Times New Roman', serif", color: "#1a1a1a",
+          lineHeight: "1.5", boxSizing: "border-box" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: `2px solid #05318a`, paddingBottom: "15px" }}>
+          <img src="/logo.png" alt="Logo" style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+          <div style={{ textAlign: "right" }}>
+            <h1 style={{ fontSize: "28px", fontWeight: "900", margin: 0, color: "#05318a", letterSpacing: "1px" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+            <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: "40px", marginTop: "50px" }}>
+          <h2 style={{ fontSize: "24px", fontWeight: "900", margin: 0 }}>CERTIFICADO DE AVAL EDUCATIVO</h2>
+        </div>
+
+        <div style={{ fontSize: "14px", textAlign: "justify" }}>
+          <p style={{ marginBottom: "15px" }}>
+            La presente organización de base denominada <strong><em>FUNDACIÓN ISLA CASCAJAL “FICong”</em></strong>, identificada con NIT: 900.248.351-0, con domicilio principal en el Distrito de Santiago de Cali, República de Colombia, se permite presentar a <strong>{empleadoData?.nombre?.toUpperCase()}</strong> con NUIP. <strong>{empleadoData?.documento}</strong>, quien cuenta con registro oficial en nuestra base de datos institucional y con membresía activa para acceder a nuestros convenios educativos.
+          </p>
+          <p style={{ marginBottom: "15px" }}>
+            Esta membresía fue realizada el día <strong>{empleadoData?.fechaIngreso ? new Date(empleadoData.fechaIngreso).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" }) : ""}</strong> a las <strong>{new Date().toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</strong>, bajo el código institucional <strong>{empleadoData?.codigoInstitucional}</strong> y tiene validez y cobertura para los convenios Nacionales e Internacionales y le permite acceder a los programas, actividades y procesos académicos establecidos y ofertados por los aliados estratégicos de la Fundación Isla Cascajal y por ella misma.
+          </p>
+          <p style={{ marginBottom: "15px" }}>
+            Después de corroborar que se asumirán los compromisos académicos, sociales y morales por parte del titular de este documento, se procede a conceder <strong>AVAL</strong> y se le solicita a la institución educativa receptora de este documento, que, de acuerdo al convenio interinstitucional firmado por las partes, se avance en el otorgamiento de los correspondientes descuentos para programas académicos y demás servicios educativos.
+          </p>
+          <p style={{ marginBottom: "40px" }}>
+            El presente documento se expide a los {new Date().getDate().toString().padStart(2, '0')} días del mes de {new Date().toLocaleString('es-CO', { month: 'long' })} de {new Date().getFullYear()} en Santiago de Cali por interés del solicitante.
+          </p>
+        </div>
+
+        <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div style={{ textAlign: "center" }}>
+            <img src="/firma.jpeg" alt="Firma" style={{ height: "60px", marginBottom: "5px" }} />
+            <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px", fontStyle: "italic" }}>Dirección Administrativa</p>
+            <p style={{ margin: 0, fontSize: "14px", fontStyle: "italic" }}>Fundación Isla Cascajal</p>
+            <p style={{ margin: 0, fontSize: "10px", fontStyle: "italic", marginTop: "5px" }}>Documento electrónico verificable con el código QR.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* TEMPLATE OCULTO: Desprendible de Pago */}
+      <div
+        id="hidden-cert-desprendible"
+        style={{ display: "none", position: "fixed", left: "-9999px", top: 0, zIndex: -1,
+          width: "800px", padding: "60px", background: "white",
+          fontFamily: "Calibri, 'Times New Roman', serif", color: "#1a1a1a",
+          lineHeight: "1.5", boxSizing: "border-box" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", borderBottom: "2px solid #05318a", paddingBottom: "15px" }}>
+          <img src="/logo.png" alt="Logo" style={{ width: "80px", height: "80px", borderRadius: "50%" }} />
+          <div style={{ textAlign: "right" }}>
+            <h1 style={{ fontSize: "24px", fontWeight: "900", margin: 0, color: "#05318a" }}>FUNDACIÓN ISLA CASCAJAL</h1>
+            <p style={{ fontSize: "12px", fontWeight: "bold", margin: 0, color: "#1a1a1a" }}>NIT: 900.248.351-0</p>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>DESPRENDIBLE DE PAGO DE NÓMINA</h2>
+          <p style={{ fontSize: "14px", margin: "5px 0 0 0" }}>
+            {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][desprendibleMes]} de {new Date().getFullYear()} - Quincena {desprendibleQuincena}
+          </p>
+        </div>
+        <div style={{ border: "1px solid #ccc", padding: "15px", borderRadius: "8px", marginBottom: "20px", fontSize: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div><strong>Empleado:</strong> {empleadoData?.nombre}</div>
+            <div><strong>Documento:</strong> {empleadoData?.documento}</div>
+            <div><strong>Cargo:</strong> {empleadoData?.cargo}</div>
+            <div><strong>Tipo de Contrato:</strong> {empleadoData?.tipoContrato || empleadoData?.tipoVinculacion}</div>
+          </div>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px", marginBottom: "30px" }}>
+          <thead>
+            <tr style={{ backgroundColor: "#f3f4f6", borderBottom: "2px solid #e5e7eb" }}>
+              <th style={{ padding: "10px", textAlign: "left" }}>Concepto</th>
+              <th style={{ padding: "10px", textAlign: "right" }}>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+              <td style={{ padding: "10px" }}>Remuneración Mensual ({desprendibleQuincena === "1" ? "1-15" : "16-Fin"}) (50%)</td>
+              <td style={{ padding: "10px", textAlign: "right" }}>
+                {(() => {
+                  const s = parseFloat((empleadoData?.salario || "").replace(/[^0-9]/g, "")) || 0;
+                  return s > 0 ? "$ " + (s / 2).toLocaleString("es-CO") : "No especificado";
+                })()}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th style={{ padding: "10px", textAlign: "left", fontSize: "16px" }}>NETO A PAGAR</th>
+              <th style={{ padding: "10px", textAlign: "right", fontSize: "16px", color: "#05318a" }}>
+                {(() => {
+                  const s = parseFloat((empleadoData?.salario || "").replace(/[^0-9]/g, "")) || 0;
+                  return s > 0 ? "$ " + (s / 2).toLocaleString("es-CO") : "No especificado";
+                })()}
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+        <div style={{ textAlign: "center", marginTop: "50px" }}>
+          <img src="/firma.jpeg" alt="Firma" style={{ height: "50px", marginBottom: "5px" }} />
+          <div style={{ width: "200px", margin: "0 auto", borderTop: "1px solid #1a1a1a", paddingTop: "5px" }}>
+            <p style={{ margin: 0, fontWeight: "bold", fontSize: "12px" }}>Diana C. Rojas V.</p>
+            <p style={{ margin: 0, fontSize: "12px" }}>Directora Administrativa</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

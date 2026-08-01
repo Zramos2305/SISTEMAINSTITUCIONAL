@@ -19,6 +19,10 @@ export default function HomePage() {
     }
 
     if (userData) {
+      if (userData.estado === "inactivo") {
+        router.push("/unauthorized?reason=inactive");
+        return;
+      }
       if (userData.rol === "empleado") {
         router.push("/asistencia");
       } else if (userData.rol === "recursos_humanos" || userData.rol === "personal") {
