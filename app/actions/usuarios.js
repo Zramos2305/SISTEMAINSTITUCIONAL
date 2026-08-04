@@ -16,7 +16,24 @@ export async function crearUsuarioInstitucional(data) {
       oficinaContrata, dependenciaSolicita,
       paisAsignacion, departamentoAsignacion, ciudadAsignacion, correoPersonal,
       // Remuneración desglosada
-      valorDiaTrabajo, horasSemanales, auxilioTransporte
+      valorDiaTrabajo, horasSemanales, auxilioTransporte,
+      // Horario y Modalidad
+      horarioModalidad,
+      // Afiliaciones / Seguridad Social
+      eps, fondoPension, cesantias, cajaCompensacion, arl,
+      // Campos Demográficos
+      fechaNacimiento, paisNacimiento, otroPaisNacimiento, lugarNacimiento, edad,
+      sexo, orientacionSexual, orientacionOtro, estrato, etnia,
+      sisben, sisbenPuntaje, asesoriaSisben,
+      victimaConflicto, victimaTipo, victimaInscrito,
+      discriminacion, discriminacionTipo,
+      educacionNivel, educacionEstudio, educacionSemestre, educacionPlantel,
+      enfermedad, enfermedadCual, alergia, alergiaCual,
+      discapacidad, discapacidadTipo, discapacidadOtro,
+      trastorno, trastornoTipo, trastornoOtro,
+      condicionEspecial, condicionEspecialCual,
+      deseaSerVoluntario,
+      emergenciaNombre, emergenciaNumero, emergenciaWhatsapp, emergenciaDireccion
     } = data;
 
     // 1. Crear usuario en Firebase Auth
@@ -33,10 +50,31 @@ export async function crearUsuarioInstitucional(data) {
     const empleadoRef = adminDb.collection("empleados").doc();
     nuevoEmpleadoId = empleadoRef.id;
 
-    const horarioDefault = {
-      lunes: "presencial", martes: "presencial", miercoles: "presencial",
-      jueves: "presencial", viernes: "presencial", sabado: "libre", domingo: "libre"
+    const horarioBaseEstandar = {
+      lunes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      martes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      miercoles: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      jueves: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      viernes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      sabado: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      domingo: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
     };
+
+    const horarioConfianza = {
+      lunes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      martes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      miercoles: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      jueves: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      viernes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      sabado: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+      domingo: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    };
+
+    const modalidadFinal = rol === "superadmin" ? "Empleado de Confianza" : (modalidadLaboral || "Presencial");
+
+    const horarioFinal = horarioModalidad 
+      ? horarioModalidad 
+      : ((modalidadFinal === "Empleado de Confianza" || rol === "superadmin") ? horarioConfianza : horarioBaseEstandar);
 
     await empleadoRef.set({
       nombre: nombre || "",
@@ -45,19 +83,19 @@ export async function crearUsuarioInstitucional(data) {
       telefono: telefono || "",
       direccion: direccion || "",
       rh: rh || "",
-      cargo: cargo || "General",
+      cargo: cargo || (rol === "superadmin" ? "Súper Administrador" : "General"),
       tipoPersonal: tipoPersonal || "Empleado",
       fechaIngreso: fechaIngreso || new Date().toISOString(),
       estado: estado || "activo",
       rolSistema: rol || "empleado",
-      modalidadLaboral: modalidadLaboral || "Presencial",
+      modalidadLaboral: modalidadFinal,
       diasTeletrabajo: diasTeletrabajo || "",
       codigoInstitucional: codigoInstitucional || "",
       foto: foto || null,
       uidAuth: userRecord.uid,
       fechaCreacion: FieldValue.serverTimestamp(),
       creadoPor: creadoPorUid,
-      horarioModalidad: horarioDefault,
+      horarioModalidad: horarioFinal,
       tipoVinculacion: tipoVinculacion || "",
       tienePeriodoPrueba: tienePeriodoPrueba || false,
       tiempoPeriodoPrueba: tiempoPeriodoPrueba || "",
@@ -76,7 +114,56 @@ export async function crearUsuarioInstitucional(data) {
       // Remuneración desglosada
       valorDiaTrabajo: valorDiaTrabajo || "",
       horasSemanales: horasSemanales || "",
-      auxilioTransporte: auxilioTransporte || ""
+      auxilioTransporte: auxilioTransporte || "",
+      // Seguridad social
+      eps: eps || "",
+      fondoPension: fondoPension || "",
+      cesantias: cesantias || "",
+      cajaCompensacion: cajaCompensacion || "",
+      arl: arl || "POSITIVA ARL",
+      // Afiliación y Demografía
+      afiliarAutomaticamente: !!afiliarAutomaticamente,
+      fechaNacimiento: fechaNacimiento || "",
+      paisNacimiento: paisNacimiento || "Colombia",
+      otroPaisNacimiento: otroPaisNacimiento || "",
+      lugarNacimiento: lugarNacimiento || "",
+      edad: edad || "",
+      sexo: sexo || "",
+      orientacionSexual: orientacionSexual || "",
+      orientacionOtro: orientacionOtro || "",
+      estrato: estrato || "",
+      etnia: etnia || "",
+      sisben: sisben || "",
+      sisbenPuntaje: sisbenPuntaje || "",
+      asesoriaSisben: asesoriaSisben || "",
+      victimaConflicto: victimaConflicto || "",
+      victimaTipo: victimaTipo || "",
+      victimaInscrito: victimaInscrito || "",
+      discriminacion: discriminacion || "",
+      discriminacionTipo: discriminacionTipo || "",
+      educacionNivel: educacionNivel || "",
+      educacionEstudio: educacionEstudio || "",
+      educacionSemestre: educacionSemestre || "",
+      educacionPlantel: educacionPlantel || "",
+      enfermedad: enfermedad || "",
+      enfermedadCual: enfermedadCual || "",
+      alergia: alergia || "",
+      alergiaCual: alergiaCual || "",
+      discapacidad: discapacidad || "",
+      discapacidadTipo: discapacidadTipo || "",
+      discapacidadOtro: discapacidadOtro || "",
+      trastorno: trastorno || "",
+      trastornoTipo: trastornoTipo || "",
+      trastornoOtro: trastornoOtro || "",
+      condicionEspecial: condicionEspecial || "",
+      condicionEspecialCual: condicionEspecialCual || "",
+      deseaSerVoluntario: deseaSerVoluntario || "",
+      emergenciaNombre: emergenciaNombre || "",
+      emergenciaNumero: emergenciaNumero || "",
+      emergenciaWhatsapp: emergenciaWhatsapp || "",
+      emergenciaDireccion: emergenciaDireccion || "",
+      beneficiarios: beneficiarios || [],
+      mascotas: mascotas || []
     });
 
     // 3. Crear documento en colección 'usuarios' para el acceso al sistema
@@ -110,6 +197,48 @@ export async function crearUsuarioInstitucional(data) {
         creadoPor: creadoPorUid,
         beneficiarios: beneficiarios || [],
         mascotas: mascotas || [],
+        // Campos Demográficos Completos
+        fechaNacimiento: fechaNacimiento || "",
+        paisNacimiento: paisNacimiento || "Colombia",
+        otroPaisNacimiento: otroPaisNacimiento || "",
+        lugarNacimiento: lugarNacimiento || "",
+        edad: edad || "",
+        sexo: sexo || "",
+        orientacionSexual: orientacionSexual || "",
+        orientacionOtro: orientacionOtro || "",
+        estrato: estrato || "",
+        etnia: etnia || "",
+        sisben: sisben || "",
+        sisbenPuntaje: sisbenPuntaje || "",
+        asesoriaSisben: asesoriaSisben || "",
+        victimaConflicto: victimaConflicto || "",
+        victimaTipo: victimaTipo || "",
+        victimaInscrito: victimaInscrito || "",
+        discriminacion: discriminacion || "",
+        discriminacionTipo: discriminacionTipo || "",
+        educacionNivel: educacionNivel || "",
+        educacionEstudio: educacionEstudio || "",
+        educacionSemestre: educacionSemestre || "",
+        educacionPlantel: educacionPlantel || "",
+        eps: eps || "",
+        arl: arl || "POSITIVA ARL",
+        enfermedad: enfermedad || "",
+        enfermedadCual: enfermedadCual || "",
+        alergia: alergia || "",
+        alergiaCual: alergiaCual || "",
+        discapacidad: discapacidad || "",
+        discapacidadTipo: discapacidadTipo || "",
+        discapacidadOtro: discapacidadOtro || "",
+        trastorno: trastorno || "",
+        trastornoTipo: trastornoTipo || "",
+        trastornoOtro: trastornoOtro || "",
+        condicionEspecial: condicionEspecial || "",
+        condicionEspecialCual: condicionEspecialCual || "",
+        deseaSerVoluntario: deseaSerVoluntario || "",
+        emergenciaNombre: emergenciaNombre || "",
+        emergenciaNumero: emergenciaNumero || "",
+        emergenciaWhatsapp: emergenciaWhatsapp || "",
+        emergenciaDireccion: emergenciaDireccion || "",
         membresias: [
           {
             tipo: "institucional",
@@ -148,7 +277,23 @@ export async function reingresarUsuarioInstitucional(empleadoExistente, data) {
       oficinaContrata, dependenciaSolicita,
       paisAsignacion, departamentoAsignacion, ciudadAsignacion, correoPersonal,
       valorDiaTrabajo, horasSemanales, auxilioTransporte,
-      horarioModalidad
+      horarioModalidad,
+      // Afiliaciones / Seguridad Social
+      eps, fondoPension, cesantias, cajaCompensacion, arl,
+      // Campos Demográficos
+      fechaNacimiento, paisNacimiento, otroPaisNacimiento, lugarNacimiento, edad,
+      sexo, orientacionSexual, orientacionOtro, estrato, etnia,
+      sisben, sisbenPuntaje, asesoriaSisben,
+      victimaConflicto, victimaTipo, victimaInscrito,
+      discriminacion, discriminacionTipo,
+      educacionNivel, educacionEstudio, educacionSemestre, educacionPlantel,
+      enfermedad, enfermedadCual, alergia, alergiaCual,
+      discapacidad, discapacidadTipo, discapacidadOtro,
+      trastorno, trastornoTipo, trastornoOtro,
+      condicionEspecial, condicionEspecialCual,
+      deseaSerVoluntario,
+      emergenciaNombre, emergenciaNumero, emergenciaWhatsapp, emergenciaDireccion,
+      beneficiarios, mascotas, afiliarAutomaticamente
     } = data;
 
     // 2. Extraer contrato anterior para guardarlo en el historial
@@ -168,7 +313,7 @@ export async function reingresarUsuarioInstitucional(empleadoExistente, data) {
     // 3. Actualizar documento de empleado
     const empleadoRef = adminDb.collection("empleados").doc(empleadoExistente.id);
     
-    await empleadoRef.update({
+    const updatePayload = {
       estado: "activo",
       contratosAnteriores: historialContratos,
       
@@ -195,8 +340,62 @@ export async function reingresarUsuarioInstitucional(empleadoExistente, data) {
       valorDiaTrabajo: valorDiaTrabajo || "",
       horasSemanales: horasSemanales || "",
       auxilioTransporte: auxilioTransporte || "",
-      horarioModalidad: horarioModalidad || empleadoExistente.horarioModalidad
-    });
+      horarioModalidad: horarioModalidad || empleadoExistente.horarioModalidad,
+      // Seguridad social
+      eps: eps || empleadoExistente.eps || "",
+      fondoPension: fondoPension || empleadoExistente.fondoPension || "",
+      cesantias: cesantias || empleadoExistente.cesantias || "",
+      cajaCompensacion: cajaCompensacion || empleadoExistente.cajaCompensacion || "",
+      arl: arl || empleadoExistente.arl || "POSITIVA ARL",
+      // Demografía
+      fechaNacimiento: fechaNacimiento || empleadoExistente.fechaNacimiento || "",
+      paisNacimiento: paisNacimiento || empleadoExistente.paisNacimiento || "Colombia",
+      otroPaisNacimiento: otroPaisNacimiento || empleadoExistente.otroPaisNacimiento || "",
+      lugarNacimiento: lugarNacimiento || empleadoExistente.lugarNacimiento || "",
+      edad: edad || empleadoExistente.edad || "",
+      sexo: sexo || empleadoExistente.sexo || "",
+      orientacionSexual: orientacionSexual || empleadoExistente.orientacionSexual || "",
+      orientacionOtro: orientacionOtro || empleadoExistente.orientacionOtro || "",
+      estrato: estrato || empleadoExistente.estrato || "",
+      etnia: etnia || empleadoExistente.etnia || "",
+      sisben: sisben || empleadoExistente.sisben || "",
+      sisbenPuntaje: sisbenPuntaje || empleadoExistente.sisbenPuntaje || "",
+      asesoriaSisben: asesoriaSisben || empleadoExistente.asesoriaSisben || "",
+      victimaConflicto: victimaConflicto || empleadoExistente.victimaConflicto || "",
+      victimaTipo: victimaTipo || empleadoExistente.victimaTipo || "",
+      victimaInscrito: victimaInscrito || empleadoExistente.victimaInscrito || "",
+      discriminacion: discriminacion || empleadoExistente.discriminacion || "",
+      discriminacionTipo: discriminacionTipo || empleadoExistente.discriminacionTipo || "",
+      educacionNivel: educacionNivel || empleadoExistente.educacionNivel || "",
+      educacionEstudio: educacionEstudio || empleadoExistente.educacionEstudio || "",
+      educacionSemestre: educacionSemestre || empleadoExistente.educacionSemestre || "",
+      educacionPlantel: educacionPlantel || empleadoExistente.educacionPlantel || "",
+      enfermedad: enfermedad || empleadoExistente.enfermedad || "",
+      enfermedadCual: enfermedadCual || empleadoExistente.enfermedadCual || "",
+      alergia: alergia || empleadoExistente.alergia || "",
+      alergiaCual: alergiaCual || empleadoExistente.alergiaCual || "",
+      discapacidad: discapacidad || empleadoExistente.discapacidad || "",
+      discapacidadTipo: discapacidadTipo || empleadoExistente.discapacidadTipo || "",
+      discapacidadOtro: discapacidadOtro || empleadoExistente.discapacidadOtro || "",
+      trastorno: trastorno || empleadoExistente.trastorno || "",
+      trastornoTipo: trastornoTipo || empleadoExistente.trastornoTipo || "",
+      trastornoOtro: trastornoOtro || empleadoExistente.trastornoOtro || "",
+      condicionEspecial: condicionEspecial || empleadoExistente.condicionEspecial || "",
+      condicionEspecialCual: condicionEspecialCual || empleadoExistente.condicionEspecialCual || "",
+      deseaSerVoluntario: deseaSerVoluntario || empleadoExistente.deseaSerVoluntario || "",
+      emergenciaNombre: emergenciaNombre || empleadoExistente.emergenciaNombre || "",
+      emergenciaNumero: emergenciaNumero || empleadoExistente.emergenciaNumero || "",
+      emergenciaWhatsapp: emergenciaWhatsapp || empleadoExistente.emergenciaWhatsapp || "",
+      emergenciaDireccion: emergenciaDireccion || empleadoExistente.emergenciaDireccion || "",
+      beneficiarios: beneficiarios || empleadoExistente.beneficiarios || [],
+      mascotas: mascotas || empleadoExistente.mascotas || []
+    };
+
+    if (afiliarAutomaticamente !== undefined) {
+      updatePayload.afiliarAutomaticamente = !!afiliarAutomaticamente;
+    }
+
+    await empleadoRef.update(updatePayload);
 
     // 4. Actualizar estado en Auth / Documento de usuario (si existe)
     if (empleadoExistente.uidAuth) {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
-import { getDiaActualES, normalizarHorario } from "@/hooks/use-empleados";
+import { getDiaActualES, normalizarHorario, HORARIO_DEFAULT_CONFIANZA } from "@/hooks/use-empleados";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { registrarAuditoria } from "@/lib/auditoria";
@@ -18,7 +18,7 @@ import Link from "next/link";
 import {
   LogIn, LogOut, Coffee, RotateCcw, Monitor, CheckCircle2,
   Clock, User, Wifi, WifiOff, MapPin, MapPinOff, Activity,
-  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck, FileText
+  Send, Sun, Briefcase, AlertCircle, Home, CalendarOff, ShieldCheck, FileText, ArrowLeft
 } from "lucide-react";
 import {
   Dialog,
@@ -76,6 +76,7 @@ const MODALIDAD_DISPLAY = {
   teletrabajo: { label: "Teletrabajo", icon: Monitor, color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
   presencial_sin_horario: { label: "Presencial (Sin Horario)", icon: Briefcase, color: "bg-success/15 text-success border-success/30", dot: "bg-success" },
   teletrabajo_sin_horario: { label: "Teletrabajo (Sin Horario)", icon: Monitor, color: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
+  confianza: { label: "Empleado de Confianza", icon: ShieldCheck, color: "bg-purple-500/15 text-purple-700 border-purple-500/30", dot: "bg-purple-600" },
   libre: { label: "Día libre", icon: CalendarOff, color: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
 };
 
@@ -105,6 +106,14 @@ function getAcciones(modalidad, registro) {
       { id: "salidaAlmuerzo", label: "Salida Primera Jornada", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Finaliza tu primera jornada remota" },
       { id: "entradaAlmuerzo", label: "Entrada Segunda Jornada", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "teletrabajo_activo", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Inicia tu segunda jornada remota" },
       { id: "salida", label: "Salida Segunda Jornada", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tu segunda jornada remota" },
+    ].filter((a) => a.show);
+  }
+  if (modalidad === "confianza") {
+    return [
+      { id: "entrada", label: "Registrar Inicio de Labores", icon: ShieldCheck, campo: "horaEntrada", estadoResultante: "trabajando", color: "bg-purple-600 hover:bg-purple-700 text-white", show: !r?.horaEntrada, desc: "Registra tu inicio de labores (Manejo y Confianza)" },
+      { id: "salidaAlmuerzo", label: "Salida a Receso / Almuerzo", icon: Coffee, campo: "horaSalidaAlmuerzo", estadoResultante: "almuerzo", color: "bg-amber-500 hover:bg-amber-500/90 text-white", show: !!r?.horaEntrada && !r?.horaSalidaAlmuerzo, desc: "Pausa tus actividades" },
+      { id: "entradaAlmuerzo", label: "Reanudar Labores", icon: RotateCcw, campo: "horaEntradaAlmuerzo", estadoResultante: "trabajando", color: "bg-info hover:bg-info/90 text-info-foreground", show: !!r?.horaSalidaAlmuerzo && !r?.horaEntradaAlmuerzo, desc: "Reanuda tus actividades" },
+      { id: "salida", label: "Finalizar Jornada", icon: LogOut, campo: "horaSalida", estadoResultante: "finalizado", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground", show: !!r?.horaEntrada && !r?.horaSalida && (!!r?.horaEntradaAlmuerzo || !r?.horaSalidaAlmuerzo), desc: "Finaliza tus actividades del día" },
     ].filter((a) => a.show);
   }
   return [];
@@ -212,12 +221,27 @@ function AsistenciaContent() {
   const hoy = fechaHoy();
   const diaActual = getDiaActualES();
 
-  // Detectar modalidad asignada para hoy
-  const horario = normalizarHorario(empleadoData?.horarioModalidad);
-  const horarioHoy = horario[diaActual] || { modalidad: "libre", entrada: "08:00", salida: "17:00" };
-  const modalidadPermitida = horarioHoy.modalidad;
-  const modalidadCfg = MODALIDAD_DISPLAY[modalidadPermitida] || MODALIDAD_DISPLAY.libre;
+  const esSuperAdmin = userData?.rol === "superadmin" || userData?.isMock || user?.email === "admin@fundacion.org";
+  const esComercial = userData?.rol === "comercial" || userData?.rol === "lider_comercial";
+  const effectiveEmpleadoId = empleadoId || user?.uid;
+
+  // Detectar modalidad asignada para hoy (SuperAdmin no tiene horario rígido)
+  const horario = esSuperAdmin
+    ? HORARIO_DEFAULT_CONFIANZA
+    : normalizarHorario(empleadoData?.horarioModalidad);
+
+  const horarioHoy = esSuperAdmin
+    ? { modalidad: "confianza" }
+    : (horario[diaActual] || { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" });
+
+  const modalidadPermitida = esSuperAdmin ? "confianza" : (horarioHoy.modalidad || "presencial");
+  const modalidadCfg = MODALIDAD_DISPLAY[modalidadPermitida] || MODALIDAD_DISPLAY.presencial;
   const ModIcon = modalidadCfg.icon;
+
+  const nombreColaborador = empleadoData?.nombreCompleto || empleadoData?.nombre || userData?.nombre || user?.displayName || user?.email || "Colaborador";
+  const cargoColaborador = esSuperAdmin 
+    ? "Súper Administrador Institucional" 
+    : (empleadoData?.cargo || (userData?.rol === "lider_comercial" ? "Líder Comercial" : userData?.rol === "comercial" ? "Asesor Comercial" : (userData?.rol || "Personal Institucional")));
 
   // Calcular horas trabajadas dinámicamente
   useEffect(() => {
@@ -284,7 +308,6 @@ function AsistenciaContent() {
   // Verificar IP pública y Red
   const verificarRed = useCallback(async () => {
     try {
-      // Añadimos un timestamp para evitar que el navegador guarde la IP en caché
       const res = await fetch(`https://api.ipify.org?format=json&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       setIpActual(data.ip);
@@ -304,41 +327,40 @@ function AsistenciaContent() {
 
   // Cargar registro del día
   const cargarRegistro = useCallback(async () => {
-    if (!empleadoId) return;
+    if (!effectiveEmpleadoId) return;
     setCargandoReg(true);
     try {
-      const ref = doc(db, "asistencias", `${hoy}_${empleadoId}`);
+      const ref = doc(db, "asistencias", `${hoy}_${effectiveEmpleadoId}`);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         setRegistroHoy(snap.data());
-        // No limpiamos el campo de texto, solo cargamos el estado
       } else {
         setRegistroHoy(null);
       }
     } catch (e) { console.error(e); toast.error("Error al cargar el registro"); }
     finally { setCargandoReg(false); }
-  }, [empleadoId, hoy]);
+  }, [effectiveEmpleadoId, hoy]);
 
   useEffect(() => {
     if (!loading) {
-      if (empleadoId) {
+      if (effectiveEmpleadoId) {
         cargarRegistro();
       } else {
         setCargandoReg(false);
       }
     }
-  }, [loading, empleadoId, cargarRegistro]);
+  }, [loading, effectiveEmpleadoId, cargarRegistro]);
 
   // Ejecutar acción
   const handleAccion = async (accion) => {
-    if (!empleadoId) { toast.error("Sin perfil de empleado"); return; }
+    if (!effectiveEmpleadoId) { toast.error("Sesión no válida para asistencia"); return; }
     setAccionEnCurso(accion.id);
 
-    // Re-verificar IP antes de proceder si es presencial
+    // Re-verificar IP antes de proceder si es presencial (excepto SuperAdmin)
     let ipParaRegistrar = ipActual;
     let esRedValida = redValida;
 
-    if (modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario") {
+    if (!esSuperAdmin && (modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario")) {
       toast.loading("Validando conexión institucional...", { id: "val-ip" });
       const currentIp = await verificarRed();
       toast.dismiss("val-ip");
@@ -352,9 +374,8 @@ function AsistenciaContent() {
       esRedValida = true;
     }
 
-    const ref = doc(db, "asistencias", `${hoy}_${empleadoId}`);
+    const ref = doc(db, "asistencias", `${hoy}_${effectiveEmpleadoId}`);
     try {
-      // Capturar ubicación en el momento exacto si es presencial y no la tenemos
       let ubicacionFinal = coords;
       if ((modalidadPermitida === "presencial" || modalidadPermitida === "presencial_sin_horario") && !ubicacionFinal) {
         try {
@@ -377,7 +398,7 @@ function AsistenciaContent() {
 
       let minutosDiferencia = 0;
       let extraData = {};
-      const tieneHorario = !["presencial_sin_horario", "teletrabajo_sin_horario"].includes(modalidadPermitida);
+      const tieneHorario = !["presencial_sin_horario", "teletrabajo_sin_horario", "confianza"].includes(modalidadPermitida) && !esSuperAdmin;
 
       let horaProgramadaEntrada = dataExistente?.horaProgramadaEntrada || null;
       let horaProgramadaSalida = dataExistente?.horaProgramadaSalida || null;
@@ -449,9 +470,9 @@ function AsistenciaContent() {
         await setDoc(ref, {
           fecha: hoy,
           usuarioId: user.uid,
-          empleadoId,
-          nombre: empleadoData?.nombre || userData?.nombre || user?.email,
-          cargo: empleadoData?.cargo || "",
+          empleadoId: effectiveEmpleadoId,
+          nombre: nombreColaborador,
+          cargo: cargoColaborador,
           bitacora: [],
           creadoEn: serverTimestamp(),
           ...base,
@@ -459,15 +480,6 @@ function AsistenciaContent() {
       } else {
         await updateDoc(ref, base);
       }
-
-      // Registrar en Auditoría el movimiento del usuario
-      /*await registrarAuditoria({
-        user,
-        userData: userData || empleadoData,
-        accion: `Registro: ${accion.label}`,
-        documentoId: `${hoy}_${empleadoId}`,
-        detalles: `Registro de ${accion.label} (Modo: ${modalidadPermitida}) validado por servidor.`
-      });*/
 
       await cargarRegistro();
       toast.success(`✅ ${accion.label} registrado correctamente`);
@@ -482,7 +494,7 @@ function AsistenciaContent() {
     setEnviando(true);
     const hora = horaActual();
     try {
-      await updateDoc(doc(db, "asistencias", `${hoy}_${empleadoId}`), {
+      await updateDoc(doc(db, "asistencias", `${hoy}_${effectiveEmpleadoId}`), {
         bitacora: arrayUnion({
           actividad: actividad.trim(),
           hora,
@@ -491,17 +503,8 @@ function AsistenciaContent() {
         actualizadoEn: serverTimestamp(),
       });
 
-      // Registrar en Auditoría la adición de actividad
-      await registrarAuditoria({
-        user,
-        userData: userData || empleadoData,
-        accion: "Bitácora: Actividad",
-        documentoId: `${hoy}_${empleadoId}`,
-        detalles: `El usuario agregó una actividad a su bitácora: "${actividad.trim().substring(0, 50)}${actividad.trim().length > 50 ? '...' : ''}"`
-      });
-
       toast.success("Actividad registrada en la bitácora ✔");
-      setActividad(""); // Limpiar campo tras guardar
+      setActividad("");
       await cargarRegistro();
     } catch (e) { toast.error("Error al guardar"); }
     finally { setEnviando(false); }
@@ -678,7 +681,38 @@ function AsistenciaContent() {
   }
   if (!user) return null;
 
-  if (!empleadoId) {
+  if (esSuperAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <Card className="max-w-md w-full text-center shadow-xl border-primary/20 bg-white">
+          <CardContent className="pt-8 pb-8 space-y-6">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+              <ShieldCheck className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-slate-800">Súper Administrador</h2>
+              <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 uppercase text-xs font-bold px-3 py-1">
+                Acceso Maestro • Sin Marcación de Horario
+              </Badge>
+              <p className="text-sm text-muted-foreground pt-2 px-4 leading-relaxed">
+                El perfil de <strong>Súper Administrador</strong> cuenta con privilegios totales sobre todo el sistema. Por normativa institucional, <strong>no realiza marcación de horarios ni asistencia laboral</strong>.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col gap-3">
+              <Button asChild variant="default" className="w-full font-bold shadow-md">
+                <Link href="/dashboard">Ir al Panel de Control (Dashboard)</Link>
+              </Button>
+              <Button variant="outline" className="w-full" onClick={logout}>
+                Cerrar Sesión
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!effectiveEmpleadoId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-sm w-full text-center shadow-lg border-primary/20">
@@ -687,21 +721,10 @@ function AsistenciaContent() {
               <AlertCircle className="h-8 w-8 text-amber-500" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Sin perfil de empleado</h2>
+              <h2 className="text-lg font-semibold">Sin sesión activa</h2>
               <p className="text-sm text-muted-foreground px-2">
-                Tu cuenta no está vinculada a un perfil administrativo. Contacta al administrador.
+                Inicia sesión en el sistema para marcar tu asistencia laboral.
               </p>
-              {userData && (
-                <div className="mt-4 p-3 bg-muted rounded text-xs text-left text-muted-foreground break-all">
-                  <p><strong>Debug info:</strong></p>
-                  <p>Correo: {userData.correo}</p>
-                  <p>Rol: {userData.rol}</p>
-                  <p>EmpleadoID Vinculado: {userData.empleadoId || 'null'}</p>
-                  {userData._debugError && (
-                    <p className="text-destructive font-semibold mt-2">Error FS: {userData._debugError}</p>
-                  )}
-                </div>
-              )}
             </div>
             <div className="pt-2 flex flex-col gap-3">
               <Button asChild variant="default" className="w-full">
@@ -736,9 +759,25 @@ function AsistenciaContent() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {(esSuperAdmin || userData?.rol === "admin" || userData?.rol === "recursos_humanos") && (
+              <Button asChild variant="outline" size="sm" className="h-8 gap-1 text-xs text-primary border-primary/30">
+                <Link href="/dashboard">
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                  Dashboard
+                </Link>
+              </Button>
+            )}
+            {userData?.rol === "lider_comercial" && (
+              <Button asChild variant="outline" size="sm" className="h-8 gap-1 text-xs text-orange-600 border-orange-200">
+                <Link href="/dashboard/afiliados">
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                  Afiliados
+                </Link>
+              </Button>
+            )}
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-medium text-foreground">{empleadoData?.nombre || user?.email}</p>
-              <p className="text-xs text-muted-foreground">{empleadoData?.cargo || "Empleado"}</p>
+              <p className="text-xs font-medium text-foreground">{nombreColaborador}</p>
+              <p className="text-xs text-muted-foreground">{cargoColaborador}</p>
             </div>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-4 w-4 text-primary" />
@@ -1428,7 +1467,7 @@ function AsistenciaContent() {
 
 export default function AsistenciaPage() {
   return (
-    <ProtectedRoute allowedRoles={["empleado"]}>
+    <ProtectedRoute allowedRoles={["empleado", "comercial", "lider_comercial", "superadmin", "admin", "recursos_humanos", "personal"]}>
       <AsistenciaContent />
     </ProtectedRoute>
   );

@@ -13,7 +13,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  turbopack: {}, // 👈 ESTO EVITA EL ERROR
 };
 
 // export default withPWA(nextConfig);

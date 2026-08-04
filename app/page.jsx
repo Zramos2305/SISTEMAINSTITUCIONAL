@@ -23,7 +23,7 @@ export default function HomePage() {
         router.push("/unauthorized?reason=inactive");
         return;
       }
-      if (userData.rol === "empleado") {
+      if (userData.rol === "empleado" || userData.rol === "comercial") {
         router.push("/asistencia");
       } else if (userData.rol === "recursos_humanos" || userData.rol === "personal") {
         router.push("/dashboard/personal");
@@ -62,7 +62,7 @@ export default function HomePage() {
           Fundación Isla Cascajal
         </h1>
         <p className="text-slate-500 font-bold uppercase tracking-widest mb-8 text-sm">
-          Sistema Institucional
+          Sistema Institucional Integral
         </p>
         <Spinner className="mx-auto text-blue-600" />
       </div>

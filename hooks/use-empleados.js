@@ -1,30 +1,46 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { collection, getDocs, doc, updateDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // ─── constantes ──────────────────────────────────────────────────────────────
 
 export const DIAS_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
-export const MODALIDADES = ["presencial", "teletrabajo", "libre", "presencial_sin_horario", "teletrabajo_sin_horario"];
+export const MODALIDADES = [
+  "presencial",
+  "teletrabajo",
+  "libre",
+  "presencial_sin_horario",
+  "teletrabajo_sin_horario",
+  "confianza"
+];
 
 export const HORARIO_DEFAULT = {
-  lunes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
-  martes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
-  miercoles: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
-  jueves: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
-  viernes: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  lunes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  martes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  miercoles: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  jueves: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  viernes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
   sabado: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
   domingo: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+};
+
+export const HORARIO_DEFAULT_CONFIANZA = {
+  lunes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  martes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  miercoles: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  jueves: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  viernes: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  sabado: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  domingo: { modalidad: "confianza", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Devuelve el nombre del día actual en español, en minúsculas, sin tilde.
- * Ejemplo: "lunes", "miercoles", "sabado"
  */
 export function getDiaActualES() {
   const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
@@ -32,25 +48,31 @@ export function getDiaActualES() {
 }
 
 /**
- * Garantiza que un objeto horario tenga los 7 días.
- * Si un día falta, lo inicializa en "libre".
+ * Garantiza que un objeto horario tenga los 7 días con estructura completa y consistente.
  */
 export function normalizarHorario(horario) {
-  const base = { ...HORARIO_DEFAULT };
+  const base = {
+    lunes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    martes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    miercoles: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    jueves: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    viernes: { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    sabado: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+    domingo: { modalidad: "libre", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" },
+  };
+
   if (horario && typeof horario === "object") {
     DIAS_SEMANA.forEach((dia) => {
       const data = horario[dia];
       if (typeof data === "string" && MODALIDADES.includes(data)) {
-        // Compatibilidad con estructura anterior
         base[dia] = { modalidad: data, entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" };
       } else if (data && typeof data === "object") {
-        // Nueva estructura
         base[dia] = {
-          modalidad: MODALIDADES.includes(data.modalidad) ? data.modalidad : "libre",
-          entrada1: data.entrada1 || data.entrada || "08:00",
-          salida1: data.salida1 || "12:00",
-          entrada2: data.entrada2 || "14:00",
-          salida2: data.salida2 || data.salida || "18:00",
+          modalidad: MODALIDADES.includes(data.modalidad) ? data.modalidad : "presencial",
+          entrada1: data.entrada1 !== undefined ? data.entrada1 : (data.entrada || "08:00"),
+          salida1: data.salida1 !== undefined ? data.salida1 : "12:00",
+          entrada2: data.entrada2 !== undefined ? data.entrada2 : "14:00",
+          salida2: data.salida2 !== undefined ? data.salida2 : (data.salida || "18:00"),
         };
       }
     });
@@ -64,19 +86,15 @@ export function normalizarHorario(horario) {
 export function calcularResumenHorario(horario) {
   const h = normalizarHorario(horario);
   return {
-    presencial: DIAS_SEMANA.filter((d) => h[d].modalidad === "presencial").length,
-    teletrabajo: DIAS_SEMANA.filter((d) => h[d].modalidad === "teletrabajo").length,
+    presencial: DIAS_SEMANA.filter((d) => ["presencial", "presencial_sin_horario"].includes(h[d].modalidad)).length,
+    teletrabajo: DIAS_SEMANA.filter((d) => ["teletrabajo", "teletrabajo_sin_horario"].includes(h[d].modalidad)).length,
+    confianza: DIAS_SEMANA.filter((d) => h[d].modalidad === "confianza").length,
     libre: DIAS_SEMANA.filter((d) => h[d].modalidad === "libre").length,
   };
 }
 
 // ─── hook principal ───────────────────────────────────────────────────────────
 
-/**
- * Carga todos los documentos de la colección `empleados`.
- * Cada empleado incluye `horarioModalidad` normalizado.
- * Expone `actualizarModalidad(empleadoId, nuevoHorario)` para persistir cambios.
- */
 export function useEmpleados() {
   const [empleados, setEmpleados] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,14 +127,12 @@ export function useEmpleados() {
 
   /**
    * Persiste el horarioModalidad de un empleado en Firestore.
-   * Solo actualiza el campo `horarioModalidad`, no toca nada más.
    */
   const actualizarModalidad = async (empleadoId, nuevoHorario) => {
     const horarioNormalizado = normalizarHorario(nuevoHorario);
     await updateDoc(doc(db, "empleados", empleadoId), {
       horarioModalidad: horarioNormalizado,
     });
-    // Actualizar estado local para evitar re-fetch
     setEmpleados((prev) =>
       prev.map((e) =>
         e.id === empleadoId
@@ -124,6 +140,7 @@ export function useEmpleados() {
           : e
       )
     );
+    return horarioNormalizado;
   };
 
   return { empleados, isLoading, error, recargar: cargar, actualizarModalidad };

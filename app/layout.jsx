@@ -10,8 +10,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 // Metadatos globales: Sirven para establecer el nombre de la página y SEO
 export const metadata = {
-  title: 'Fundación Isla Cascajal - Sistema de Verificación',
-  description: 'Sistema oficial de verificación de documentos',
+  title: 'Fundación Isla Cascajal - Sistema Institucional Integral',
+  description: 'Sistema Institucional Integral de la Fundación Isla Cascajal',
 
   manifest: '/manifest.json',
 

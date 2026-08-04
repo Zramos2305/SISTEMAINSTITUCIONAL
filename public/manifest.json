@@ -1,7 +1,7 @@
 {
-  "name": "Sistema de Verificación",
-  "short_name": "Verificador",
-  "description": "Verificación de certificados",
+  "name": "Sistema Institucional Integral",
+  "short_name": "Sistema Integral",
+  "description": "Sistema Institucional Integral - Fundación Isla Cascajal",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

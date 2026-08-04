@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Monitor, Search } from "lucide-react";
+import { Monitor, Search, ShieldCheck } from "lucide-react";
 
 export function PersonalReadOnlyList({ onOtorgarPermiso }) {
   const [usuarios, setUsuarios] = useState([]);
@@ -120,8 +120,17 @@ export function PersonalReadOnlyList({ onOtorgarPermiso }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {empleado && resumenHorario ? (
+                      {u.rol === "superadmin" ? (
+                        <span className="inline-flex items-center text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
+                          <ShieldCheck className="w-3 h-3 mr-1" /> Sin Turnos / Horario
+                        </span>
+                      ) : empleado && resumenHorario ? (
                         <div className="flex gap-1.5 flex-wrap">
+                          {resumenHorario.confianza > 0 || empleado.modalidadLaboral === "Empleado de Confianza" ? (
+                            <span className="inline-flex items-center text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded">
+                              <ShieldCheck className="w-3 h-3 mr-1" /> Confianza
+                            </span>
+                          ) : null}
                           {resumenHorario.presencial > 0 && (
                             <span className="inline-flex items-center text-xs font-medium text-foreground bg-secondary px-1.5 py-0.5 rounded">
                               {resumenHorario.presencial}d pres.
@@ -147,7 +156,9 @@ export function PersonalReadOnlyList({ onOtorgarPermiso }) {
                     </TableCell>
                     {onOtorgarPermiso && (
                       <TableCell>
-                        {u.empleadoId ? (
+                        {u.rol === "superadmin" ? (
+                          <span className="text-xs text-muted-foreground italic">Exento de permisos</span>
+                        ) : u.empleadoId ? (
                           <Button size="sm" variant="outline" onClick={() => onOtorgarPermiso(u)}>
                             Otorgar Permiso
                           </Button>

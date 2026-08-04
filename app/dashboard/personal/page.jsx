@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
-import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario, HORARIO_DEFAULT } from "@/hooks/use-empleados";
+import { useEmpleados, DIAS_SEMANA, MODALIDADES, calcularResumenHorario, HORARIO_DEFAULT, HORARIO_DEFAULT_CONFIANZA, normalizarHorario } from "@/hooks/use-empleados";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,16 +39,15 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { toast } from "sonner";
 import {
   Users, UserPlus, RefreshCcw, LogOut, ArrowLeft, Mail, Lock, User, Briefcase, CalendarDays,
-  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint, Pencil, AlertCircle, HelpCircle, ShieldCheck
+  Monitor, Home, CheckCircle2, Eye, EyeOff, Search, MapPin, Phone, Building, QrCode, FileText, Trash2, PowerOff, Power, PawPrint, Pencil, AlertCircle, HelpCircle, ShieldCheck,
+  FileSpreadsheet, Download, GraduationCap, HeartPulse, ShieldAlert, HeartHandshake, Globe, Map, Droplets, Calendar, Plus, X, Heart, Award, Info
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { crearUsuarioInstitucional, reingresarUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { exportarAExcel } from "@/lib/export-excel";
 
-// Librerías para PDF y QR
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 
 const COLORS = {
@@ -59,27 +58,58 @@ const COLORS = {
 };
 
 const PAISES_PERSONAL = [
-  "Colombia", "Venezuela", "Ecuador", "Per\u00fa", "Chile", "Argentina", "Brasil", "Panam\u00e1", "M\u00e9xico", "Estados Unidos", "Espa\u00f1a", "Otro"
+  "Colombia", "Venezuela", "Ecuador", "Perú", "Chile", "Argentina", "Brasil", "Panamá", "México", "Estados Unidos", "España", "Otro"
 ];
 
 const DEPARTAMENTOS_COLOMBIA_PERSONAL = [
-  "Amazonas", "Antioquia", "Arauca", "Atl\u00e1ntico", "Bol\u00edvar", "Boyac\u00e1", "Caldas", "Caquet\u00e1", "Casanare", "Cauca", "Cesar", "Choc\u00f3", "C\u00f3rdoba", "Cundinamarca", "Guain\u00eda", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Nari\u00f1o", "Norte de Santander", "Putumayo", "Quind\u00edo", "Risaralda", "San Andr\u00e9s y Providencia", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupes", "Vichada"
+  "Amazonas", "Antioquia", "Arauca", "Atlántico", "Bolívar", "Boyacá", "Caldas", "Caquetá", "Casanare", "Cauca", "Cesar", "Chocó", "Córdoba", "Cundinamarca", "Guainía", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Nariño", "Norte de Santander", "Putumayo", "Quindío", "Risaralda", "San Andrés y Providencia", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupés", "Vichada"
 ];
 
 const SEDES_INSTITUCIONALES = [
   "Sede Principal",
-  "Subdirecci\u00f3n Regional Pac\u00edfico Norte",
-  "Subdirecci\u00f3n Regional Pac\u00edfico Sur",
-  "Subdirecci\u00f3n Regional Eje Cafetero",
-  "Subdirecci\u00f3n Regional Sur Central",
-  "Subdirecci\u00f3n Regional Nor Caribe",
-  "Subdirecci\u00f3n Regional Sur Caribe",
-  "Subdirecci\u00f3n Regional Nor Oriente",
-  "Subdirecci\u00f3n Regional Sur Oriente"
+  "Subdirección Regional Pacífico Norte",
+  "Subdirección Regional Pacífico Sur",
+  "Subdirección Regional Eje Cafetero",
+  "Subdirección Regional Sur Central",
+  "Subdirección Regional Nor Caribe",
+  "Subdirección Regional Sur Caribe",
+  "Subdirección Regional Nor Oriente",
+  "Subdirección Regional Sur Oriente"
 ];
 
 const TIPOS_PERSONAL = [
   "Empleado", "Practicante", "Contratista", "Administrativo", "Coordinador", "Directivo", "Otro"
+];
+
+const ETNIAS = [
+  "Afrodiaspórico (Negro)", "Afrodiaspórico (Afro)", "Afrodiaspórico (Palenquero)", "Afrodiaspórico (Raizal)",
+  "Originario (Indígena)", "Mestizo", "ROM", "Caucásico (Blanco)"
+];
+
+const TIPOS_VICTIMA = [
+  "Desplazamiento", "Homicidio", "Amenazas", "Desaparición forzosa", "Pérdida de bienes",
+  "Atentados", "Secuestros", "Delitos contra la libertad sexual", "Daños por explosivos",
+  "Abandono o expulsión de tierras", "Torturas", "Reclutamiento de NNA"
+];
+
+const TIPOS_DISCRIMINACION = [
+  "Raza", "Por país de origen", "Por lugar de nacimiento", "Lugar de origen/procedencia/destino",
+  "Por género", "Por religión", "Por discapacidad", "Por identidad cultural", "Por identidad ideológica",
+  "Por situación socioeconómica", "Por nivel académico", "Por edad", "Por situación de salud",
+  "Por condición familiar", "Por aspecto físico"
+];
+
+const NIVELES_EDUCATIVOS = [
+  "Ninguno", "Primaria", "Bachiller", "Técnico", "Tecnólogo", "Pregrado (Universitario)",
+  "Especialización o posgrado", "Maestría", "Doctorado", "Posdoctorado"
+];
+
+const TIPOS_DISCAPACIDAD = [
+  "Múltiple", "Auditiva", "Visual", "Física", "Intelectual", "Psicosocial", "Del habla", "Otro"
+];
+
+const TIPOS_TRASTORNO = [
+  "Dislexia", "Autismo", "De la percepción visual", "De la memoria", "Otro"
 ];
 
 function PersonalContent() {
@@ -131,12 +161,60 @@ function PersonalContent() {
     valorDiaTrabajo: "",
     horasSemanales: "",
     auxilioTransporte: "",
-    // Nuevos Afiliaciones
+    salario: "",
+    tipoVinculacion: "",
+    tienePeriodoPrueba: false,
+    tiempoPeriodoPrueba: "",
+    tipoContrato: "",
+    tiempoContrato: "",
+    fechaTerminacion: "",
+    motivoTerminacion: "",
+    // Nuevos Afiliaciones / Seguridad Social
     eps: "",
     fondoPension: "",
     cesantias: "",
     cajaCompensacion: "",
     arl: "POSITIVA ARL",
+    // Datos Demográficos de Afiliación
+    fechaNacimiento: "",
+    paisNacimiento: "Colombia",
+    otroPaisNacimiento: "",
+    lugarNacimiento: "",
+    edad: "",
+    sexo: "",
+    orientacionSexual: "",
+    orientacionOtro: "",
+    estrato: "",
+    etnia: "",
+    sisben: "",
+    sisbenPuntaje: "",
+    asesoriaSisben: "",
+    victimaConflicto: "",
+    victimaTipo: "",
+    victimaInscrito: "",
+    discriminacion: "",
+    discriminacionTipo: "",
+    educacionNivel: "",
+    educacionEstudio: "",
+    educacionSemestre: "",
+    educacionPlantel: "",
+    enfermedad: "",
+    enfermedadCual: "",
+    alergia: "",
+    alergiaCual: "",
+    discapacidad: "",
+    discapacidadTipo: "",
+    discapacidadOtro: "",
+    trastorno: "",
+    trastornoTipo: "",
+    trastornoOtro: "",
+    condicionEspecial: "",
+    condicionEspecialCual: "",
+    deseaSerVoluntario: "",
+    emergenciaNombre: "",
+    emergenciaNumero: "",
+    emergenciaWhatsapp: "",
+    emergenciaDireccion: "",
   });
   const [fotoPreview, setFotoPreview] = useState(null);
   const [creando, setCreando] = useState(false);
@@ -149,6 +227,7 @@ function PersonalContent() {
   const [fechaCertificado, setFechaCertificado] = useState("");
   const [showRemuneracionModal, setShowRemuneracionModal] = useState(false);
   const [personaCertPendiente, setPersonaCertPendiente] = useState(null);
+  const [empleadoExpediente, setEmpleadoExpediente] = useState(null);
 
   // Estados Table
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,6 +235,25 @@ function PersonalContent() {
   const [horarioEdit, setHorarioEdit] = useState({});
   const [guardandoHorario, setGuardandoHorario] = useState(false);
   const [confirmDuplicado, setConfirmDuplicado] = useState(false);
+
+  const handleBirthDateChange = (val) => {
+    let calcAge = "";
+    if (val) {
+      const birthDate = new Date(val);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      calcAge = age >= 0 ? `${age} Años` : "";
+    }
+    setFormData((prev) => ({
+      ...prev,
+      fechaNacimiento: val,
+      edad: calcAge,
+    }));
+  };
 
   const cargarDatos = async () => {
     setCargandoUsuarios(true);
@@ -509,11 +607,11 @@ function PersonalContent() {
       password: "",
       modalidadLaboral: target.modalidadLaboral || "Presencial",
       diasTeletrabajo: target.diasTeletrabajo || "",
-      afiliarAutomaticamente: false,
-      beneficiarios: target.beneficiarios || [],
-      mascotas: target.mascotas || [],
+      afiliarAutomaticamente: !!target.afiliarAutomaticamente,
+      beneficiarios: Array.isArray(target.beneficiarios) && target.beneficiarios.length > 0 ? target.beneficiarios : Array.from({ length: 5 }, () => ({ nombre: "", nuip: "" })),
+      mascotas: Array.isArray(target.mascotas) && target.mascotas.length > 0 ? target.mascotas : Array.from({ length: 2 }, () => ({ nombre: "", tipo: "", raza: "" })),
       foto: target.foto || null,
-      horarioModalidad: target.horarioModalidad || HORARIO_DEFAULT,
+      horarioModalidad: normalizarHorario(target.horarioModalidad || HORARIO_DEFAULT),
       memorandos: Array.isArray(target.memorandos) ? target.memorandos : [],
       // Campos de asignación institucional
       oficinaContrata: target.oficinaContrata || "",
@@ -527,6 +625,52 @@ function PersonalContent() {
       valorDiaTrabajo: target.valorDiaTrabajo || "",
       horasSemanales: target.horasSemanales || "",
       auxilioTransporte: target.auxilioTransporte || "",
+      // Afiliaciones / Seguridad Social
+      eps: target.eps || "",
+      fondoPension: target.fondoPension || "",
+      cesantias: target.cesantias || "",
+      cajaCompensacion: target.cajaCompensacion || "",
+      arl: target.arl || "POSITIVA ARL",
+      // Datos Demográficos
+      fechaNacimiento: target.fechaNacimiento || "",
+      paisNacimiento: target.paisNacimiento || "Colombia",
+      otroPaisNacimiento: target.otroPaisNacimiento || "",
+      lugarNacimiento: target.lugarNacimiento || "",
+      edad: target.edad || "",
+      sexo: target.sexo || "",
+      orientacionSexual: target.orientacionSexual || "",
+      orientacionOtro: target.orientacionOtro || "",
+      estrato: target.estrato || "",
+      etnia: target.etnia || "",
+      sisben: target.sisben || "",
+      sisbenPuntaje: target.sisbenPuntaje || "",
+      asesoriaSisben: target.asesoriaSisben || "",
+      victimaConflicto: target.victimaConflicto || "",
+      victimaTipo: target.victimaTipo || "",
+      victimaInscrito: target.victimaInscrito || "",
+      discriminacion: target.discriminacion || "",
+      discriminacionTipo: target.discriminacionTipo || "",
+      educacionNivel: target.educacionNivel || "",
+      educacionEstudio: target.educacionEstudio || "",
+      educacionSemestre: target.educacionSemestre || "",
+      educacionPlantel: target.educacionPlantel || "",
+      enfermedad: target.enfermedad || "",
+      enfermedadCual: target.enfermedadCual || "",
+      alergia: target.alergia || "",
+      alergiaCual: target.alergiaCual || "",
+      discapacidad: target.discapacidad || "",
+      discapacidadTipo: target.discapacidadTipo || "",
+      discapacidadOtro: target.discapacidadOtro || "",
+      trastorno: target.trastorno || "",
+      trastornoTipo: target.trastornoTipo || "",
+      trastornoOtro: target.trastornoOtro || "",
+      condicionEspecial: target.condicionEspecial || "",
+      condicionEspecialCual: target.condicionEspecialCual || "",
+      deseaSerVoluntario: target.deseaSerVoluntario || "",
+      emergenciaNombre: target.emergenciaNombre || "",
+      emergenciaNumero: target.emergenciaNumero || "",
+      emergenciaWhatsapp: target.emergenciaWhatsapp || "",
+      emergenciaDireccion: target.emergenciaDireccion || "",
     });
     setFotoPreview(target.foto || null);
     setIsEditing(true);
@@ -610,7 +754,10 @@ function PersonalContent() {
         });
       }
       if (editId.empleadoId) {
-        await updateDoc(doc(db, "empleados", editId.empleadoId), {
+        const beneficiariosValidos = formData.afiliarAutomaticamente ? (formData.beneficiarios || []).filter(b => b.nombre.trim() !== "") : [];
+        const mascotasValidas = formData.afiliarAutomaticamente ? (formData.mascotas || []).filter(m => m.nombre.trim() !== "") : [];
+
+        const updateData = {
           nombre: formData.nombre,
           documento: formData.documento,
           correo: formData.correo,
@@ -632,6 +779,7 @@ function PersonalContent() {
           horasSemanales: formData.horasSemanales || "",
           auxilioTransporte: formData.auxilioTransporte || "",
           modalidadLaboral: formData.modalidadLaboral,
+          horarioModalidad: normalizarHorario(formData.horarioModalidad),
           foto: formData.foto,
           memorandos: formData.memorandos || [],
           // Campos de asignación institucional
@@ -641,7 +789,120 @@ function PersonalContent() {
           departamentoAsignacion: formData.paisAsignacion === "Colombia" ? (formData.departamentoAsignacion || "") : "",
           ciudadAsignacion: formData.ciudadAsignacion || "",
           correoPersonal: formData.correoPersonal || "",
-        });
+          // Seguridad social
+          eps: formData.eps || "",
+          fondoPension: formData.fondoPension || "",
+          cesantias: formData.cesantias || "",
+          cajaCompensacion: formData.cajaCompensacion || "",
+          arl: formData.arl || "POSITIVA ARL",
+          // Demografía y Afiliación
+          afiliarAutomaticamente: !!formData.afiliarAutomaticamente,
+          beneficiarios: beneficiariosValidos,
+          mascotas: mascotasValidas,
+          fechaNacimiento: formData.fechaNacimiento || "",
+          paisNacimiento: formData.paisNacimiento || "Colombia",
+          otroPaisNacimiento: formData.otroPaisNacimiento || "",
+          lugarNacimiento: formData.lugarNacimiento || "",
+          edad: formData.edad || "",
+          sexo: formData.sexo || "",
+          orientacionSexual: formData.orientacionSexual || "",
+          orientacionOtro: formData.orientacionOtro || "",
+          estrato: formData.estrato || "",
+          etnia: formData.etnia || "",
+          sisben: formData.sisben || "",
+          sisbenPuntaje: formData.sisbenPuntaje || "",
+          asesoriaSisben: formData.asesoriaSisben || "",
+          victimaConflicto: formData.victimaConflicto || "",
+          victimaTipo: formData.victimaTipo || "",
+          victimaInscrito: formData.victimaInscrito || "",
+          discriminacion: formData.discriminacion || "",
+          discriminacionTipo: formData.discriminacionTipo || "",
+          educacionNivel: formData.educacionNivel || "",
+          educacionEstudio: formData.educacionEstudio || "",
+          educacionSemestre: formData.educacionSemestre || "",
+          educacionPlantel: formData.educacionPlantel || "",
+          enfermedad: formData.enfermedad || "",
+          enfermedadCual: formData.enfermedadCual || "",
+          alergia: formData.alergia || "",
+          alergiaCual: formData.alergiaCual || "",
+          discapacidad: formData.discapacidad || "",
+          discapacidadTipo: formData.discapacidadTipo || "",
+          discapacidadOtro: formData.discapacidadOtro || "",
+          trastorno: formData.trastorno || "",
+          trastornoTipo: formData.trastornoTipo || "",
+          trastornoOtro: formData.trastornoOtro || "",
+          condicionEspecial: formData.condicionEspecial || "",
+          condicionEspecialCual: formData.condicionEspecialCual || "",
+          deseaSerVoluntario: formData.deseaSerVoluntario || "",
+          emergenciaNombre: formData.emergenciaNombre || "",
+          emergenciaNumero: formData.emergenciaNumero || "",
+          emergenciaWhatsapp: formData.emergenciaWhatsapp || "",
+          emergenciaDireccion: formData.emergenciaDireccion || "",
+        };
+
+        await updateDoc(doc(db, "empleados", editId.empleadoId), updateData);
+
+        // Sincronizar con 'afiliados' si existe
+        try {
+          const qAf = query(collection(db, "afiliados"), where("personalId", "==", editId.empleadoId));
+          const snapAf = await getDocs(qAf);
+          if (!snapAf.empty) {
+            const afDoc = snapAf.docs[0];
+            await updateDoc(doc(db, "afiliados", afDoc.id), {
+              nombre: formData.nombre,
+              cedula: formData.documento,
+              telefono: formData.telefono,
+              correo: formData.correo,
+              direccion: formData.direccion,
+              rh: formData.rh,
+              beneficiarios: beneficiariosValidos,
+              mascotas: mascotasValidas,
+              fechaNacimiento: formData.fechaNacimiento || "",
+              paisNacimiento: formData.paisNacimiento || "Colombia",
+              otroPaisNacimiento: formData.otroPaisNacimiento || "",
+              lugarNacimiento: formData.lugarNacimiento || "",
+              edad: formData.edad || "",
+              sexo: formData.sexo || "",
+              orientacionSexual: formData.orientacionSexual || "",
+              orientacionOtro: formData.orientacionOtro || "",
+              estrato: formData.estrato || "",
+              etnia: formData.etnia || "",
+              sisben: formData.sisben || "",
+              sisbenPuntaje: formData.sisbenPuntaje || "",
+              asesoriaSisben: formData.asesoriaSisben || "",
+              victimaConflicto: formData.victimaConflicto || "",
+              victimaTipo: formData.victimaTipo || "",
+              victimaInscrito: formData.victimaInscrito || "",
+              discriminacion: formData.discriminacion || "",
+              discriminacionTipo: formData.discriminacionTipo || "",
+              educacionNivel: formData.educacionNivel || "",
+              educacionEstudio: formData.educacionEstudio || "",
+              educacionSemestre: formData.educacionSemestre || "",
+              educacionPlantel: formData.educacionPlantel || "",
+              eps: formData.eps || "",
+              arl: formData.arl || "POSITIVA ARL",
+              enfermedad: formData.enfermedad || "",
+              enfermedadCual: formData.enfermedadCual || "",
+              alergia: formData.alergia || "",
+              alergiaCual: formData.alergiaCual || "",
+              discapacidad: formData.discapacidad || "",
+              discapacidadTipo: formData.discapacidadTipo || "",
+              discapacidadOtro: formData.discapacidadOtro || "",
+              trastorno: formData.trastorno || "",
+              trastornoTipo: formData.trastornoTipo || "",
+              trastornoOtro: formData.trastornoOtro || "",
+              condicionEspecial: formData.condicionEspecial || "",
+              condicionEspecialCual: formData.condicionEspecialCual || "",
+              deseaSerVoluntario: formData.deseaSerVoluntario || "",
+              emergenciaNombre: formData.emergenciaNombre || "",
+              emergenciaNumero: formData.emergenciaNumero || "",
+              emergenciaWhatsapp: formData.emergenciaWhatsapp || "",
+              emergenciaDireccion: formData.emergenciaDireccion || "",
+            });
+          }
+        } catch (syncErr) {
+          console.warn("No se pudo sincronizar con afiliados:", syncErr);
+        }
       }
       toast.success("Personal actualizado correctamente");
       cargarDatos();
@@ -657,7 +918,244 @@ function PersonalContent() {
     }
   };
 
+  const handleExportarExcelPersonal = () => {
+    if (!usuariosFiltrados || usuariosFiltrados.length === 0) {
+      toast.error("No hay registros para exportar");
+      return;
+    }
 
+    const columnas = [
+      { header: "Documento (NUIP)", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.documento || u.documento || "";
+      }},
+      { header: "Nombre Completo", transform: (u) => u.nombre || "" },
+      { header: "Correo Institucional", transform: (u) => u.correo || "" },
+      { header: "Correo Personal", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.correoPersonal || "";
+      }},
+      { header: "Teléfono", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.telefono || "";
+      }},
+      { header: "Dirección", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.direccion || "";
+      }},
+      { header: "RH", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.rh || "";
+      }},
+      { header: "Rol Sistema", transform: (u) => u.rol || "" },
+      { header: "Cargo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.cargo || "";
+      }},
+      { header: "Tipo Personal", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.tipoPersonal || "";
+      }},
+      { header: "Estado", transform: (u) => u.activo === false ? "Inactivo / Bloqueado" : "Activo" },
+      { header: "Modalidad Laboral", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.modalidadLaboral || "";
+      }},
+      { header: "Días Teletrabajo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.diasTeletrabajo || "";
+      }},
+      { header: "Oficina Emite / Asignación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.oficinaContrata || "";
+      }},
+      { header: "Dependencia Solicitante", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.dependenciaSolicita || "";
+      }},
+      { header: "País Asignación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.paisAsignacion || "";
+      }},
+      { header: "Departamento Asignación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.departamentoAsignacion || "";
+      }},
+      { header: "Ciudad Asignación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.ciudadAsignacion || "";
+      }},
+      { header: "Tipo Vinculación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.tipoVinculacion || "";
+      }},
+      { header: "Periodo de Prueba", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.tienePeriodoPrueba ? `Sí (${p?.tiempoPeriodoPrueba || ""})` : "No";
+      }},
+      { header: "Tipo de Contrato", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.tipoContrato || "";
+      }},
+      { header: "Tiempo Contrato", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.tiempoContrato || "";
+      }},
+      { header: "Fecha de Ingreso", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.fechaIngreso || "";
+      }},
+      { header: "Fecha Terminación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.fechaTerminacion || "";
+      }},
+      { header: "Salario Mensual", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.salario ? `$ ${p.salario}` : "";
+      }},
+      { header: "Valor Día", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.valorDiaTrabajo ? `$ ${p.valorDiaTrabajo}` : "";
+      }},
+      { header: "Horas Semanales", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.horasSemanales || "";
+      }},
+      { header: "Auxilio Transporte", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.auxilioTransporte ? `$ ${p.auxilioTransporte}` : "";
+      }},
+      { header: "EPS", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.eps || "";
+      }},
+      { header: "Fondo de Pensión", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.fondoPension || "";
+      }},
+      { header: "Cesantías", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.cesantias || "";
+      }},
+      { header: "Caja Compensación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.cajaCompensacion || "";
+      }},
+      { header: "ARL", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.arl || "";
+      }},
+      { header: "Código Institucional", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.codigoInstitucional || "";
+      }},
+      { header: "Afiliación Fundación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.afiliarAutomaticamente ? "Sí" : "No";
+      }},
+      { header: "Fecha Nacimiento", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.fechaNacimiento || "";
+      }},
+      { header: "Edad", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.edad || "";
+      }},
+      { header: "País Nacimiento", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.paisNacimiento || "";
+      }},
+      { header: "Lugar Nacimiento", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.lugarNacimiento || "";
+      }},
+      { header: "Sexo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.sexo || "";
+      }},
+      { header: "Orientación Sexual", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.orientacionSexual === "Otro" ? `Otro: ${p?.orientacionOtro || ""}` : (p?.orientacionSexual || "");
+      }},
+      { header: "Estrato", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.estrato || "";
+      }},
+      { header: "Grupo Étnico", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.etnia || "";
+      }},
+      { header: "Sisbén", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.sisben === "Sí" ? `Sí (Cat/Pje: ${p?.sisbenPuntaje || ""})` : (p?.sisben || "");
+      }},
+      { header: "Víctima Conflicto", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.victimaConflicto === "Sí" ? `Sí (${p?.victimaTipo || ""}) - RUV: ${p?.victimaInscrito || ""}` : (p?.victimaConflicto || "");
+      }},
+      { header: "Discriminación", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.discriminacion === "Sí" ? `Sí (${p?.discriminacionTipo || ""})` : (p?.discriminacion || "");
+      }},
+      { header: "Nivel Educativo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.educacionNivel || "";
+      }},
+      { header: "Estudio / Carrera", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.educacionEstudio || "";
+      }},
+      { header: "Plantel Educativo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.educacionPlantel || "";
+      }},
+      { header: "Enfermedades", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.enfermedad === "Sí" ? `Sí: ${p?.enfermedadCual || ""}` : "No";
+      }},
+      { header: "Alergias", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.alergia === "Sí" ? `Sí: ${p?.alergiaCual || ""}` : "No";
+      }},
+      { header: "Discapacidad", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.discapacidad === "Sí" ? `Sí: ${p?.discapacidadTipo || ""}` : "No";
+      }},
+      { header: "Trastorno Neurodesarrollo", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.trastorno === "Sí" ? `Sí: ${p?.trastornoTipo || ""}` : "No";
+      }},
+      { header: "Condición Especial", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.condicionEspecial === "Sí" ? `Sí: ${p?.condicionEspecialCual || ""}` : "No";
+      }},
+      { header: "Contacto Emergencia", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return p?.emergenciaNombre ? `${p.emergenciaNombre} (Tel: ${p.emergenciaNumero || ""} / Dir: ${p.emergenciaDireccion || ""})` : "";
+      }},
+      { header: "Beneficiarios", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return (p?.beneficiarios || []).filter(b => b.nombre).map(b => `${b.nombre} [NUIP: ${b.nuip || "N/A"}]`).join("; ");
+      }},
+      { header: "Mascotas", transform: (u) => {
+        const p = u.empleadoId ? personalList.find(x => x.id === u.empleadoId) : null;
+        return (p?.mascotas || []).filter(m => m.nombre).map(m => `${m.nombre} (${m.tipo}${m.raza ? ` - ${m.raza}` : ""})`).join("; ");
+      }},
+    ];
+
+    try {
+      exportarAExcel({
+        nombreArchivo: "Personal_Institucional",
+        titulo: "REPORTE INTEGRAL DE PERSONAL INSTITUCIONAL",
+        columnas,
+        datos: usuariosFiltrados,
+      });
+      toast.success("Archivo Excel descargado exitosamente");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al exportar a Excel");
+    }
+  };
 
   const handleEliminarPersonal = async (uId, empleadoId) => {
     if (!window.confirm("¿Estás seguro de que deseas ELIMINAR este personal permanentemente? Esta acción no se puede deshacer.")) return;
@@ -692,6 +1190,7 @@ function PersonalContent() {
       const element = document.getElementById("hidden-carnet-personal");
       if (!element) throw new Error("Template no encontrado");
 
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(element, {
         scale: 4,
         useCORS: true,
@@ -736,6 +1235,9 @@ function PersonalContent() {
 
       const element = document.getElementById("hidden-cert-personal");
       if (!element) throw new Error("Template no encontrado");
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -847,6 +1349,9 @@ function PersonalContent() {
                     className="pl-10 h-10 bg-card border-primary/20 focus-visible:ring-primary shadow-sm"
                   />
                 </div>
+                <Button onClick={handleExportarExcelPersonal} variant="outline" className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Exportar a Excel
+                </Button>
                 <Button onClick={() => setView("create")} className="gap-2 shrink-0 h-10 w-full sm:w-auto shadow-sm">
                   <UserPlus className="h-4 w-4" /> Nuevo Personal
                 </Button>
@@ -870,14 +1375,15 @@ function PersonalContent() {
                     <TableBody>
                       {usuariosFiltrados.map((u) => {
                         const personal = u.empleadoId ? personalList.find(p => p.id === u.empleadoId) : {
-                          id: null,
+                          id: u.uid || u.id,
                           nombre: u.nombre,
                           documento: "No Registrado",
-                          cargo: "Administrador / RRHH",
+                          cargo: u.rol === "superadmin" ? "Súper Administrador" : (u.rol === "lider_comercial" ? "Líder Comercial" : u.rol === "comercial" ? "Asesor Comercial" : "Administrador / RRHH"),
                           tipoPersonal: u.rol,
                           codigoInstitucional: u.uid?.substring(0, 8),
                           fechaIngreso: new Date().toISOString().split("T")[0],
-                          horarioModalidad: HORARIO_DEFAULT,
+                          modalidadLaboral: u.rol === "superadmin" ? "Empleado de Confianza" : "Presencial",
+                          horarioModalidad: u.rol === "superadmin" ? HORARIO_DEFAULT_CONFIANZA : HORARIO_DEFAULT,
                           isMock: true
                         };
 
@@ -905,9 +1411,10 @@ function PersonalContent() {
                                   u.rol === 'superadmin' ? 'bg-destructive/10 text-destructive border-destructive/20' :
                                     u.rol === 'recursos_humanos' ? 'bg-primary/10 text-primary border-primary/20' :
                                       u.rol === 'lider_comercial' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                        'bg-slate-100 text-slate-600 border-slate-200'
+                                        u.rol === 'comercial' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                          'bg-slate-100 text-slate-600 border-slate-200'
                                 }`}>
-                                  {u.rol}
+                                  {u.rol === 'comercial' ? 'comercial' : u.rol}
                                 </Badge>
                                 {Array.isArray(personal?.memorandos) && personal.memorandos.filter(m => typeof m === 'string' && m.trim() !== "").length > 0 && (
                                   <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[9px] mt-1 flex gap-1 items-center w-fit">
@@ -929,44 +1436,88 @@ function PersonalContent() {
                                 ) : (
                                   <Badge variant="destructive" className="text-[10px] uppercase">Bloqueado</Badge>
                                 )}
-                                {personal && !personal.isMock && (
+                                {u.rol === "superadmin" ? (
+                                  <span className="inline-flex items-center text-purple-700 font-semibold text-[11px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                    <ShieldCheck className="w-3 h-3 mr-1" /> Sin Horario (Súper Admin)
+                                  </span>
+                                ) : (personal && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    {personal.modalidadLaboral === "Teletrabajo" ? <Monitor className="w-3 h-3" /> : <Building className="w-3 h-3" />}
-                                    {personal.modalidadLaboral}
+                                    {personal.modalidadLaboral === "Empleado de Confianza" ? (
+                                      <span className="inline-flex items-center text-purple-700 font-semibold text-[11px] bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                        <ShieldCheck className="w-3 h-3 mr-1" /> Confianza (Sin Horario)
+                                      </span>
+                                    ) : personal.modalidadLaboral === "Teletrabajo" ? (
+                                      <span className="inline-flex items-center text-primary font-medium text-xs">
+                                        <Monitor className="w-3 h-3 mr-1" /> Teletrabajo
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center text-muted-foreground font-medium text-xs">
+                                        <Building className="w-3 h-3 mr-1" /> {personal.modalidadLaboral || "Presencial"}
+                                      </span>
+                                    )}
                                   </div>
-                                )}
+                                ))}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
-                                {personal && (
+                                {u.rol === "superadmin" ? (
                                   <>
-                                    <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Personal" className="text-warning hover:bg-warning/10">
+                                    <Button variant="ghost" size="icon" onClick={() => setEmpleadoExpediente({ ...personal, usuarioData: u })} title="Ver Expediente Integral" className="text-indigo-600 hover:bg-indigo-50">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Información" className="text-warning hover:bg-warning/10">
                                       <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => { if (!personal.isMock) { setEmpleadoSeleccionado(personal); setHorarioEdit(personal.horarioModalidad); } else { toast.info("Super Admins no tienen gestión de horario."); } }} title="Gestionar Horario">
-                                      <CalendarDays className="h-4 w-4 text-primary" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
+                                    <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet Operativo">
                                       <QrCode className="h-4 w-4 text-info" />
                                     </Button>
                                     <Button variant="ghost" size="icon" onClick={() => solicitarCertificadoPersonal(personal)} title="Descargar Certificado Laboral">
                                       <FileText className="h-4 w-4 text-success" />
                                     </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleToggleEstado(u.empleadoId, u.id, personal?.estado || "activo")}
-                                      title={personal?.estado === "inactivo" ? "Habilitar Empleado" : "Inhabilitar Empleado"}
-                                      className={personal?.estado === "inactivo" ? "text-success hover:bg-success/10" : "text-orange-500 hover:bg-orange-500/10"}
-                                    >
-                                      {personal?.estado === "inactivo" ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
-                                    </Button>
                                   </>
+                                ) : (
+                                  personal && (
+                                    <>
+                                      <Button variant="ghost" size="icon" onClick={() => setEmpleadoExpediente({ ...personal, usuarioData: u })} title="Ver Expediente Integral" className="text-indigo-600 hover:bg-indigo-50">
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => abrirEdicion(u, personal)} title="Editar Personal" className="text-warning hover:bg-warning/10">
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      {personal?.modalidadLaboral !== "Empleado de Confianza" && (
+                                        <Button variant="ghost" size="icon" onClick={() => { 
+                                          if (!personal.isMock) { 
+                                            setEmpleadoSeleccionado(personal); 
+                                            setHorarioEdit(normalizarHorario(personal.horarioModalidad)); 
+                                          } else { 
+                                            toast.info("Perfil administrativo sin gestión de horario asignado."); 
+                                          } 
+                                        }} title="Gestionar Horario">
+                                          <CalendarDays className="h-4 w-4 text-primary" />
+                                        </Button>
+                                      )}
+                                      <Button variant="ghost" size="icon" onClick={() => generarCarnetPersonal(personal)} title="Descargar Carnet">
+                                        <QrCode className="h-4 w-4 text-info" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => solicitarCertificadoPersonal(personal)} title="Descargar Certificado Laboral">
+                                        <FileText className="h-4 w-4 text-success" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleToggleEstado(u.empleadoId, u.id, personal?.estado || "activo")}
+                                        title={personal?.estado === "inactivo" ? "Habilitar Empleado" : "Inhabilitar Empleado"}
+                                        className={personal?.estado === "inactivo" ? "text-success hover:bg-success/10" : "text-orange-500 hover:bg-orange-500/10"}
+                                      >
+                                        {personal?.estado === "inactivo" ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleEliminarPersonal(u.id, u.empleadoId)} title="Eliminar Personal" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )
                                 )}
-                                <Button variant="ghost" size="icon" onClick={() => handleEliminarPersonal(u.id, u.empleadoId)} title="Eliminar Personal" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1105,12 +1656,26 @@ function PersonalContent() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase text-muted-foreground">Modalidad Laboral</label>
-                          <Select value={formData.modalidadLaboral} onValueChange={v => setFormData({ ...formData, modalidadLaboral: v })}>
+                          <Select 
+                            value={formData.modalidadLaboral} 
+                            onValueChange={v => {
+                              let updatedSchedule = { ...formData.horarioModalidad };
+                              if (v === "Empleado de Confianza") {
+                                DIAS_SEMANA.forEach(d => {
+                                  if (updatedSchedule[d]?.modalidad !== "libre") {
+                                    updatedSchedule[d] = { ...updatedSchedule[d], modalidad: "confianza" };
+                                  }
+                                });
+                              }
+                              setFormData({ ...formData, modalidadLaboral: v, horarioModalidad: updatedSchedule });
+                            }}
+                          >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Presencial">Presencial</SelectItem>
                               <SelectItem value="Teletrabajo">Teletrabajo</SelectItem>
                               <SelectItem value="Híbrido">Híbrido</SelectItem>
+                              <SelectItem value="Empleado de Confianza">Empleado de Confianza (Sin Horario Fijo)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1142,6 +1707,7 @@ function PersonalContent() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="empleado">Empleado</SelectItem>
+                              <SelectItem value="comercial">Asesor Comercial</SelectItem>
                               <SelectItem value="lider_comercial">Líder Comercial</SelectItem>
                               <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
                               {esSuperAdmin && <SelectItem value="superadmin">Súper Administrador</SelectItem>}
@@ -1591,9 +2157,9 @@ function PersonalContent() {
                               {dia}
                             </div>
 
-                            <div className="w-full md:w-48 shrink-0">
+                            <div className="w-full md:w-56 shrink-0">
                               <Select
-                                value={formData.horarioModalidad[dia].modalidad}
+                                value={formData.horarioModalidad[dia]?.modalidad || "presencial"}
                                 onValueChange={(v) => setFormData({
                                   ...formData,
                                   horarioModalidad: {
@@ -1606,15 +2172,16 @@ function PersonalContent() {
                                 <SelectContent>
                                   <SelectItem value="presencial">Presencial</SelectItem>
                                   <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                                  <SelectItem value="confianza">Empleado de Confianza</SelectItem>
                                   <SelectItem value="presencial_sin_horario">Presencial sin Horario</SelectItem>
                                   <SelectItem value="teletrabajo_sin_horario">Teletrabajo sin Horario</SelectItem>
-                                  <SelectItem value="libre">No Laboral</SelectItem>
+                                  <SelectItem value="libre">No Laboral (Libre)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div className="flex-1 flex justify-end w-full">
-                              {!["libre", "presencial_sin_horario", "teletrabajo_sin_horario"].includes(formData.horarioModalidad[dia].modalidad) ? (
+                              {!["libre", "confianza", "presencial_sin_horario", "teletrabajo_sin_horario"].includes(formData.horarioModalidad[dia]?.modalidad) ? (
                                 <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 items-center w-full bg-muted/20 lg:bg-transparent p-2 lg:p-0 rounded-md">
                                   {/* Jornada 1 */}
                                   <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
@@ -1622,15 +2189,21 @@ function PersonalContent() {
                                     <Input
                                       type="time"
                                       className="w-[90px] h-8 text-xs px-2"
-                                      value={formData.horarioModalidad[dia].entrada1 || ""}
+                                      value={formData.horarioModalidad[dia]?.entrada1 || "08:00"}
                                       onChange={(e) => handleTimeChange(dia, 'entrada1', e.target.value)}
                                     />
                                     <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right lg:pl-2 border-l border-muted-foreground/20">Sal 1</label>
                                     <Input
                                       type="time"
-                                      className="w-[90px] h-8 text-xs px-2 bg-muted cursor-not-allowed"
-                                      value={formData.horarioModalidad[dia].salida1 || ""}
-                                      readOnly
+                                      className="w-[90px] h-8 text-xs px-2"
+                                      value={formData.horarioModalidad[dia]?.salida1 || "12:00"}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], salida1: e.target.value }
+                                        }
+                                      })}
                                     />
                                   </div>
                                   {/* Jornada 2 */}
@@ -1639,21 +2212,35 @@ function PersonalContent() {
                                     <Input
                                       type="time"
                                       className="w-[90px] h-8 text-xs px-2"
-                                      value={formData.horarioModalidad[dia].entrada2 || ""}
+                                      value={formData.horarioModalidad[dia]?.entrada2 || "14:00"}
                                       onChange={(e) => handleTimeChange(dia, 'entrada2', e.target.value)}
                                     />
                                     <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right lg:pl-2 border-l border-muted-foreground/20">Sal 2</label>
                                     <Input
                                       type="time"
-                                      className="w-[90px] h-8 text-xs px-2 bg-muted cursor-not-allowed"
-                                      value={formData.horarioModalidad[dia].salida2 || ""}
-                                      readOnly
+                                      className="w-[90px] h-8 text-xs px-2"
+                                      value={formData.horarioModalidad[dia]?.salida2 || "18:00"}
+                                      onChange={(e) => setFormData({
+                                        ...formData,
+                                        horarioModalidad: {
+                                          ...formData.horarioModalidad,
+                                          [dia]: { ...formData.horarioModalidad[dia], salida2: e.target.value }
+                                        }
+                                      })}
                                     />
                                   </div>
                                 </div>
+                              ) : formData.horarioModalidad[dia]?.modalidad === "confianza" ? (
+                                <div className="w-full lg:w-auto text-center lg:text-right text-xs font-semibold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-md border border-purple-200 flex items-center justify-end gap-1">
+                                  <ShieldCheck className="w-3.5 h-3.5" /> Manejo y Confianza (Sin horario fijo)
+                                </div>
+                              ) : formData.horarioModalidad[dia]?.modalidad === "libre" ? (
+                                <div className="w-full lg:w-auto text-center lg:text-right text-sm text-muted-foreground italic py-2 lg:py-0">
+                                  Día no laboral (Libre)
+                                </div>
                               ) : (
                                 <div className="w-full lg:w-auto text-center lg:text-right text-sm text-muted-foreground italic py-2 lg:py-0">
-                                  Sin horario asignado
+                                  Sin horario fijo asignado
                                 </div>
                               )}
                             </div>
@@ -1688,80 +2275,628 @@ function PersonalContent() {
                         </p>
 
                         {formData.afiliarAutomaticamente && (
-                          <div className="mt-4 space-y-6 bg-background/50 p-4 rounded-xl border border-primary/10">
-                            {/* Beneficiarios */}
-                            <div className="space-y-3">
-                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Beneficiarios
+                          <div className="mt-6 space-y-8 bg-background/80 p-6 rounded-xl border border-primary/20 shadow-inner animate-in fade-in zoom-in duration-300">
+                            
+                            {/* 1. INFORMACIÓN DE NACIMIENTO Y EDAD */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <Calendar className="h-4 w-4" />
+                                1. Información de Nacimiento
                               </p>
-                              {formData.beneficiarios?.map((ben, idx) => (
-                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-card p-3 rounded-lg border shadow-sm">
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</label>
-                                    <Input
-                                      value={ben.nombre}
-                                      onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
-                                      className="h-8 text-xs"
-                                      placeholder={`Beneficiario ${idx + 1}`}
-                                      disabled={creando}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Documento (NUIP)</label>
-                                    <Input
-                                      value={ben.nuip}
-                                      onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
-                                      className="h-8 text-xs"
-                                      placeholder="Opcional"
-                                      disabled={creando}
-                                    />
-                                  </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Fecha de Nacimiento *</label>
+                                  <Input
+                                    type="date"
+                                    value={formData.fechaNacimiento}
+                                    onChange={(e) => handleBirthDateChange(e.target.value)}
+                                    className="h-9 text-xs"
+                                    disabled={creando}
+                                  />
                                 </div>
-                              ))}
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Edad Calculada</label>
+                                  <Input
+                                    value={formData.edad || "—"}
+                                    readOnly
+                                    className="h-9 text-xs bg-muted font-bold text-primary cursor-not-allowed"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">País de Nacimiento *</label>
+                                  <Select
+                                    value={formData.paisNacimiento}
+                                    onValueChange={(v) => setFormData({ ...formData, paisNacimiento: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione País" /></SelectTrigger>
+                                    <SelectContent>
+                                      {PAISES_PERSONAL.map((p) => (
+                                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {formData.paisNacimiento === "Otro" ? (
+                                  <div className="space-y-1">
+                                    <label className="text-[11px] font-bold uppercase text-muted-foreground">¿Cuál País?</label>
+                                    <Input
+                                      value={formData.otroPaisNacimiento}
+                                      onChange={(e) => setFormData({ ...formData, otroPaisNacimiento: e.target.value })}
+                                      className="h-9 text-xs"
+                                      placeholder="Escriba el país"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <label className="text-[11px] font-bold uppercase text-muted-foreground">Lugar / Ciudad de Nacimiento</label>
+                                    <Input
+                                      value={formData.lugarNacimiento}
+                                      onChange={(e) => setFormData({ ...formData, lugarNacimiento: e.target.value })}
+                                      className="h-9 text-xs"
+                                      placeholder="Ej: Buenaventura, Cali"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Mascotas */}
-                            <div className="space-y-3">
-                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2">
-                                <PawPrint className="h-4 w-4" />
-                                Mascotas (Plan Integra)
+                            {/* 2. IDENTIDAD Y PERFIL DEMOGRÁFICO */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <Users className="h-4 w-4" />
+                                2. Perfil Demográfico e Identidad
                               </p>
-                              {formData.mascotas?.map((mascota, idx) => (
-                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-card p-3 rounded-lg border shadow-sm">
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</label>
-                                    <Input
-                                      value={mascota.nombre}
-                                      onChange={(e) => handleMascotaChange(idx, "nombre", e.target.value)}
-                                      className="h-8 text-xs"
-                                      placeholder={`Mascota ${idx + 1}`}
-                                      disabled={creando}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Animal</label>
-                                    <Input
-                                      value={mascota.tipo}
-                                      onChange={(e) => handleMascotaChange(idx, "tipo", e.target.value)}
-                                      className="h-8 text-xs"
-                                      placeholder="Ej: Perro, Gato"
-                                      disabled={creando}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Raza (Opcional)</label>
-                                    <Input
-                                      value={mascota.raza}
-                                      onChange={(e) => handleMascotaChange(idx, "raza", e.target.value)}
-                                      className="h-8 text-xs"
-                                      placeholder="Raza"
-                                      disabled={creando}
-                                    />
-                                  </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Sexo Asignado *</label>
+                                  <Select
+                                    value={formData.sexo}
+                                    onValueChange={(v) => setFormData({ ...formData, sexo: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione Sexo" /></SelectTrigger>
+                                    <SelectContent>
+                                      {["Masculino", "Femenino", "Intersexual", "No binario", "Prefiero no decir"].map((s) => (
+                                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                              ))}
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Orientación Sexual</label>
+                                  <Select
+                                    value={formData.orientacionSexual}
+                                    onValueChange={(v) => setFormData({ ...formData, orientacionSexual: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      {["Heterosexual", "Homosexual / Gay / Lesbiana", "Bisexual", "Pansexual", "Asexual", "Otro"].map((o) => (
+                                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {formData.orientacionSexual === "Otro" && (
+                                  <div className="space-y-1">
+                                    <label className="text-[11px] font-bold uppercase text-muted-foreground">¿Cuál Orientación?</label>
+                                    <Input
+                                      value={formData.orientacionOtro}
+                                      onChange={(e) => setFormData({ ...formData, orientacionOtro: e.target.value })}
+                                      className="h-9 text-xs"
+                                      placeholder="Especificar"
+                                      disabled={creando}
+                                    />
+                                  </div>
+                                )}
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Estrato Socioeconómico</label>
+                                  <Select
+                                    value={formData.estrato}
+                                    onValueChange={(v) => setFormData({ ...formData, estrato: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione Estrato" /></SelectTrigger>
+                                    <SelectContent>
+                                      {["Estrato 1", "Estrato 2", "Estrato 3", "Estrato 4", "Estrato 5", "Estrato 6", "No aplica / Rural"].map((est) => (
+                                        <SelectItem key={est} value={est}>{est}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Grupo Étnico</label>
+                                  <Select
+                                    value={formData.etnia}
+                                    onValueChange={(v) => setFormData({ ...formData, etnia: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione Etnia" /></SelectTrigger>
+                                    <SelectContent>
+                                      {ETNIAS.map((et) => (
+                                        <SelectItem key={et} value={et}>{et}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
                             </div>
+
+                            {/* 3. CONTEXTO SOCIAL Y VULNERABILIDAD */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <ShieldAlert className="h-4 w-4" />
+                                3. Contexto Social y Vulnerabilidad
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Cuenta con Sisbén?</label>
+                                  <Select
+                                    value={formData.sisben}
+                                    onValueChange={(v) => setFormData({ ...formData, sisben: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.sisben === "Sí" && (
+                                    <Input
+                                      value={formData.sisbenPuntaje}
+                                      onChange={(e) => setFormData({ ...formData, sisbenPuntaje: e.target.value })}
+                                      className="h-8 text-xs mt-2"
+                                      placeholder="Categoría / Grupo (Ej: A1, B2)"
+                                      disabled={creando}
+                                    />
+                                  )}
+                                  {formData.sisben === "No" && (
+                                    <div className="pt-2">
+                                      <label className="text-[10px] text-muted-foreground block">¿Desea asesoría de Sisbén?</label>
+                                      <Select
+                                        value={formData.asesoriaSisben}
+                                        onValueChange={(v) => setFormData({ ...formData, asesoriaSisben: v })}
+                                        disabled={creando}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="¿Desea Asesoría?" /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Sí">Sí</SelectItem>
+                                          <SelectItem value="No">No</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Víctima del Conflicto Armado?</label>
+                                  <Select
+                                    value={formData.victimaConflicto}
+                                    onValueChange={(v) => setFormData({ ...formData, victimaConflicto: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.victimaConflicto === "Sí" && (
+                                    <div className="space-y-2 pt-2">
+                                      <Select
+                                        value={formData.victimaTipo}
+                                        onValueChange={(v) => setFormData({ ...formData, victimaTipo: v })}
+                                        disabled={creando}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Hecho Victimizante" /></SelectTrigger>
+                                        <SelectContent>
+                                          {TIPOS_VICTIMA.map((tv) => (
+                                            <SelectItem key={tv} value={tv}>{tv}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Select
+                                        value={formData.victimaInscrito}
+                                        onValueChange={(v) => setFormData({ ...formData, victimaInscrito: v })}
+                                        disabled={creando}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="¿Inscrito en RUV?" /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Sí">Inscrito en RUV: Sí</SelectItem>
+                                          <SelectItem value="No">Inscrito en RUV: No</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Ha sufrido Discriminación?</label>
+                                  <Select
+                                    value={formData.discriminacion}
+                                    onValueChange={(v) => setFormData({ ...formData, discriminacion: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.discriminacion === "Sí" && (
+                                    <Select
+                                      value={formData.discriminacionTipo}
+                                      onValueChange={(v) => setFormData({ ...formData, discriminacionTipo: v })}
+                                      disabled={creando}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs mt-2"><SelectValue placeholder="Tipo de discriminación" /></SelectTrigger>
+                                      <SelectContent>
+                                        {TIPOS_DISCRIMINACION.map((td) => (
+                                          <SelectItem key={td} value={td}>{td}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 4. FORMACIÓN ACADÉMICA */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <GraduationCap className="h-4 w-4" />
+                                4. Formación Académica
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Nivel Educativo Alcanzado *</label>
+                                  <Select
+                                    value={formData.educacionNivel}
+                                    onValueChange={(v) => setFormData({ ...formData, educacionNivel: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione Nivel" /></SelectTrigger>
+                                    <SelectContent>
+                                      {NIVELES_EDUCATIVOS.map((ne) => (
+                                        <SelectItem key={ne} value={ne}>{ne}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {formData.educacionNivel && formData.educacionNivel !== "Ninguno" && (
+                                  <>
+                                    <div className="space-y-1">
+                                      <label className="text-[11px] font-bold uppercase text-muted-foreground">Carrera o Estudio</label>
+                                      <Input
+                                        value={formData.educacionEstudio}
+                                        onChange={(e) => setFormData({ ...formData, educacionEstudio: e.target.value })}
+                                        className="h-9 text-xs"
+                                        placeholder="Ej: Contaduría, Psicología, Bachiller"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[11px] font-bold uppercase text-muted-foreground">Semestre / Grado</label>
+                                      <Input
+                                        value={formData.educacionSemestre}
+                                        onChange={(e) => setFormData({ ...formData, educacionSemestre: e.target.value })}
+                                        className="h-9 text-xs"
+                                        placeholder="Ej: 8vo Semestre / Graduado"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[11px] font-bold uppercase text-muted-foreground">Plantel o Institución</label>
+                                      <Input
+                                        value={formData.educacionPlantel}
+                                        onChange={(e) => setFormData({ ...formData, educacionPlantel: e.target.value })}
+                                        className="h-9 text-xs"
+                                        placeholder="Ej: Universidad del Valle, SENA"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 5. PERFIL DE SALUD Y CONDICIONES ESPECIALES */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <HeartPulse className="h-4 w-4" />
+                                5. Perfil de Salud y Condiciones Especiales
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Enfermedad Diagnosticada?</label>
+                                  <Select
+                                    value={formData.enfermedad}
+                                    onValueChange={(v) => setFormData({ ...formData, enfermedad: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.enfermedad === "Sí" && (
+                                    <Input
+                                      value={formData.enfermedadCual}
+                                      onChange={(e) => setFormData({ ...formData, enfermedadCual: e.target.value })}
+                                      className="h-8 text-xs mt-2"
+                                      placeholder="¿Cuál enfermedad?"
+                                      disabled={creando}
+                                    />
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Tiene Alergias?</label>
+                                  <Select
+                                    value={formData.alergia}
+                                    onValueChange={(v) => setFormData({ ...formData, alergia: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.alergia === "Sí" && (
+                                    <Input
+                                      value={formData.alergiaCual}
+                                      onChange={(e) => setFormData({ ...formData, alergiaCual: e.target.value })}
+                                      className="h-8 text-xs mt-2"
+                                      placeholder="¿Alergias a qué?"
+                                      disabled={creando}
+                                    />
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Presenta alguna Discapacidad?</label>
+                                  <Select
+                                    value={formData.discapacidad}
+                                    onValueChange={(v) => setFormData({ ...formData, discapacidad: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.discapacidad === "Sí" && (
+                                    <div className="space-y-2 pt-2">
+                                      <Select
+                                        value={formData.discapacidadTipo}
+                                        onValueChange={(v) => setFormData({ ...formData, discapacidadTipo: v })}
+                                        disabled={creando}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tipo Discapacidad" /></SelectTrigger>
+                                        <SelectContent>
+                                          {TIPOS_DISCAPACIDAD.map((td) => (
+                                            <SelectItem key={td} value={td}>{td}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      {formData.discapacidadTipo === "Otro" && (
+                                        <Input
+                                          value={formData.discapacidadOtro}
+                                          onChange={(e) => setFormData({ ...formData, discapacidadOtro: e.target.value })}
+                                          className="h-8 text-xs"
+                                          placeholder="Especificar"
+                                          disabled={creando}
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Trastorno Neurodesarrollo?</label>
+                                  <Select
+                                    value={formData.trastorno}
+                                    onValueChange={(v) => setFormData({ ...formData, trastorno: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.trastorno === "Sí" && (
+                                    <div className="space-y-2 pt-2">
+                                      <Select
+                                        value={formData.trastornoTipo}
+                                        onValueChange={(v) => setFormData({ ...formData, trastornoTipo: v })}
+                                        disabled={creando}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tipo Trastorno" /></SelectTrigger>
+                                        <SelectContent>
+                                          {TIPOS_TRASTORNO.map((tt) => (
+                                            <SelectItem key={tt} value={tt}>{tt}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      {formData.trastornoTipo === "Otro" && (
+                                        <Input
+                                          value={formData.trastornoOtro}
+                                          onChange={(e) => setFormData({ ...formData, trastornoOtro: e.target.value })}
+                                          className="h-8 text-xs"
+                                          placeholder="Especificar"
+                                          disabled={creando}
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2 bg-card p-3 rounded-lg border">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground block">¿Otra Condición Especial?</label>
+                                  <Select
+                                    value={formData.condicionEspecial}
+                                    onValueChange={(v) => setFormData({ ...formData, condicionEspecial: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {formData.condicionEspecial === "Sí" && (
+                                    <Input
+                                      value={formData.condicionEspecialCual}
+                                      onChange={(e) => setFormData({ ...formData, condicionEspecialCual: e.target.value })}
+                                      className="h-8 text-xs mt-2"
+                                      placeholder="¿Cuál condición?"
+                                      disabled={creando}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 6. COMPROMISO Y CONTACTO DE EMERGENCIA */}
+                            <div className="space-y-4">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <HeartHandshake className="h-4 w-4" />
+                                6. Compromiso Institucional y Contacto de Emergencia
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">¿Desea ser Voluntario?</label>
+                                  <Select
+                                    value={formData.deseaSerVoluntario}
+                                    onValueChange={(v) => setFormData({ ...formData, deseaSerVoluntario: v })}
+                                    disabled={creando}
+                                  >
+                                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Sí">Sí, deseo ser voluntario</SelectItem>
+                                      <SelectItem value="No">No por el momento</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Nombre Contacto Emergencia</label>
+                                  <Input
+                                    value={formData.emergenciaNombre}
+                                    onChange={(e) => setFormData({ ...formData, emergenciaNombre: e.target.value })}
+                                    className="h-9 text-xs"
+                                    placeholder="Nombre completo"
+                                    disabled={creando}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Teléfono / Celular Emergencia</label>
+                                  <Input
+                                    value={formData.emergenciaNumero}
+                                    onChange={(e) => setFormData({ ...formData, emergenciaNumero: e.target.value })}
+                                    className="h-9 text-xs"
+                                    placeholder="Número de contacto"
+                                    disabled={creando}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Dirección de Emergencia</label>
+                                  <Input
+                                    value={formData.emergenciaDireccion}
+                                    onChange={(e) => setFormData({ ...formData, emergenciaDireccion: e.target.value })}
+                                    className="h-9 text-xs"
+                                    placeholder="Dirección de residencia o contacto"
+                                    disabled={creando}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 7. BENEFICIARIOS */}
+                            <div className="space-y-3 pt-2">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <Users className="h-4 w-4" />
+                                7. Beneficiarios (Hasta 5)
+                              </p>
+                              <div className="space-y-2">
+                                {formData.beneficiarios?.map((ben, idx) => (
+                                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-card p-3 rounded-lg border shadow-sm">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Beneficiario {idx + 1}: Nombre Completo</label>
+                                      <Input
+                                        value={ben.nombre}
+                                        onChange={(e) => handleBeneficiarioChange(idx, "nombre", e.target.value)}
+                                        className="h-8 text-xs"
+                                        placeholder={`Nombre Beneficiario ${idx + 1}`}
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Documento (NUIP / Cédula / TI)</label>
+                                      <Input
+                                        value={ben.nuip}
+                                        onChange={(e) => handleBeneficiarioChange(idx, "nuip", e.target.value)}
+                                        className="h-8 text-xs"
+                                        placeholder="Opcional"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* 8. MASCOTAS */}
+                            <div className="space-y-3 pt-2">
+                              <p className="text-xs font-black uppercase text-primary flex items-center gap-2 border-b border-primary/20 pb-2">
+                                <PawPrint className="h-4 w-4" />
+                                8. Mascotas (Plan Integra - Hasta 2)
+                              </p>
+                              <div className="space-y-2">
+                                {formData.mascotas?.map((mascota, idx) => (
+                                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-card p-3 rounded-lg border shadow-sm">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Mascota {idx + 1}</label>
+                                      <Input
+                                        value={mascota.nombre}
+                                        onChange={(e) => handleMascotaChange(idx, "nombre", e.target.value)}
+                                        className="h-8 text-xs"
+                                        placeholder={`Mascota ${idx + 1}`}
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Animal</label>
+                                      <Input
+                                        value={mascota.tipo}
+                                        onChange={(e) => handleMascotaChange(idx, "tipo", e.target.value)}
+                                        className="h-8 text-xs"
+                                        placeholder="Ej: Perro, Gato"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Raza (Opcional)</label>
+                                      <Input
+                                        value={mascota.raza}
+                                        onChange={(e) => handleMascotaChange(idx, "raza", e.target.value)}
+                                        className="h-8 text-xs"
+                                        placeholder="Raza"
+                                        disabled={creando}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
                           </div>
                         )}
                       </div>
@@ -1855,94 +2990,140 @@ function PersonalContent() {
         <Dialog open={!!empleadoSeleccionado} onOpenChange={(open) => !open && setEmpleadoSeleccionado(null)}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold text-primary">
+                <CalendarDays className="h-6 w-6 text-primary" />
                 Gestionar Horario Institucional
               </DialogTitle>
               <DialogDescription>
-                Configure la jornada semanal para <strong>{empleadoSeleccionado?.nombre}</strong>.
+                Configure la jornada semanal, turnos y modalidad para <strong>{empleadoSeleccionado?.nombre}</strong> ({empleadoSeleccionado?.cargo || "Personal"}).
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex flex-col space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-              {DIAS_SEMANA.map((dia) => (
-                <div key={dia} className="flex flex-col md:flex-row md:items-center justify-between bg-muted/30 p-3 rounded-lg border border-dashed gap-3 transition-colors hover:bg-muted/50">
-                  <div className="w-full md:w-28 font-black uppercase text-primary text-sm border-b md:border-b-0 pb-1 md:pb-0">
-                    {dia}
-                  </div>
+            <div className="flex flex-col space-y-3 max-h-[60vh] overflow-y-auto pr-2 mt-2">
+              {DIAS_SEMANA.map((dia) => {
+                const diaInfo = horarioEdit[dia] || { modalidad: "presencial", entrada1: "08:00", salida1: "12:00", entrada2: "14:00", salida2: "18:00" };
+                const mod = diaInfo.modalidad || "presencial";
+                const isConHorario = !["libre", "confianza", "presencial_sin_horario", "teletrabajo_sin_horario"].includes(mod);
 
-                  <div className="w-full md:w-40">
-                    <Select
-                      value={horarioEdit[dia]?.modalidad}
-                      onValueChange={(v) => setHorarioEdit({
-                        ...horarioEdit,
-                        [dia]: { ...horarioEdit[dia], modalidad: v }
-                      })}
-                    >
-                      <SelectTrigger className="bg-card h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="presencial">Presencial</SelectItem>
-                        <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
-                        <SelectItem value="libre">No Laboral</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                return (
+                  <div key={dia} className="flex flex-col xl:flex-row xl:items-center justify-between bg-card p-4 rounded-xl border shadow-sm gap-3 transition-colors hover:bg-muted/30">
+                    <div className="w-full xl:w-28 font-black uppercase text-primary text-sm border-b xl:border-b-0 pb-1 xl:pb-0">
+                      {dia}
+                    </div>
 
-                  <div className="flex-1 flex justify-end">
-                    {horarioEdit[dia]?.modalidad !== "libre" ? (
-                      <div className="flex flex-row gap-4 items-center w-full md:w-auto bg-card md:bg-transparent p-2 md:p-0 rounded-md border md:border-0 shadow-sm md:shadow-none">
-                        <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start">
-                          <label className="text-xs font-bold text-muted-foreground uppercase">Entrada</label>
-                          <Input
-                            type="time"
-                            className="w-[110px] sm:w-[130px] h-9 text-sm"
-                            value={horarioEdit[dia]?.entrada}
-                            onChange={(e) => setHorarioEdit({
-                              ...horarioEdit,
-                              [dia]: { ...horarioEdit[dia], entrada: e.target.value }
-                            })}
-                          />
+                    <div className="w-full xl:w-56 shrink-0">
+                      <Select
+                        value={mod}
+                        onValueChange={(v) => setHorarioEdit({
+                          ...horarioEdit,
+                          [dia]: { ...diaInfo, modalidad: v }
+                        })}
+                      >
+                        <SelectTrigger className="bg-background h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="presencial">Presencial</SelectItem>
+                          <SelectItem value="teletrabajo">Teletrabajo</SelectItem>
+                          <SelectItem value="confianza">Empleado de Confianza</SelectItem>
+                          <SelectItem value="presencial_sin_horario">Presencial sin Horario</SelectItem>
+                          <SelectItem value="teletrabajo_sin_horario">Teletrabajo sin Horario</SelectItem>
+                          <SelectItem value="libre">No Laboral (Libre)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex-1 flex justify-end w-full">
+                      {isConHorario ? (
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center w-full bg-muted/20 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                          {/* Jornada 1 */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10">Ent 1</label>
+                            <Input
+                              type="time"
+                              className="w-[95px] h-8 text-xs px-2 bg-background"
+                              value={diaInfo.entrada1 || "08:00"}
+                              onChange={(e) => setHorarioEdit({
+                                ...horarioEdit,
+                                [dia]: { ...diaInfo, entrada1: e.target.value }
+                              })}
+                            />
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right sm:pl-2 border-l border-muted-foreground/20">Sal 1</label>
+                            <Input
+                              type="time"
+                              className="w-[95px] h-8 text-xs px-2 bg-background"
+                              value={diaInfo.salida1 || "12:00"}
+                              onChange={(e) => setHorarioEdit({
+                                ...horarioEdit,
+                                [dia]: { ...diaInfo, salida1: e.target.value }
+                              })}
+                            />
+                          </div>
+
+                          {/* Jornada 2 */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start sm:pl-4 sm:border-l border-muted-foreground/20">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10">Ent 2</label>
+                            <Input
+                              type="time"
+                              className="w-[95px] h-8 text-xs px-2 bg-background"
+                              value={diaInfo.entrada2 || "14:00"}
+                              onChange={(e) => setHorarioEdit({
+                                ...horarioEdit,
+                                [dia]: { ...diaInfo, entrada2: e.target.value }
+                              })}
+                            />
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase leading-none w-10 text-right sm:pl-2 border-l border-muted-foreground/20">Sal 2</label>
+                            <Input
+                              type="time"
+                              className="w-[95px] h-8 text-xs px-2 bg-background"
+                              value={diaInfo.salida2 || "18:00"}
+                              onChange={(e) => setHorarioEdit({
+                                ...horarioEdit,
+                                [dia]: { ...diaInfo, salida2: e.target.value }
+                              })}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 w-1/2 md:w-auto justify-between md:justify-start border-l md:border-l-0 pl-3 md:pl-0 border-muted-foreground/20">
-                          <label className="text-xs font-bold text-muted-foreground uppercase">Salida</label>
-                          <Input
-                            type="time"
-                            className="w-[110px] sm:w-[130px] h-9 text-sm"
-                            value={horarioEdit[dia]?.salida}
-                            onChange={(e) => setHorarioEdit({
-                              ...horarioEdit,
-                              [dia]: { ...horarioEdit[dia], salida: e.target.value }
-                            })}
-                          />
+                      ) : mod === "confianza" ? (
+                        <div className="w-full sm:w-auto text-center sm:text-right text-xs font-semibold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-md border border-purple-200 flex items-center justify-end gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-purple-600" /> Manejo y Confianza (Sin horario rígido)
                         </div>
-                      </div>
-                    ) : (
-                      <div className="w-full md:w-auto text-center md:text-right text-sm text-muted-foreground italic py-2 md:py-0">
-                        Día de descanso
-                      </div>
-                    )}
+                      ) : mod === "libre" ? (
+                        <div className="w-full sm:w-auto text-center sm:text-right text-xs font-medium text-muted-foreground italic py-1.5">
+                          Día no laboral (Libre)
+                        </div>
+                      ) : (
+                        <div className="w-full sm:w-auto text-center sm:text-right text-xs font-medium text-muted-foreground italic py-1.5">
+                          Sin horario fijo asignado
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
               <Button variant="outline" onClick={() => setEmpleadoSeleccionado(null)}>Cancelar</Button>
               <Button
                 onClick={async () => {
                   setGuardandoHorario(true);
                   try {
-                    await actualizarModalidad(empleadoSeleccionado.id, horarioEdit);
+                    const nuevoHorario = await actualizarModalidad(empleadoSeleccionado.id, horarioEdit);
+                    setPersonalList((prev) =>
+                      prev.map((p) =>
+                        p.id === empleadoSeleccionado.id ? { ...p, horarioModalidad: nuevoHorario } : p
+                      )
+                    );
                     await registrarAuditoria({
                       user, userData,
                       accion: "Actualizar Horario",
                       documentoId: empleadoSeleccionado.id,
                       detalles: `Se actualizó horario semanal de ${empleadoSeleccionado.nombre}`
                     });
-                    toast.success("Horario actualizado correctamente");
+                    toast.success("Horario institucional actualizado y guardado correctamente");
                     setEmpleadoSeleccionado(null);
                     cargarDatos();
                   } catch (e) {
+                    console.error("Error al guardar horario:", e);
                     toast.error("Error al guardar el horario");
                   } finally {
                     setGuardandoHorario(false);
@@ -1997,6 +3178,236 @@ function PersonalContent() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ================================================== */}
+      {/* MODAL: EXPEDIENTE INTEGRAL DEL COLABORADOR */}
+      {/* ================================================== */}
+      <Dialog open={!!empleadoExpediente} onOpenChange={(open) => { if (!open) setEmpleadoExpediente(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+          {empleadoExpediente && (
+            <div className="space-y-6">
+              {/* Header con Info Principal */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-primary/5 p-4 rounded-xl border border-primary/20">
+                {empleadoExpediente.foto ? (
+                  <img src={empleadoExpediente.foto} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-primary" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                    <User className="h-8 w-8 text-primary" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-xl font-black text-foreground">{empleadoExpediente.nombre}</h3>
+                    <Badge className={empleadoExpediente.usuarioData?.activo === false ? "bg-destructive text-white" : "bg-success text-white"}>
+                      {empleadoExpediente.usuarioData?.activo === false ? "Inactivo / Bloqueado" : "Activo"}
+                    </Badge>
+                    <Badge variant="outline" className="uppercase text-xs font-bold text-primary border-primary/30">
+                      {empleadoExpediente.usuarioData?.rol || empleadoExpediente.tipoPersonal}
+                    </Badge>
+                  </div>
+                  <p className="text-sm font-semibold text-primary mt-0.5">{empleadoExpediente.cargo || "Sin cargo registrado"}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
+                    <span><strong>Doc / NUIP:</strong> {empleadoExpediente.documento || "—"}</span>
+                    <span><strong>RH:</strong> {empleadoExpediente.rh || "—"}</span>
+                    <span><strong>Código:</strong> {empleadoExpediente.codigoInstitucional || "—"}</span>
+                    <span><strong>Correo Inst:</strong> {empleadoExpediente.usuarioData?.correo || "—"}</span>
+                    <span><strong>Teléfono:</strong> {empleadoExpediente.telefono || "—"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid de Secciones */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                
+                {/* 1. Información Contractual y Laboral */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <Briefcase className="w-4 h-4" /> 1. Información Contractual
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><span className="text-muted-foreground block">Modalidad:</span> <strong className="text-foreground">{empleadoExpediente.modalidadLaboral || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Días Teletrabajo:</span> <strong className="text-foreground">{empleadoExpediente.diasTeletrabajo || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Tipo Vinculación:</span> <strong className="text-foreground">{empleadoExpediente.tipoVinculacion || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Tipo Contrato:</span> <strong className="text-foreground">{empleadoExpediente.tipoContrato || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Fecha Ingreso:</span> <strong className="text-foreground">{empleadoExpediente.fechaIngreso || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Fecha Terminación:</span> <strong className="text-foreground">{empleadoExpediente.fechaTerminacion || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Salario / Remuneración:</span> <strong className="text-success font-bold">{empleadoExpediente.salario ? `$ ${empleadoExpediente.salario}` : "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Horas Semanales:</span> <strong className="text-foreground">{empleadoExpediente.horasSemanales || "—"}</strong></div>
+                    <div className="col-span-2"><span className="text-muted-foreground block">Oficina / Asignación:</span> <strong className="text-foreground">{empleadoExpediente.oficinaContrata || "—"} ({empleadoExpediente.ciudadAsignacion || ""} - {empleadoExpediente.paisAsignacion || ""})</strong></div>
+                    <div className="col-span-2"><span className="text-muted-foreground block">Dependencia Solicitante:</span> <strong className="text-foreground">{empleadoExpediente.dependenciaSolicita || "—"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 2. Seguridad Social */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <ShieldCheck className="w-4 h-4" /> 2. Seguridad Social
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><span className="text-muted-foreground block">EPS:</span> <strong className="text-foreground">{empleadoExpediente.eps || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Fondo Pensión:</span> <strong className="text-foreground">{empleadoExpediente.fondoPension || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Cesantías:</span> <strong className="text-foreground">{empleadoExpediente.cesantias || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Caja Compensación:</span> <strong className="text-foreground">{empleadoExpediente.cajaCompensacion || "—"}</strong></div>
+                    <div className="col-span-2"><span className="text-muted-foreground block">ARL:</span> <strong className="text-foreground">{empleadoExpediente.arl || "POSITIVA ARL"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 3. Perfil Demográfico y Nacimiento */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <Users className="w-4 h-4" /> 3. Perfil Demográfico
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><span className="text-muted-foreground block">Fecha Nacimiento:</span> <strong className="text-foreground">{empleadoExpediente.fechaNacimiento || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Edad:</span> <strong className="text-foreground">{empleadoExpediente.edad ? `${empleadoExpediente.edad} años` : "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">País Nacimiento:</span> <strong className="text-foreground">{empleadoExpediente.paisNacimiento || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Lugar / Ciudad:</span> <strong className="text-foreground">{empleadoExpediente.lugarNacimiento || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Sexo:</span> <strong className="text-foreground">{empleadoExpediente.sexo || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Orientación Sexual:</span> <strong className="text-foreground">{empleadoExpediente.orientacionSexual === "Otro" ? empleadoExpediente.orientacionOtro : (empleadoExpediente.orientacionSexual || "—")}</strong></div>
+                    <div><span className="text-muted-foreground block">Estrato:</span> <strong className="text-foreground">{empleadoExpediente.estrato || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Grupo Étnico:</span> <strong className="text-foreground">{empleadoExpediente.etnia || "—"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 4. Contexto Social y Vulnerabilidad */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <ShieldAlert className="w-4 h-4" /> 4. Contexto Social
+                  </h4>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-muted-foreground block">Sisbén:</span>
+                      <strong className="text-foreground">
+                        {empleadoExpediente.sisben === "Sí" ? `Sí (${empleadoExpediente.sisbenPuntaje || "Sin puntaje"})` : (empleadoExpediente.sisben || "No")}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">Víctima Conflicto:</span>
+                      <strong className="text-foreground">
+                        {empleadoExpediente.victimaConflicto === "Sí" ? `Sí - ${empleadoExpediente.victimaTipo || ""} (RUV: ${empleadoExpediente.victimaInscrito || "No"})` : (empleadoExpediente.victimaConflicto || "No")}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">Discriminación:</span>
+                      <strong className="text-foreground">
+                        {empleadoExpediente.discriminacion === "Sí" ? `Sí (${empleadoExpediente.discriminacionTipo || ""})` : (empleadoExpediente.discriminacion || "No")}
+                      </strong>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* 5. Formación Académica */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <GraduationCap className="w-4 h-4" /> 5. Formación Académica
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><span className="text-muted-foreground block">Nivel:</span> <strong className="text-foreground">{empleadoExpediente.educacionNivel || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Semestre / Grado:</span> <strong className="text-foreground">{empleadoExpediente.educacionSemestre || "—"}</strong></div>
+                    <div className="col-span-2"><span className="text-muted-foreground block">Carrera / Estudio:</span> <strong className="text-foreground">{empleadoExpediente.educacionEstudio || "—"}</strong></div>
+                    <div className="col-span-2"><span className="text-muted-foreground block">Plantel:</span> <strong className="text-foreground">{empleadoExpediente.educacionPlantel || "—"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 6. Perfil de Salud */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <HeartPulse className="w-4 h-4" /> 6. Perfil de Salud
+                  </h4>
+                  <div className="space-y-1.5">
+                    <div><span className="text-muted-foreground block">Enfermedades:</span> <strong className="text-foreground">{empleadoExpediente.enfermedad === "Sí" ? `Sí: ${empleadoExpediente.enfermedadCual}` : "Ninguna"}</strong></div>
+                    <div><span className="text-muted-foreground block">Alergias:</span> <strong className="text-foreground">{empleadoExpediente.alergia === "Sí" ? `Sí: ${empleadoExpediente.alergiaCual}` : "Ninguna"}</strong></div>
+                    <div><span className="text-muted-foreground block">Discapacidad:</span> <strong className="text-foreground">{empleadoExpediente.discapacidad === "Sí" ? `Sí (${empleadoExpediente.discapacidadTipo || ""})` : "No"}</strong></div>
+                    <div><span className="text-muted-foreground block">Trastorno Neurodesarrollo:</span> <strong className="text-foreground">{empleadoExpediente.trastorno === "Sí" ? `Sí (${empleadoExpediente.trastornoTipo || ""})` : "No"}</strong></div>
+                    <div><span className="text-muted-foreground block">Condición Especial:</span> <strong className="text-foreground">{empleadoExpediente.condicionEspecial === "Sí" ? `Sí: ${empleadoExpediente.condicionEspecialCual}` : "No"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 7. Contacto de Emergencia */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <HeartHandshake className="w-4 h-4" /> 7. Contacto de Emergencia
+                  </h4>
+                  <div className="space-y-2">
+                    <div><span className="text-muted-foreground block">Nombre:</span> <strong className="text-foreground">{empleadoExpediente.emergenciaNombre || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Teléfono / Celular:</span> <strong className="text-foreground">{empleadoExpediente.emergenciaNumero || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">Dirección:</span> <strong className="text-foreground">{empleadoExpediente.emergenciaDireccion || "—"}</strong></div>
+                    <div><span className="text-muted-foreground block">¿Desea ser Voluntario?:</span> <strong className="text-foreground">{empleadoExpediente.deseaSerVoluntario || "No"}</strong></div>
+                  </div>
+                </Card>
+
+                {/* 8. Beneficiarios y Mascotas */}
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-black uppercase text-primary flex items-center gap-2 border-b pb-2">
+                    <PawPrint className="w-4 h-4" /> 8. Beneficiarios y Mascotas
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-muted-foreground font-bold block mb-1">Beneficiarios:</span>
+                      {Array.isArray(empleadoExpediente.beneficiarios) && empleadoExpediente.beneficiarios.filter(b => b.nombre).length > 0 ? (
+                        <ul className="list-disc list-inside space-y-0.5 text-foreground">
+                          {empleadoExpediente.beneficiarios.filter(b => b.nombre).map((b, idx) => (
+                            <li key={idx}><strong>{b.nombre}</strong> {b.nuip ? `(NUIP: ${b.nuip})` : ""}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-muted-foreground italic">Sin beneficiarios registrados</span>
+                      )}
+                    </div>
+                    <div className="border-t pt-2">
+                      <span className="text-muted-foreground font-bold block mb-1">Mascotas:</span>
+                      {Array.isArray(empleadoExpediente.mascotas) && empleadoExpediente.mascotas.filter(m => m.nombre).length > 0 ? (
+                        <ul className="list-disc list-inside space-y-0.5 text-foreground">
+                          {empleadoExpediente.mascotas.filter(m => m.nombre).map((m, idx) => (
+                            <li key={idx}><strong>{m.nombre}</strong> ({m.tipo}{m.raza ? ` - ${m.raza}` : ""})</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-muted-foreground italic">Sin mascotas registradas</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+              </div>
+
+              {/* Botones de acción al pie del modal */}
+              <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setEmpleadoExpediente(null)}>
+                  Cerrar Expediente
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const u = empleadoExpediente.usuarioData || { id: empleadoExpediente.id, nombre: empleadoExpediente.nombre, correo: empleadoExpediente.correo, rol: empleadoExpediente.tipoPersonal };
+                      const exp = empleadoExpediente;
+                      setEmpleadoExpediente(null);
+                      abrirEdicion(u, exp);
+                    }}
+                    className="gap-1.5 text-warning border-warning/30 hover:bg-warning/10"
+                  >
+                    <Pencil className="h-4 w-4" /> Editar Datos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => generarCarnetPersonal(empleadoExpediente)}
+                    className="gap-1.5 text-info border-info/30 hover:bg-info/10"
+                  >
+                    <QrCode className="h-4 w-4" /> Descargar Carnet
+                  </Button>
+                  <Button
+                    onClick={() => solicitarCertificadoPersonal(empleadoExpediente)}
+                    className="gap-1.5 bg-success hover:bg-success/90 text-white"
+                  >
+                    <FileText className="h-4 w-4" /> Certificado Laboral
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

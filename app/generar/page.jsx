@@ -24,9 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, FileCheck, QrCode, Download, ExternalLink, User, IdCard, Calendar, Award, PenTool, Upload } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import QRCode from "qrcode";
-import { jsPDF } from "jspdf";
 import { ref, uploadBytes, getDownloadURL, getStorage } from "firebase/storage";
 import {
   Dialog,
@@ -250,6 +248,7 @@ function GenerarContent() {
       });
 
       // 2. Dibujar el PDF Oficial (Sin compress:true para evitar corrupción de PNGs)
+      const { jsPDF } = await import("jspdf");
       const docPdf = new jsPDF({ format: 'letter', unit: 'mm' });
       const pageWidth = docPdf.internal.pageSize.getWidth();
       const pageHeight = docPdf.internal.pageSize.getHeight();

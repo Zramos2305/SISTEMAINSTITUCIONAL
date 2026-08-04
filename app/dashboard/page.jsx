@@ -2200,7 +2200,7 @@ function DashboardContent() {
               >
                 <SelectTrigger><SelectValue placeholder="Selecciona un trabajador..." /></SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {documentos.filter(d => d.tipo !== "afiliado" && d.tipo !== "afiliacion_individual").map(d => (
+                  {documentos.filter(d => d.tipo !== "afiliado" && d.tipo !== "afiliacion_individual" && d.rol !== "superadmin" && d.tipoPersonal !== "superadmin" && d.modalidadLaboral !== "Empleado de Confianza").map(d => (
                     <SelectItem key={d.id} value={d.id}>{d.nombre} ({d.cargo || "Sin cargo"})</SelectItem>
                   ))}
                 </SelectContent>

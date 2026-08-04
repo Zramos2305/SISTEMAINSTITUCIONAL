@@ -47,14 +47,14 @@ import { Empty } from "@/components/ui/empty";
 import { toast } from "sonner";
 import {
   Search, User, Phone, Eye, AlertCircle, Download, Users, CheckCircle2,
-  XCircle, ArrowLeft, MoreVertical, FileText, QrCode, Trash2, PawPrint, FileSpreadsheet, Plus, X, UserPlus, LogOut
+  XCircle, ArrowLeft, MoreVertical, FileText, QrCode, Trash2, PawPrint, FileSpreadsheet, Plus, X, UserPlus, LogOut, Clock
 } from "lucide-react";
 import Link from "next/link";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+
+import { exportarAExcel } from "@/lib/export-excel";
 
 const COLORS = {
   azul: "#3f7384",
@@ -84,34 +84,64 @@ function formatearFecha(fecha) {
   return dateObj.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function exportarCSV(lista, nombre) {
-  if (lista.length === 0) {
+function exportarAfiliadosAExcel(lista, nombreArchivo = "Afiliados_Institucionales") {
+  if (!lista || lista.length === 0) {
     toast.error("No hay datos para exportar");
     return;
   }
-  const encabezados = ["Código", "Nombre", "NUIP", "Email", "Teléfono", "Estado", "Membresías", "Referidor", "Fecha Ingreso"];
-  const filas = lista.map((item) => {
-    return [
-      item.codigo || "",
-      item.nombre || "",
-      item.cedula || "",
-      item.email || "",
-      item.telefono || "",
-      item.estado || "",
-      item.membresias?.map(m => m.tipo).join(" / ") || "",
-      item.codigoReferidor || "",
-      formatearFecha(item.fechaCreacion || item.fechaIngreso)
-    ];
-  });
-  const contenido = [encabezados, ...filas].map((e) => e.map(s => `"${String(s).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const blob = new Blob(["\uFEFF" + contenido], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Exportacion_${nombre}_${new Date().getTime()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+
+  const columnas = [
+    { header: "Código Afiliado", key: "codigo" },
+    { header: "Nombre Completo", key: "nombre" },
+    { header: "Documento (NUIP/Cédula)", transform: (a) => a.cedula || a.documento || "" },
+    { header: "Correo Electrónico", key: "email" },
+    { header: "Teléfono / Celular", key: "telefono" },
+    { header: "Estado", transform: (a) => a.estado ? a.estado.toUpperCase() : "ACTIVO" },
+    { header: "Fecha de Ingreso", transform: (a) => formatearFecha(a.fechaCreacion || a.fechaIngreso) },
+    { header: "Membresías Activas", transform: (a) => (a.membresias || []).map(m => m.tipo).join(" / ") },
+    { header: "Código Referidor", key: "codigoReferidor" },
+    { header: "Dirección", key: "direccion" },
+    { header: "Barrio", key: "barrio" },
+    { header: "Ciudad / Municipio", key: "ciudad" },
+    { header: "Departamento", key: "departamento" },
+    { header: "País", key: "pais" },
+    { header: "Fecha Nacimiento", transform: (a) => a.fechaNacimiento || "" },
+    { header: "Edad", key: "edad" },
+    { header: "País Nacimiento", key: "paisNacimiento" },
+    { header: "Lugar Nacimiento", key: "lugarNacimiento" },
+    { header: "Sexo", key: "sexo" },
+    { header: "Orientación Sexual", transform: (a) => a.orientacionSexual === "Otro" ? `Otro: ${a.orientacionOtro || ""}` : (a.orientacionSexual || "") },
+    { header: "Estrato Socioeconómico", key: "estrato" },
+    { header: "Grupo Étnico", key: "etnia" },
+    { header: "Sisbén", transform: (a) => a.sisben === "Sí" ? `Sí (${a.sisbenPuntaje || ""})` : (a.sisben || "") },
+    { header: "Víctima Conflicto", transform: (a) => a.victimaConflicto === "Sí" ? `Sí (${a.victimaTipo || ""}) - RUV: ${a.victimaInscrito || ""}` : (a.victimaConflicto || "") },
+    { header: "Discriminación", transform: (a) => a.discriminacion === "Sí" ? `Sí (${a.discriminacionTipo || ""})` : (a.discriminacion || "") },
+    { header: "Nivel Educativo", key: "educacionNivel" },
+    { header: "Estudio / Carrera", key: "educacionEstudio" },
+    { header: "Semestre / Grado", key: "educacionSemestre" },
+    { header: "Plantel Educativo", key: "educacionPlantel" },
+    { header: "Enfermedades", transform: (a) => a.enfermedad === "Sí" ? `Sí: ${a.enfermedadCual || ""}` : "No" },
+    { header: "Alergias", transform: (a) => a.alergia === "Sí" ? `Sí: ${a.alergiaCual || ""}` : "No" },
+    { header: "Discapacidad", transform: (a) => a.discapacidad === "Sí" ? `Sí: ${a.discapacidadTipo || ""}` : "No" },
+    { header: "Trastorno Neurodesarrollo", transform: (a) => a.trastorno === "Sí" ? `Sí: ${a.trastornoTipo || ""}` : "No" },
+    { header: "Condición Especial", transform: (a) => a.condicionEspecial === "Sí" ? `Sí: ${a.condicionEspecialCual || ""}` : "No" },
+    { header: "Contacto de Emergencia", transform: (a) => a.emergenciaNombre ? `${a.emergenciaNombre} (Tel: ${a.emergenciaNumero || ""} / Dir: ${a.emergenciaDireccion || ""})` : "" },
+    { header: "Beneficiarios", transform: (a) => (a.beneficiarios || []).filter(b => b.nombre).map(b => `${b.nombre} [NUIP: ${b.nuip || "N/A"}]`).join("; ") },
+    { header: "Mascotas", transform: (a) => (a.mascotas || []).filter(m => m.nombre).map(m => `${m.nombre} (${m.tipo}${m.raza ? ` - ${m.raza}` : ""})`).join("; ") }
+  ];
+
+  try {
+    exportarAExcel({
+      nombreArchivo,
+      titulo: "REPORTE INTEGRAL DE AFILIADOS INSTITUCIONALES",
+      columnas,
+      datos: lista,
+    });
+    toast.success("Archivo Excel exportado exitosamente");
+  } catch (e) {
+    console.error(e);
+    toast.error("Error al exportar a Excel");
+  }
 }
 
 export default function CRM_Afiliados() {
@@ -285,7 +315,11 @@ export default function CRM_Afiliados() {
   // Acciones Masivas
   const exportarSeleccionados = () => {
     const seleccionados = afiliadosFiltrados.filter(a => selectedIds.has(a.id));
-    exportarCSV(seleccionados, "AfiliadosSeleccionados");
+    exportarAfiliadosAExcel(seleccionados, "Afiliados_Seleccionados");
+  };
+
+  const exportarTodosLosAfiliados = () => {
+    exportarAfiliadosAExcel(afiliadosFiltrados, "Reporte_Afiliados_Institucionales");
   };
 
   const ejecutarCambioMasivoEstado = async () => {
@@ -325,6 +359,8 @@ export default function CRM_Afiliados() {
     if (!selectedAfiliado || !carnetRef.current) return;
     setIsDownloading(true);
     try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
       const canvas = await html2canvas(carnetRef.current, { scale: 2, useCORS: true, backgroundColor: null });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [380, 580] });
@@ -370,6 +406,8 @@ export default function CRM_Afiliados() {
       const element = document.getElementById(templateId);
       if (!element) throw new Error("Template no encontrado");
 
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
       const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
@@ -424,6 +462,18 @@ export default function CRM_Afiliados() {
             </div>
             
             <div className="flex items-center gap-3">
+              <Link href="/asistencia">
+                <Button variant="outline" className="font-bold shadow-sm h-10 border-blue-200 text-blue-700 hover:bg-blue-50">
+                  <Clock className="h-4 w-4 mr-2 text-blue-600" /> Mi Asistencia
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                className="font-bold shadow-sm h-10 border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                onClick={exportarTodosLosAfiliados}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" /> Exportar a Excel
+              </Button>
               <Link href="/afiliar">
                 <Button className="font-bold shadow-md h-10" style={{ backgroundColor: COLORS.azul }}>
                   <UserPlus className="h-4 w-4 mr-2" /> Nueva Afiliación

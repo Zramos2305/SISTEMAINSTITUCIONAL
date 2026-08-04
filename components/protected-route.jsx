@@ -37,16 +37,20 @@ export default function ProtectedRoute({ allowedRoles, children }) {
       return;
     }
 
-    // Validar si el rol del usuario está en el array de permitidos
-    const hasPermission = allowedRoles.includes(userData.rol);
+    // SuperAdmin siempre tiene acceso o si el rol está en allowedRoles
+    const hasPermission = userData.rol === "superadmin" || allowedRoles.includes(userData.rol);
 
     if (!hasPermission) {
-      // Si es un empleado intentando entrar a otra cosa, forzar a /asistencia
-      if (userData.rol === "empleado" && !pathname.startsWith("/asistencia")) {
+      // Si es un empleado o asesor comercial intentando entrar a otra cosa, forzar a /asistencia
+      if ((userData.rol === "empleado" || userData.rol === "comercial") && !pathname.startsWith("/asistencia")) {
         router.push("/asistencia");
       } 
-      // Si es un recursos_humanos o personal intentando entrar a zona superadmin o asistencia, forzar a personal
-      else if ((userData.rol === "recursos_humanos" || userData.rol === "personal") && !pathname.includes("/dashboard/personal") && !pathname.includes("/generar")) {
+      // Si es un líder comercial intentando entrar a zona no permitida
+      else if (userData.rol === "lider_comercial" && !pathname.includes("/dashboard/afiliados") && !pathname.startsWith("/asistencia") && !pathname.includes("/afiliar")) {
+        router.push("/dashboard/afiliados");
+      }
+      // Si es un recursos_humanos o personal intentando entrar a zona superadmin o no permitida
+      else if ((userData.rol === "recursos_humanos" || userData.rol === "personal") && !pathname.includes("/dashboard/personal") && !pathname.includes("/generar") && !pathname.startsWith("/asistencia")) {
         router.push("/dashboard/personal");
       }
       // Redirigir a unauthorized por defecto
@@ -67,8 +71,8 @@ export default function ProtectedRoute({ allowedRoles, children }) {
     );
   }
 
-  // Si tiene el rol activo y permitido
-  if (userData.activo !== false && userData.estado !== "inactivo" && allowedRoles.includes(userData.rol)) {
+  // Si tiene el rol activo y permitido (superadmin tiene pase total)
+  if (userData.activo !== false && userData.estado !== "inactivo" && (userData.rol === "superadmin" || allowedRoles.includes(userData.rol))) {
     return <>{children}</>;
   }
 

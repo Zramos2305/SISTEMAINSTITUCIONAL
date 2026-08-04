@@ -81,7 +81,7 @@ export default function LoginPage() {
             Ingreso Administrador
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Sistema de verificación documental
+            Sistema Institucional Integral
           </CardDescription>
         </CardHeader>
         

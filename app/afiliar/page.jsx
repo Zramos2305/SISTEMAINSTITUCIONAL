@@ -47,9 +47,7 @@ import {
   Info
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import QRCode from "qrcode";
-import html2canvas from "html2canvas";
 import { FileText as FileTextIcon } from "lucide-react";
 
 const getVerificacionBaseUrl = () => `${window.location.origin}/verificar?doc=`;
@@ -1056,6 +1054,7 @@ export default function AfiliarPage() {
     setIsDownloading(true);
 
     try {
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(carnetRef.current, {
         scale: 3,
         useCORS: true,
@@ -1106,6 +1105,7 @@ export default function AfiliarPage() {
       const element = document.getElementById(templateId);
       if (!element) throw new Error("Template no encontrado");
 
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -1164,7 +1164,7 @@ export default function AfiliarPage() {
                 <h1 className="font-black text-slate-800 flex items-center gap-2" style={{ color: COLORS.verde }}>
                   Nueva Afiliación
                 </h1>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sistema Institucional</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sistema Institucional Integral</p>
               </div>
             </div>
           </div>
