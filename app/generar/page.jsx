@@ -26,6 +26,7 @@ import { ArrowLeft, Eye, FileCheck, QrCode, Download, ExternalLink, User, IdCard
 import Link from "next/link";
 import QRCode from "qrcode";
 import { ref, uploadBytes, getDownloadURL, getStorage } from "firebase/storage";
+import NextImage from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -403,7 +404,7 @@ function GenerarContent() {
             </Link>
           </Button>
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
+            <NextImage src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-indigo-900">
                 {formData.tipo === "certificado" ? "Generar Certificado" : "Generar Documento"}
@@ -428,7 +429,7 @@ function GenerarContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="inline-block p-4 bg-muted rounded-xl">
-                <Image
+                <NextImage
                   src={documentoCreado.qrDataUrl}
                   alt="Código QR"
                   width={200}

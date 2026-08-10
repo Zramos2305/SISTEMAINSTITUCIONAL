@@ -43,7 +43,7 @@ import {
   FileSpreadsheet, Download, GraduationCap, HeartPulse, ShieldAlert, HeartHandshake, Globe, Map, Droplets, Calendar, Plus, X, Heart, Award, Info
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import NextImage from "next/image";
 import { crearUsuarioInstitucional, reingresarUsuarioInstitucional, eliminarUsuarioInstitucional } from "@/app/actions/usuarios";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { exportarAExcel } from "@/lib/export-excel";
@@ -1307,7 +1307,7 @@ function PersonalContent() {
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
-            <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-full" />
+            <NextImage src="/logo.png" alt="Logo" width={36} height={36} className="rounded-full" />
             <div>
               <h1 className="font-semibold text-foreground text-sm leading-tight">Módulo de Personal</h1>
               <p className="text-xs text-muted-foreground">Institucional</p>
