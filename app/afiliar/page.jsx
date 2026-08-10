@@ -47,6 +47,7 @@ import {
   Info
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import QRCode from "qrcode";
 import { FileText as FileTextIcon } from "lucide-react";
 

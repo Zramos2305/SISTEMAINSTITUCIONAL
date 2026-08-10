@@ -429,11 +429,11 @@ function GenerarContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="inline-block p-4 bg-muted rounded-xl">
-                <NextImage
+                <img
                   src={documentoCreado.qrDataUrl}
                   alt="Código QR"
-                  width={200}
-                  height={200}
+                  width="200"
+                  height="200"
                   className="mx-auto"
                 />
               </div>
