@@ -391,7 +391,7 @@ export default function AfiliadoDashboard() {
   const formatearFecha = (fechaISO) => {
     if(!fechaISO) return "N/A";
     const date = new Date(fechaISO);
-    return date.toLocaleDateString("es-CO", { year: 'numeric', month: 'long', day: 'numeric' });
+    return date.toLocaleDateString("es-CO", { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Bogota' });
   };
 
   const determinarEstado = (membresia) => {

@@ -163,7 +163,7 @@ function VerificarContent() {
     
     if (isNaN(d.getTime())) return "-";
     
-    return d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+    return d.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Bogota" });
   };
 
   return (

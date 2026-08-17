@@ -81,7 +81,7 @@ function formatearFecha(fecha) {
     dateObj = new Date(fecha);
   }
   if (isNaN(dateObj.getTime())) return "Fecha inválida";
-  return dateObj.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+  return dateObj.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" });
 }
 
 function exportarAfiliadosAExcel(lista, nombreArchivo = "Afiliados_Institucionales") {
