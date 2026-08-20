@@ -3419,86 +3419,89 @@ function PersonalContent() {
             {/* Template de Carnet de Personal */}
             <div
               id="hidden-carnet-personal"
-              style={{ width: '380px', height: '580px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '32px', fontFamily: 'sans-serif' }}
+              style={{ width: '380px', height: '620px', background: '#ffffff', position: 'relative', overflow: 'hidden', borderRadius: '0px', fontFamily: 'sans-serif', border: '1px solid #000000', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}
             >
-              {/* Decoración Superior Tierra */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '180px', overflow: 'hidden', background: `linear-gradient(135deg, #5c4033 0%, #8b5a2b 100%)` }}>
+              {/* Top border segments */}
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '16px', display: 'flex' }}>
+                <div style={{ flex: 1, backgroundColor: '#e5b77e' }} />
+                <div style={{ flex: 1, backgroundColor: '#8d5d2d' }} />
+                <div style={{ flex: 1, backgroundColor: '#f39c11' }} />
+                <div style={{ flex: 1, backgroundColor: '#f8d49a' }} />
               </div>
 
               {/* Logo y Encabezado */}
-              <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '9999px', marginBottom: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '9999px' }} />
+              <div style={{ position: 'relative', zIndex: 10, paddingTop: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ padding: '0px', borderRadius: '9999px', marginBottom: '8px' }}>
+                  <img src="/logo.png" alt="Logo" style={{ width: '120px', height: '120px', borderRadius: '9999px', border: '1px solid #777' }} />
                 </div>
-                <h2 style={{ color: '#ffffff', fontWeight: 900, fontSize: '24px', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '-0.05em' }}>ISLA CASCAJAL</h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '5px', margin: 0 }}>Fundación</p>
+                <h2 style={{ color: '#006cb5', fontWeight: 900, fontSize: '30px', margin: 0, letterSpacing: '-0.02em' }}>ISLA CASCAJAL</h2>
+                <p style={{ color: '#f36f21', fontSize: '13px', fontWeight: 'bold', margin: '2px 0 0 0' }}>FUNDACIÓN</p>
               </div>
 
               {/* Foto de Perfil y Badge LÍDER */}
-              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
-                <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '24px', border: '6px solid #ffffff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
+              <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px' }}>
+                <div style={{ position: 'relative', width: '190px', height: '130px', overflow: 'hidden' }}>
                   {personalReciente.foto ? (
-                    <img src={personalReciente.foto} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ width: '100%', height: '100%', backgroundImage: `url(${personalReciente.foto})`, backgroundSize: 'cover', backgroundPosition: 'center 15%' }} />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                      </svg>
+                    <div style={{ width: '100%', height: '100%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <User style={{ width: '60px', height: '60px', color: '#94a3b8' }} />
                     </div>
                   )}
                 </div>
 
-                <div style={{ marginTop: '-10px', position: 'relative', zIndex: 20, padding: '6px 32px', borderRadius: '9999px', border: '2px solid #ffffff', backgroundColor: '#5c4033', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px' }}>LÍDER</span>
+                <div style={{ marginTop: '-14px', position: 'relative', zIndex: 20, padding: '4px 32px', borderRadius: '6px', backgroundColor: '#006cb5' }}>
+                  <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '16px', textTransform: 'uppercase' }}>LÍDER</span>
                 </div>
               </div>
 
               {/* Información Personal */}
-              <div style={{ marginTop: '16px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '96px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', color: '#1e293b', margin: 0, lineHeight: 1.1 }}>
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', flex: 1 }}>
+                <h3 style={{ fontSize: '22px', fontWeight: 900, textTransform: 'uppercase', color: '#006cb5', margin: 0, lineHeight: 1.1, padding: '0 10px' }}>
                   {personalReciente.nombre}
                 </h3>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', color: '#8b5a2b', marginTop: '4px', textTransform: 'uppercase', margin: '4px 0 0 0' }}>
+                <p style={{ fontWeight: '900', fontSize: '14px', color: '#f36f21', marginTop: '4px', textTransform: 'uppercase', margin: '4px 0 0 0' }}>
                   {personalReciente.cargo}
                 </p>
 
-                <div style={{ marginTop: '16px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', textAlign: 'left' }}>
-                  <div>
-                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>NIUP</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.documento}</p>
+                <div style={{ marginTop: 'auto', marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 24px', boxSizing: 'border-box' }}>
+                  {/* Left Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: '15px' }}>
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: 900, color: '#006cb5', margin: 0, textTransform: 'uppercase' }}>NUIP</p>
+                        <p style={{ fontSize: '14px', fontWeight: 900, color: '#f36f21', margin: 0 }}>{personalReciente.documento}</p>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '14px', fontWeight: 900, color: '#006cb5', margin: 0, textTransform: 'uppercase' }}>RH</p>
+                        <p style={{ fontSize: '14px', fontWeight: 900, color: '#f36f21', margin: 0, textTransform: 'uppercase' }}>{personalReciente.rh || "—"}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '14px', fontWeight: 900, color: '#006cb5', margin: 0, textTransform: 'uppercase' }}>CÓDIGO INSTITUCIONAL</p>
+                      <p style={{ fontSize: '14px', fontWeight: 900, color: '#f36f21', margin: 0 }}>{personalReciente.codigoInstitucional}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>RH</p>
-                    <p style={{ fontSize: '14px', fontWeight: 900, color: '#334155', margin: 0, textTransform: 'uppercase' }}>{personalReciente.rh || "—"}</p>
-                  </div>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', margin: 0, textTransform: 'uppercase' }}>CÓDIGO INSTITUCIONAL</p>
-                    <p style={{ fontSize: '16px', fontWeight: 900, color: '#8b5a2b', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.05em' }}>{personalReciente.codigoInstitucional}</p>
+                  
+                  {/* Right Column (QR) */}
+                  <div style={{ display: 'flex', alignItems: 'flex-end', marginLeft: '8px' }}>
+                    <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #8d5d2d', flexShrink: 0, minWidth: '90px', minHeight: '90px' }}>
+                      {qrPersonal ? (
+                        <img src={qrPersonal} alt="QR" style={{ width: '82px', height: '82px', objectFit: 'contain' }} />
+                      ) : (
+                        <div style={{ width: '82px', height: '82px' }} />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Area (QR and Footer) */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', paddingTop: '16px', paddingBottom: '24px', paddingLeft: '40px', paddingRight: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 900, color: '#5c4033', margin: 0 }}>@fundacionislacascajal</p>
-                </div>
-
-                <div style={{ backgroundColor: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #8b5a2b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  {qrPersonal ? (
-                    <img src={qrPersonal} alt="QR" style={{ width: '70px', height: '70px' }} />
-                  ) : (
-                    <QrCode style={{ width: '70px', height: '70px', opacity: 0.2 }} />
-                  )}
-                </div>
-              </div>
-
-              {/* Franjas de color decorativas (Tierra) */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '6px', display: 'flex' }}>
-                <div style={{ flex: 1, backgroundColor: '#e19c2575' }} />
-                <div style={{ flex: 1, backgroundColor: '#ffa200ff' }} />
-                <div style={{ flex: 1, backgroundColor: '#8b5a2b' }} />
-                <div style={{ flex: 1, backgroundColor: '#cd853f' }} />
+              {/* Franjas de color inferiores */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '16px', display: 'flex' }}>
+                <div style={{ flex: 1, backgroundColor: '#e5b77e' }} />
+                <div style={{ flex: 1, backgroundColor: '#f39c11' }} />
+                <div style={{ flex: 1, backgroundColor: '#8d5d2d' }} />
+                <div style={{ flex: 1, backgroundColor: '#cc8332' }} />
               </div>
             </div>
 
