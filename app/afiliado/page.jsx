@@ -37,7 +37,8 @@ export default function AfiliadoLoginPage() {
 
       const q = query(
         collection(db, "afiliados"),
-        where("cedula", "==", cedulaLimpia)
+        where("cedula", "==", cedulaLimpia),
+        limit(1)
       );
 
       const snap = await getDocs(q);

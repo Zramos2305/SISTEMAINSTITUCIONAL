@@ -290,14 +290,46 @@ function GenerarContent() {
       // Dibujar QR en el cuadro superior derecho
       docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24);
 
-      // Cuerpo Redactado Clásico (Texto Plano)
+      // Cuerpo Redactado Clásico (Texto Plano con Paginación Automática)
       docPdf.setFontSize(11);
       docPdf.setTextColor(30, 30, 30);
-      const lineasTexto = docPdf.splitTextToSize(contenidoRedactado, pageWidth - 45); 
-      docPdf.text(lineasTexto, 20, 70);
+      const lineasTexto = docPdf.splitTextToSize(contenidoRedactado, pageWidth - 45);
+      
+      let cursorY = 70; // Altura inicial del texto
+      const lineHeight = 6; // Espaciado entre líneas
+      const maxY = pageHeight - 75; // Límite inferior seguro (espacio para la firma)
 
-      // Pie: Firma y Dependencia
+      lineasTexto.forEach((linea) => {
+        if (cursorY > maxY) {
+          // Crear nueva hoja
+          docPdf.addPage();
+          
+          // Redibujar el membrete de fondo en la hoja nueva
+          if (membreteBase64) {
+            docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight);
+          } else {
+            docPdf.setFontSize(22);
+            docPdf.setTextColor(30, 58, 95);
+            docPdf.text("FUNDACIÓN ISLA CASCAJAL", pageWidth / 2, 30, { align: "center" });
+            // Restaurar configuración de fuente para el texto
+            docPdf.setFontSize(11);
+            docPdf.setTextColor(30, 30, 30);
+          }
+          
+          cursorY = 40; // En la segunda hoja empezamos más arriba (margen superior estándar)
+        }
+        docPdf.text(linea, 20, cursorY);
+        cursorY += lineHeight;
+      });
+
+      // Pie: Firma y Dependencia (Se dibuja siempre al final de la última hoja generada)
       if (firmaImagen) {
+        // Calculamos que si la firma no cabe en el espacio residual, forzamos hoja nueva
+        if (cursorY > pageHeight - 65) {
+          docPdf.addPage();
+          if (membreteBase64) docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight);
+        }
+        
         // Movido a la derecha, arriba del pie de página
         const firmX = pageWidth - 65; 
         docPdf.addImage(firmaImagen, undefined, firmX - 22, pageHeight - 65, 44, 22, "firma", "FAST");
