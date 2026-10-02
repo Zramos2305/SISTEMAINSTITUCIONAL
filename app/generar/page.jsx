@@ -316,6 +316,9 @@ function GenerarContent() {
             docPdf.setTextColor(30, 30, 30);
           }
           
+          // Dibujar QR en la nueva hoja en la misma posición
+          docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24);
+          
           cursorY = 40; // En la segunda hoja empezamos más arriba (margen superior estándar)
         }
         docPdf.text(linea, 20, cursorY);
@@ -328,6 +331,8 @@ function GenerarContent() {
         if (cursorY > pageHeight - 65) {
           docPdf.addPage();
           if (membreteBase64) docPdf.addImage(membreteBase64, undefined, 0, 0, pageWidth, pageHeight);
+          // Dibujar QR en la nueva hoja de firmas en la misma posición
+          docPdf.addImage(qrDataUrl, "PNG", pageWidth - 52, 6, 24, 24);
         }
         
         // Movido a la derecha, arriba del pie de página
