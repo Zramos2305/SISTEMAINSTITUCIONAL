@@ -950,14 +950,6 @@ export default function RegistroPublicoPage() {
       <div className="max-w-5xl w-full">
         {/* Encabezado */}
         <div className="text-center mb-8 relative">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={llenarDatosPrueba}
-            className="absolute right-0 top-0 hidden md:flex items-center gap-2"
-          >
-            Llenar Datos de Prueba
-          </Button>
           <div className="mx-auto bg-white p-2 rounded-full shadow-md w-28 h-28 mb-4 border-4 border-white" style={{ borderColor: COLORS.azul }}>
             <img src="/logo.png" alt="Logo Isla Cascajal" className="w-full h-full object-contain" />
           </div>
@@ -967,14 +959,6 @@ export default function RegistroPublicoPage() {
           <p className="text-slate-600 mt-3 max-w-2xl mx-auto text-sm md:text-base">
             Complete el siguiente formulario con su información verídica para iniciar su proceso de vinculación a la Fundación Isla Cascajal.
           </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={llenarDatosPrueba}
-            className="mt-4 md:hidden w-full"
-          >
-            Llenar Datos de Prueba
-          </Button>
         </div>
 
         <div className="space-y-6">

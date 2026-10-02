@@ -1184,25 +1184,9 @@ export default function AfiliarPage() {
 
             {/* Formulario */}
             <Card className="shadow-lg relative">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={llenarDatosPrueba}
-                className="absolute right-4 top-4 hidden md:flex items-center gap-2"
-              >
-                Llenar Datos de Prueba
-              </Button>
               <CardHeader>
                 <CardTitle>Datos del Afiliado</CardTitle>
                 <CardDescription>Complete la información para generar el carnet institucional.</CardDescription>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={llenarDatosPrueba}
-                  className="mt-2 md:hidden w-full"
-                >
-                  Llenar Datos de Prueba
-                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
