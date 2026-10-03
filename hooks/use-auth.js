@@ -45,17 +45,23 @@ export function useAuth(requireAuth = true) {
         // ============================
         // BUSCAR DATOS EN COLECCION USUARIOS
         // ============================
-        const userRef = doc(db, "usuarios", firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
-
+        let userSnap = null;
         let empleadoIdVinculado = null;
 
-        if (userSnap.exists()) {
-          const ud = userSnap.data();
-          setUserData(ud);
-          empleadoIdVinculado = ud.empleadoId; // Si el usuario tiene empleadoId directo
-        } else {
-          setUserData(null);
+        try {
+          const userRef = doc(db, "usuarios", firebaseUser.uid);
+          userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const ud = userSnap.data();
+            setUserData(ud);
+            empleadoIdVinculado = ud.empleadoId; // Si el usuario tiene empleadoId directo
+          } else {
+            setUserData(null);
+          }
+        } catch (usuariosErr) {
+          console.warn("No se pudo leer la colección usuarios (posible error de reglas Firestore):", usuariosErr);
+          setUserData(null); // Continuará al fallback
         }
 
         // ============================
@@ -104,7 +110,7 @@ export function useAuth(requireAuth = true) {
               setEmpleadoData(empD);
 
               // Si no existe el documento en usuarios, autocompletar userData basado en el empleado
-              if (!userSnap.exists()) {
+              if (!userSnap || !userSnap.exists()) {
                 setUserData({
                   uid: firebaseUser.uid,
                   correo: firebaseUser.email,
