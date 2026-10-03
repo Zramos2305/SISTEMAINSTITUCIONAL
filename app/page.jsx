@@ -19,17 +19,20 @@ export default function HomePage() {
     }
 
     if (userData) {
-      if (userData.estado === "inactivo") {
+      if (userData.estado === "inactivo" || userData.activo === false) {
         router.push("/unauthorized?reason=inactive");
         return;
       }
-      if (userData.rol === "empleado" || userData.rol === "comercial") {
+      
+      const userRole = (userData.rol || "empleado").toLowerCase();
+
+      if (userRole === "empleado" || userRole === "comercial") {
         router.push("/asistencia");
-      } else if (userData.rol === "recursos_humanos" || userData.rol === "personal") {
+      } else if (userRole === "recursos_humanos" || userRole === "personal") {
         router.push("/dashboard/personal");
-      } else if (userData.rol === "superadmin" || userData.rol === "admin") {
+      } else if (userRole === "superadmin" || userRole === "admin") {
         router.push("/dashboard");
-      } else if (userData.rol === "lider_comercial") {
+      } else if (userRole === "lider_comercial") {
         router.push("/dashboard/afiliados");
       } else {
         router.push("/unauthorized");

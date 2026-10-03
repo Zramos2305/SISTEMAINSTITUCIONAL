@@ -96,18 +96,31 @@ export function useAuth(requireAuth = true) {
 
             if (!querySnapshot.empty) {
               const empleadoDoc = querySnapshot.docs[0];
-              setEmpleadoId(empleadoDoc.id);
-              setEmpleadoData({
+              const empD = {
                 id: empleadoDoc.id,
                 ...empleadoDoc.data(),
-              });
+              };
+              setEmpleadoId(empleadoDoc.id);
+              setEmpleadoData(empD);
+
+              // Si no existe el documento en usuarios, autocompletar userData basado en el empleado
+              if (!userSnap.exists()) {
+                setUserData({
+                  uid: firebaseUser.uid,
+                  correo: firebaseUser.email,
+                  nombre: empD.nombre || firebaseUser.displayName,
+                  rol: empD.rolSistema || "empleado",
+                  activo: empD.estado === "activo",
+                  empleadoId: empleadoDoc.id
+                });
+              }
             } else {
               setEmpleadoId(null);
               setEmpleadoData(null);
             }
           } catch (empErr) {
             console.error("Error en fallback:", empErr);
-            setUserData(prev => ({...prev, _debugError: empErr.message}));
+            setUserData(prev => prev ? {...prev, _debugError: empErr.message} : null);
           }
         }
 

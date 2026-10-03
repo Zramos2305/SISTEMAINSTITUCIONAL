@@ -38,19 +38,20 @@ export default function ProtectedRoute({ allowedRoles, children }) {
     }
 
     // SuperAdmin siempre tiene acceso o si el rol está en allowedRoles
-    const hasPermission = userData.rol === "superadmin" || allowedRoles.includes(userData.rol);
+    const userRole = (userData.rol || "empleado").toLowerCase();
+    const hasPermission = userRole === "superadmin" || allowedRoles.includes(userRole);
 
     if (!hasPermission) {
       // Si es un empleado o asesor comercial intentando entrar a otra cosa, forzar a /asistencia
-      if ((userData.rol === "empleado" || userData.rol === "comercial") && !pathname.startsWith("/asistencia")) {
+      if ((userRole === "empleado" || userRole === "comercial") && !pathname.startsWith("/asistencia")) {
         router.push("/asistencia");
       } 
       // Si es un líder comercial intentando entrar a zona no permitida
-      else if (userData.rol === "lider_comercial" && !pathname.includes("/dashboard/afiliados") && !pathname.startsWith("/asistencia") && !pathname.includes("/afiliar")) {
+      else if (userRole === "lider_comercial" && !pathname.includes("/dashboard/afiliados") && !pathname.startsWith("/asistencia") && !pathname.includes("/afiliar")) {
         router.push("/dashboard/afiliados");
       }
       // Si es un recursos_humanos o personal intentando entrar a zona superadmin o no permitida
-      else if ((userData.rol === "recursos_humanos" || userData.rol === "personal") && !pathname.includes("/dashboard/personal") && !pathname.includes("/generar") && !pathname.startsWith("/asistencia")) {
+      else if ((userRole === "recursos_humanos" || userRole === "personal") && !pathname.includes("/dashboard/personal") && !pathname.includes("/generar") && !pathname.startsWith("/asistencia")) {
         router.push("/dashboard/personal");
       }
       // Redirigir a unauthorized por defecto
@@ -72,7 +73,8 @@ export default function ProtectedRoute({ allowedRoles, children }) {
   }
 
   // Si tiene el rol activo y permitido (superadmin tiene pase total)
-  if (userData.activo !== false && userData.estado !== "inactivo" && (userData.rol === "superadmin" || allowedRoles.includes(userData.rol))) {
+  const finalRole = (userData.rol || "empleado").toLowerCase();
+  if (userData.activo !== false && userData.estado !== "inactivo" && (finalRole === "superadmin" || allowedRoles.includes(finalRole))) {
     return <>{children}</>;
   }
 
